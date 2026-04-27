@@ -1,0 +1,58 @@
+{
+  "agent_patch": "operator_selected_local_reference_v1",
+
+  "goal": "Replace kinematic orientation with mismatch-minimizing operator selection to derive -(i).",
+
+  "patches": [
+    {
+      "file": "native_platform/operator_selection.py",
+      "create": [
+        "import numpy as np",
+        "",
+        "OPERATORS = ['++', '--', '+-', '-+']",
+        "",
+        "def apply_operator(phi, op):",
+        "    if op == '++': return phi",
+        "    if op == '--': return -phi",
+        "    if op == '+-': return np.roll(phi, 1)",
+        "    if op == '-+': return np.roll(phi, -1)",
+        "",
+        "def select_operator(phi, phi_prev):",
+        "    best_op = None",
+        "    best_cost = 1e9",
+        "",
+        "    for op in OPERATORS:",
+        "        candidate = apply_operator(phi, op)",
+        "        cost = 1.0 - np.dot(candidate, phi_prev)",
+        "",
+        "        if cost < best_cost:",
+        "            best_cost = cost",
+        "            best_op = op",
+        "",
+        "    return best_op, best_cost"
+      ]
+    },
+
+    {
+      "file": "native_platform/run_native_platform.py",
+      "modify": [
+        "from native_platform.operator_selection import select_operator, apply_operator",
+        "",
+        "# BEFORE continuation:",
+        "op_star, op_cost = select_operator(phi_current, prev_phi)",
+        "",
+        "# derive local reference -(i)",
+        "i_local = apply_operator(phi_current, op_star)",
+        "",
+        "# use this instead of velocity-based orientation",
+        "phi_oriented = i_local",
+        "",
+        "# continuation now works in operator-selected frame",
+        "phi_continued = phase_continuation.continue_next(phi_oriented)",
+        "",
+        "# mismatch now relative to operator-selected reference",
+        "continuation_mismatch = phase_mismatch(phi_continued, phi_oriented)"
+      ]
+    }
+  ]
+}

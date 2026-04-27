@@ -14,6 +14,7 @@ from .residue_feedback import residue_bias
 from .phase_space import compute_phase_vector, phase_mismatch
 from .residue_phase_continuation import ResiduePhaseContinuation
 from .phase_operator_map import operator_pressure
+from .operator_selection import select_operator, apply_operator
 
 from core.memory_layer import load_memory_state, save_memory_state
 
@@ -58,6 +59,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     # Track metrics for engine injection and transition
     last_flow_bias = 0.0
     last_continuation_mismatch = 0.0
+    
+    # Patch 18: Prior phi for operator selection
+    prev_phi = None
     
     # Patch 17: Prior continuation for next-frame accuracy
     pending_phi_continued = None
@@ -119,12 +123,24 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 continuation_mismatch_next = 0.0
 
-            # Generate internal continuation
-            phi_continued = phase_continuation.continue_next(phi_current, last_mismatch=last_continuation_mismatch)
-            continuation_mismatch = float(phase_mismatch(phi_continued, phi_current))
+            # Patch 18: Operator Selection for Local Reference -(i)
+            # Find the operator that minimizes mismatch with the prior state
+            op_star, op_cost = select_operator(phi_current, prev_phi)
+            
+            # Derive local reference -(i)
+            i_local = apply_operator(phi_current, op_star)
+            
+            # Use this as the oriented state for continuation
+            phi_oriented = i_local
+
+            # Generate internal continuation in the operator-selected frame
+            phi_continued = phase_continuation.continue_next(phi_oriented, last_mismatch=last_continuation_mismatch)
+            
+            # Mismatch is now relative to the operator-selected reference
+            continuation_mismatch = float(phase_mismatch(phi_continued, phi_oriented))
 
             # Reinforce trace groove if mismatch is low
-            phase_continuation.reinforce_trace(phi_current, continuation_mismatch, threshold=0.02)
+            phase_continuation.reinforce_trace(phi_oriented, continuation_mismatch, threshold=0.02)
 
             # Map phase flow to operator pressure
             op_pressure = operator_pressure(continuation_mismatch, last_continuation_mismatch, scope_data['C'], scope_data['E'], scope_data['V'])
@@ -195,6 +211,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
 
             last_state = state
             last_residue = residue
+            prev_phi = phi_current.copy()
 
     # 2. Finalize
     phase_continuation.mark_traversal_complete()
