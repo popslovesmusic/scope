@@ -97,10 +97,11 @@ For archival or system transfer, use the following aggregated files:
 
 The platform uses a high-fidelity **Phase Space** representation to internally continue and stabilize analog trajectories:
 *   **Phase Vector:** An 8-dimensional state combining physics (W, C, E) and momentum (V).
-*   **Residue-Driven Continuation:** The system aligns its internal phase trajectory using multi-step momentum, acceleration curvature, and the "pull" of committed stable residues.
+*   **Operator Selection (Local Reference -(i)):** Every frame, the system selects the v14 operator (`++`, `--`, `+-`, `-+`) that minimizes the mismatch with the prior state. This selection derives the local reference state (-(i)), making the continuation engine invariant to the active frame.
+*   **Residue-Driven Continuation:** The system aligns its internal phase trajectory using multi-step momentum, acceleration curvature, and the "pull" of committed stable residues within the operator-selected frame.
 *   **Trace Groove Deepening:** Repeated stable traversals of a trajectory deepen its "groove", reinforcing the path and making familiar signals progressively easier to continue.
-*   **Mismatch (Continuation Error):** Real-time scoring of how much the engine diverges from the internal phase continuation expectation.
-*   **Operator Mapping:** Mismatch trends (divergence or recoupling) are mapped into pressure for v14 orientation operators (`++`, `--`, `+-`, `-+`), allowing the system to "steer" its reasoning toward stability.
+*   **Mismatch (Continuation Error):** Real-time scoring of how much the engine diverges from the internal phase continuation expectation (relative to the derived reference -(i)).
+*   **Operator Mapping:** Mismatch trends (divergence or recoupling) are mapped into pressure for orientation operators, allowing the system to "steer" its reasoning toward stability.
 
 ---
 
