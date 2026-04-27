@@ -1,9 +1,9 @@
 {
   "name": "replay_A",
-  "delta_phi_mean": 0.00036534968365808517,
-  "delta_phi_max": 0.015979608909880372,
-  "caution_mean": 0.7416227447306836,
-  "recovery_mean": 0.12894246296038506,
-  "residue_commit_rate": 0.0,
+  "delta_phi_mean": 0.003596010697522453,
+  "delta_phi_max": 0.1968196885040372,
+  "caution_mean": 0.7406972141416435,
+  "recovery_mean": 0.1281934961694024,
+  "residue_commit_rate": 0.004,
   "trace_path": "logs/feedback_trace_phase1_replay_A.jsonl"
 }

@@ -24,23 +24,32 @@ class ResiduePhasePredictor:
             self.history.pop(0)
 
     def predict_next(self, phi_current, residue=None):
-        if not self.history:
+        if len(self.history) < 2:
             self.update_history(phi_current)
             return phi_current
-        
-        previous_phi = self.history[-1]
-        
-        # 1. Momentum: project forward along last direction
-        trend = phi_current - previous_phi
-        
-        # 2. Residue Pull: bias toward committed stable states
+
+        # multi-step trajectory estimate
+        phi_prev = self.history[-1]
+        phi_prev2 = self.history[-2]
+
+        v1 = phi_current - phi_prev
+        v2 = phi_prev - phi_prev2
+
+        # acceleration term (captures curvature)
+        accel = v1 - v2
+
+        # residue-driven pull (re-integrated from v1)
         residue_pull = derive_residue_phase_bias(residue)
-        
-        # 3. Combine
-        phi_pred = phi_current + trend + residue_pull
-        
-        # 4. Normalize to stay on hypersphere
-        phi_pred = normalize(phi_pred)
-        
+
+        # forward projection (THIS is key)
+        phi_pred = phi_current + v1 + 0.5 * accel + residue_pull
+
+        # push prediction ahead (tunable)
+        phi_pred = phi_current + 1.5 * (phi_pred - phi_current)
+
+        # normalize
+        phi_pred = phi_pred / (np.linalg.norm(phi_pred) + 1e-9)
+
         self.update_history(phi_current)
+
         return phi_pred

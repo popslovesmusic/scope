@@ -1,9 +1,9 @@
 {
   "name": "baseline_train_A_pass3",
-  "delta_phi_mean": 0.0004188219444038188,
-  "delta_phi_max": 0.025358989890392314,
-  "caution_mean": 0.7428012632477115,
-  "recovery_mean": 0.1283809794094518,
-  "residue_commit_rate": 0.0,
+  "delta_phi_mean": 0.0033818741770399005,
+  "delta_phi_max": 0.1617720162293157,
+  "caution_mean": 0.7418891077939361,
+  "recovery_mean": 0.12854025142043213,
+  "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass3.jsonl"
 }

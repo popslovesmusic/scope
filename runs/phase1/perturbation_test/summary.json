@@ -1,9 +1,9 @@
 {
   "name": "perturbation_test",
-  "delta_phi_mean": 0.0003791318116386329,
-  "delta_phi_max": 0.00931322339171714,
-  "caution_mean": 0.7419461335626432,
-  "recovery_mean": 0.12947032953639565,
-  "residue_commit_rate": 0.0,
+  "delta_phi_mean": 0.0033776443833799324,
+  "delta_phi_max": 0.11620048833978591,
+  "caution_mean": 0.7393664004440992,
+  "recovery_mean": 0.12909598349041512,
+  "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_perturbation_test.jsonl"
 }
