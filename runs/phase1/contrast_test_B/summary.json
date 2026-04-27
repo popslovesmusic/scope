@@ -1,0 +1,9 @@
+{
+  "name": "contrast_test_B",
+  "delta_phi_mean": 0.0003628559570340519,
+  "delta_phi_max": 0.010319504899172105,
+  "caution_mean": 0.7391873443455917,
+  "recovery_mean": 0.1313760295951091,
+  "residue_commit_rate": 0.0,
+  "trace_path": "logs/feedback_trace_phase1_contrast_test_B.jsonl"
+}

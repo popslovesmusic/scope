@@ -18,9 +18,13 @@ from .phase_operator_map import operator_pressure
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None):
     print("🚀 Initializing Native Wave-Residue Platform...")
     
+    # Check input signal length
+    if input_signals is not None:
+        num_frames = len(input_signals)
+
     # 1. Initialize Components
     engine = EngineBridge(num_nodes=num_nodes)
     scope = SignalScope()
@@ -65,8 +69,11 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     # Patch 15: Open log file once (P7 buffer logging)
     with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
         for t in range(num_frames):
-            # A. Signal Generation (Example: sine wave)
-            input_signal = np.sin(t * 0.1)
+            # A. Signal Generation
+            if input_signals is not None:
+                input_signal = input_signals[t]
+            else:
+                input_signal = np.sin(t * 0.1)
             
             # Patch 15: Feedback calculation using PREVIOUS frame metrics (P2)
             base_bias = feedback.update(last_state, last_residue) if fb_config["feedback"]["enabled"] else 1.0

@@ -1,0 +1,9 @@
+{
+  "name": "transition_test",
+  "delta_phi_mean": 0.0005116868484219612,
+  "delta_phi_max": 0.028347687515834608,
+  "caution_mean": 0.74429439956059,
+  "recovery_mean": 0.12820675208555296,
+  "residue_commit_rate": 0.0,
+  "trace_path": "logs/feedback_trace_phase1_transition_test.jsonl"
+}

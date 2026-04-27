@@ -1,0 +1,9 @@
+{
+  "name": "continuation_test_A_tail_removed",
+  "delta_phi_mean": 0.0002786289250929138,
+  "delta_phi_max": 0.00860732128158992,
+  "caution_mean": 0.7425295776779387,
+  "recovery_mean": 0.13092297775274792,
+  "residue_commit_rate": 0.0,
+  "trace_path": "logs/feedback_trace_phase1_continuation_test_A_tail_removed.jsonl"
+}

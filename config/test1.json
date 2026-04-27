@@ -1,0 +1,179 @@
+{
+  "agent_task": "run_phase_1_synthetic_training_tests",
+
+  "goal": "Validate that the platform learns, continues, and detects trajectory divergence using phase-mismatch (delta_phi) and residue-based adaptation.",
+
+  "preconditions": [
+    "platform compiles and runs without errors",
+    "phase_mismatch and predictor integrated",
+    "feedback timing fixed (previous-frame application)",
+    "control_pattern clamped within [min_bias, max_bias]",
+    "logging includes delta_phi, control_pattern, C, E, V, hex, residue_committed"
+  ],
+
+  "setup": {
+    "output_dir": "runs/phase1/",
+    "log_dir": "logs/",
+    "session_reset": true,
+    "config_overrides": {
+      "feedback.enabled": true,
+      "feedback.engine_steps_per_frame": 20
+    }
+  },
+
+  "wave_generators": {
+    "sine_A": {
+      "type": "sine",
+      "frequency": 5.0,
+      "amplitude": 1.0,
+      "duration_frames": 500
+    },
+    "sine_A_repeat": {
+      "type": "reuse_previous",
+      "source": "sine_A"
+    },
+    "sine_A_tail_removed": {
+      "type": "truncate",
+      "source": "sine_A",
+      "keep_ratio": 0.6
+    },
+    "sine_A_perturbed": {
+      "type": "sine_with_noise",
+      "frequency": 5.0,
+      "amplitude": 1.0,
+      "noise_std": 0.2,
+      "duration_frames": 500
+    },
+    "sine_B": {
+      "type": "sine",
+      "frequency": 9.0,
+      "amplitude": 1.0,
+      "duration_frames": 500
+    },
+    "transition_wave": {
+      "type": "composite",
+      "segments": [
+        {"generator": "sine_A", "frames": 250},
+        {"generator": "sine_with_noise", "frequency": 5.0, "noise_std": 0.5, "frames": 250}
+      ]
+    }
+  },
+
+  "runs": [
+    {
+      "name": "baseline_train_A_pass1",
+      "input": "sine_A",
+      "frames": 500,
+      "reset_memory": true
+    },
+    {
+      "name": "baseline_train_A_pass2",
+      "input": "sine_A",
+      "frames": 500,
+      "reset_memory": false
+    },
+    {
+      "name": "baseline_train_A_pass3",
+      "input": "sine_A",
+      "frames": 500,
+      "reset_memory": false
+    },
+    {
+      "name": "replay_A",
+      "input": "sine_A_repeat",
+      "frames": 500,
+      "reset_memory": false
+    },
+    {
+      "name": "continuation_test_A_tail_removed",
+      "input": "sine_A_tail_removed",
+      "frames": 300,
+      "reset_memory": false
+    },
+    {
+      "name": "perturbation_test",
+      "input": "sine_A_perturbed",
+      "frames": 500,
+      "reset_memory": false
+    },
+    {
+      "name": "contrast_test_B",
+      "input": "sine_B",
+      "frames": 500,
+      "reset_memory": false
+    },
+    {
+      "name": "transition_test",
+      "input": "transition_wave",
+      "frames": 500,
+      "reset_memory": false
+    }
+  ],
+
+  "metrics_to_compute": [
+    "delta_phi_mean",
+    "delta_phi_slope",
+    "delta_phi_max",
+    "caution_mean",
+    "recovery_mean",
+    "residue_commit_rate",
+    "control_pattern_mean",
+    "hex_repeat_rate",
+    "operator_pressure_distribution"
+  ],
+
+  "analysis_rules": {
+    "baseline_learning": {
+      "expect": "delta_phi_mean decreases across A passes"
+    },
+    "replay": {
+      "expect": "delta_phi_mean(replay_A) < delta_phi_mean(pass1)"
+    },
+    "continuation": {
+      "expect": "delta_phi does not spike immediately after truncation; gradual increase allowed"
+    },
+    "perturbation": {
+      "expect": "delta_phi spikes early then partially recovers"
+    },
+    "contrast": {
+      "expect": "delta_phi_mean(B) > delta_phi_mean(replay_A)"
+    },
+    "transition": {
+      "expect": "delta_phi rises before noisy segment begins or at transition boundary"
+    }
+  },
+
+  "output_artifacts": [
+    "runs/phase1/<run_name>/feedback_trace.jsonl",
+    "runs/phase1/<run_name>/summary.json",
+    "runs/phase1/comparison_report.json"
+  ],
+
+  "comparison_report": {
+    "include": [
+      "delta_phi_mean per run",
+      "delta_phi_time_series",
+      "caution_vs_recovery",
+      "residue_commit_rate",
+      "control_pattern_trend"
+    ]
+  },
+
+  "success_criteria": [
+    "delta_phi decreases on repeated exposure to A",
+    "system shows internal continuation behavior on truncated A",
+    "perturbations produce recoverable mismatch",
+    "different wave produces distinct trajectory metrics",
+    "transition wave produces early warning via rising delta_phi"
+  ],
+
+  "failure_conditions": [
+    "delta_phi remains flat across all runs",
+    "no difference between A and B behavior",
+    "control_pattern saturates or collapses",
+    "residue_commit_rate is zero or constant",
+    "no observable response to perturbation"
+  ],
+
+  "final_instruction": "Execute all runs in order, collect metrics, and generate a comparison report validating phase-aligned learning and continuation behavior."
+}

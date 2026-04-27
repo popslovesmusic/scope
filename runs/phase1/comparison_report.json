@@ -1,0 +1,74 @@
+[
+  {
+    "name": "baseline_train_A_pass1",
+    "delta_phi_mean": 0.00033723364478033745,
+    "delta_phi_max": 0.011671565826897767,
+    "caution_mean": 0.7430704541719902,
+    "recovery_mean": 0.12817825498809238,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass1.jsonl"
+  },
+  {
+    "name": "baseline_train_A_pass2",
+    "delta_phi_mean": 0.00034244415750634284,
+    "delta_phi_max": 0.015446638658517364,
+    "caution_mean": 0.7424161335720184,
+    "recovery_mean": 0.12848071759977228,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass2.jsonl"
+  },
+  {
+    "name": "baseline_train_A_pass3",
+    "delta_phi_mean": 0.0004188219444038188,
+    "delta_phi_max": 0.025358989890392314,
+    "caution_mean": 0.7428012632477115,
+    "recovery_mean": 0.1283809794094518,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass3.jsonl"
+  },
+  {
+    "name": "replay_A",
+    "delta_phi_mean": 0.00036534968365808517,
+    "delta_phi_max": 0.015979608909880372,
+    "caution_mean": 0.7416227447306836,
+    "recovery_mean": 0.12894246296038506,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_replay_A.jsonl"
+  },
+  {
+    "name": "continuation_test_A_tail_removed",
+    "delta_phi_mean": 0.0002786289250929138,
+    "delta_phi_max": 0.00860732128158992,
+    "caution_mean": 0.7425295776779387,
+    "recovery_mean": 0.13092297775274792,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_continuation_test_A_tail_removed.jsonl"
+  },
+  {
+    "name": "perturbation_test",
+    "delta_phi_mean": 0.0003791318116386329,
+    "delta_phi_max": 0.00931322339171714,
+    "caution_mean": 0.7419461335626432,
+    "recovery_mean": 0.12947032953639565,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_perturbation_test.jsonl"
+  },
+  {
+    "name": "contrast_test_B",
+    "delta_phi_mean": 0.0003628559570340519,
+    "delta_phi_max": 0.010319504899172105,
+    "caution_mean": 0.7391873443455917,
+    "recovery_mean": 0.1313760295951091,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_contrast_test_B.jsonl"
+  },
+  {
+    "name": "transition_test",
+    "delta_phi_mean": 0.0005116868484219612,
+    "delta_phi_max": 0.028347687515834608,
+    "caution_mean": 0.74429439956059,
+    "recovery_mean": 0.12820675208555296,
+    "residue_commit_rate": 0.0,
+    "trace_path": "logs/feedback_trace_phase1_transition_test.jsonl"
+  }
+]
