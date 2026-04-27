@@ -93,23 +93,24 @@ For archival or system transfer, use the following aggregated files:
 
 ---
 
-## 8. Phase-Residue System
+## 8. Phase-Aligned Continuation System
 
-The platform uses a high-fidelity **Phase Space** representation to predict and stabilize analog trajectories:
+The platform uses a high-fidelity **Phase Space** representation to internally continue and stabilize analog trajectories:
 *   **Phase Vector:** An 8-dimensional state combining physics (W, C, E) and momentum (V).
-*   **Residue-Driven Prediction:** The system predicts the next expected state based on momentum plus the "pull" of committed stable residues.
-*   **Mismatch (DeltaPhi):** Real-time scoring of how much the engine diverges from expectations.
-*   **Operator Mapping:** Mismatch trends are mapped into pressure for v14 orientation operators (`++`, `--`, `+-`, `-+`), allowing the system to "steer" its reasoning toward stability.
+*   **Residue-Driven Continuation:** The system aligns its internal phase trajectory using multi-step momentum, acceleration curvature, and the "pull" of committed stable residues.
+*   **Trace Groove Deepening:** Repeated stable traversals of a trajectory deepen its "groove", reinforcing the path and making familiar signals progressively easier to continue.
+*   **Mismatch (Continuation Error):** Real-time scoring of how much the engine diverges from the internal phase continuation expectation.
+*   **Operator Mapping:** Mismatch trends (divergence or recoupling) are mapped into pressure for v14 orientation operators (`++`, `--`, `+-`, `-+`), allowing the system to "steer" its reasoning toward stability.
 
 ---
 
 ## 9. Training (Wave Exposure)
 
 The system learns through exposure to wave patterns defined in `native_platform/training_manifest.json`:
-1.  **Baseline Learning:** Repeated exposure to a stable wave to form an initial attractor.
-2.  **Continuation:** Testing whether the system can "hallucinate" the phase trajectory when the input signal is removed.
-3.  **Perturbation:** Training the system to detect and recover from frequency drift or noise.
-*   **Contrast:** Establishing distinct residue basins for different wave types.
+1.  **Baseline Learning:** Repeated exposure to a stable wave deepens its trace groove, forming an initial attractor.
+2.  **Continuation:** Testing whether the system successfully continues the phase trajectory internally when the input signal is removed or truncated.
+3.  **Perturbation:** Training the system to detect and recover from frequency drift or noise (mismatch rises then recouples).
+4.  **Contrast:** Establishing distinct residue basins for different wave types.
 
 ---
 
