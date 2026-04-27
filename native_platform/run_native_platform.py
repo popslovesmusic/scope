@@ -1,4 +1,3 @@
-
 import os
 import json
 import numpy as np
@@ -13,13 +12,13 @@ from .residue_imprinter import qualify_and_commit
 from .feedback_adapter import FeedbackAdapter
 from .residue_feedback import residue_bias
 from .phase_space import compute_phase_vector, phase_mismatch
-from .residue_phase_predictor import ResiduePhasePredictor
+from .residue_phase_continuation import ResiduePhaseContinuation
 from .phase_operator_map import operator_pressure
 
 from core.memory_layer import load_memory_state, save_memory_state
 
 def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None):
-    print("🚀 Initializing Native Wave-Residue Platform...")
+    print("🚀 Initializing Native Wave-Residue Platform (Continuation Mode)...")
     
     # Check input signal length
     if input_signals is not None:
@@ -29,7 +28,10 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     engine = EngineBridge(num_nodes=num_nodes)
     scope = SignalScope()
     v14 = V14Bridge()
-    phase_predictor = ResiduePhasePredictor(history_size=32)
+    
+    # Patch 17: Phase Continuation with deeper history
+    phase_continuation = ResiduePhaseContinuation(history_size=64, trace_size=128)
+    
     memory_path = "sessions/native_memory.json"
     memory = load_memory_state(memory_path)
     
@@ -53,12 +55,12 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     last_state = type('obj', (object,), {'caution_scalar': 0.0, 'recovery_scalar': 0.0, 'hold_state': False, 'components': []})
     last_residue = None
     
-    # Patch 15: Track biases from previous frame for engine injection
+    # Track metrics for engine injection and transition
     last_flow_bias = 0.0
-    last_delta_phi = 0.0
+    last_continuation_mismatch = 0.0
     
-    # Patch 16: Track prior prediction for forecast error calculation
-    pending_phi_pred = None
+    # Patch 17: Prior continuation for next-frame accuracy
+    pending_phi_continued = None
 
     if run_id is None:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -69,7 +71,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     
     print(f"Starting loop for {num_frames} frames (Run ID: {run_id})...")
     
-    # Patch 15: Open log file once (P7 buffer logging)
+    # Open log file once for buffered writing
     with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
         for t in range(num_frames):
             # A. Signal Generation
@@ -78,27 +80,24 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 input_signal = np.sin(t * 0.1)
             
-            # Patch 15: Feedback calculation using PREVIOUS frame metrics (P2)
+            # Feedback calculation using PREVIOUS frame metrics
             base_bias = feedback.update(last_state, last_residue) if fb_config["feedback"]["enabled"] else 1.0
             r_bias = residue_bias(last_residue)
             
             # Base control pattern
             control_pattern = base_bias * r_bias
             
-            # Inject flow bias from previous turn (P2/P11 integration)
+            # Inject flow bias and continuation mismatch from previous turn
             flow_feedback_gain = float(fb_config.get('feedback', {}).get('flow_feedback_gain', 0.2))
             control_pattern = control_pattern * (1.0 + flow_feedback_gain * last_flow_bias)
-            
-            # Inject phase mismatch damping from previous turn (P13/P15 integration)
-            # Patch 16: Reduce damping (P6)
-            control_pattern *= (1.0 - 0.02 * last_delta_phi)
+            control_pattern *= (1.0 - 0.02 * last_continuation_mismatch)
 
-            # Patch 15: Clamp control pattern (P4)
+            # Clamp control pattern
             min_b = float(fb_config.get('feedback', {}).get('min_bias', 0.5))
             max_b = float(fb_config.get('feedback', {}).get('max_bias', 2.0))
             control_pattern = float(np.clip(control_pattern, min_b, max_b))
 
-            # B. Step Engine with dynamic control pattern
+            # B. Step Engine
             engine_steps = int(fb_config.get('feedback', {}).get('engine_steps_per_frame', 20))
             engine_mean = engine.evolve(input_signal, control_pattern, steps=engine_steps)
             node_outputs = engine.get_node_outputs()
@@ -106,7 +105,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # C. Update SignalScope
             scope_data = scope.update(node_outputs)
             
-            # Phase Space & Prediction
+            # Phase Space & Continuation
             phi_current = compute_phase_vector(
                 scope_data['W_local'],
                 scope_data['C'],
@@ -114,30 +113,26 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data['V']
             )
             
-            # Patch 16: Real forecast error (P8)
-            if pending_phi_pred is not None:
-                forecast_error = float(phase_mismatch(pending_phi_pred, phi_current))
+            # Patch 17: Real continuation alignment error
+            if pending_phi_continued is not None:
+                continuation_mismatch_next = float(phase_mismatch(pending_phi_continued, phi_current))
             else:
-                forecast_error = 0.0
+                continuation_mismatch_next = 0.0
 
-            # Patch 14: Use residue-driven predictor
-            phi_pred = phase_predictor.predict_next(phi_current, residue=last_residue)
-            delta_phi = float(phase_mismatch(phi_pred, phi_current))
+            # Generate internal continuation
+            phi_continued = phase_continuation.continue_next(phi_current, last_mismatch=last_continuation_mismatch)
+            continuation_mismatch = float(phase_mismatch(phi_continued, phi_current))
 
-            # Patch 16: Naive baseline comparison (P7)
-            phi_naive = phi_current
-            delta_phi_naive = float(phase_mismatch(phi_naive, phi_current))
-            prediction_gain = float(delta_phi_naive - delta_phi)
+            # Reinforce trace groove if mismatch is low
+            phase_continuation.reinforce_trace(phi_current, continuation_mismatch, threshold=0.02)
 
             # Map phase flow to operator pressure
-            op_pressure = operator_pressure(delta_phi, last_delta_phi, scope_data['C'], scope_data['E'], scope_data['V'])
+            op_pressure = operator_pressure(continuation_mismatch, last_continuation_mismatch, scope_data['C'], scope_data['E'], scope_data['V'])
 
-            # Update biases for NEXT frame (P2)
+            # Update for next frame
             last_flow_bias = float(np.tanh(np.mean(scope_data['V'])))
-            last_delta_phi = delta_phi
-            
-            # Patch 16: Capture prior prediction for next turn (P8)
-            pending_phi_pred = phi_pred.copy()
+            last_continuation_mismatch = continuation_mismatch
+            pending_phi_continued = phi_continued.copy()
 
             # D. Hex Encoding
             full_hex = make_full_hex(scope_data["W_local"], scope_data["W_global"], scope_data["W_meta"])
@@ -150,25 +145,20 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data["V"]
             )
             
-            # Apply operator pressure to signature
+            # Apply operator pressure to signature (legal input-space shaping)
             signature_12 = apply_operator_pressure(signature_12, op_pressure)
             
             # F. Run SBLLM v14 Reasoning
             trace, state = v14.run_turn(signature_12, orientation_bias)
             
             # G. Imprint Residue
-            # Patch 15/16: Pass metadata to imprinter
             meta_dict = {
                 "phi": phi_current.tolist(),
                 "hex": full_hex,
-                "delta_phi": delta_phi,
+                "continuation_mismatch": continuation_mismatch,
                 "op_pressure": op_pressure
             }
-            # Use fb_config (which contains training_overrides) instead of v14.config
             memory, residue = qualify_and_commit(trace, state, memory, t, fb_config, metadata=meta_dict)
-            
-            # Patch 14 legacy: Ensure phi is on residue object for predictor
-            residue.phi = phi_current.copy()
             
             # H. Log Progress
             if residue.is_committed:
@@ -176,8 +166,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 status = "SKIPPED"
                 
-            # Logging to feedback_trace.jsonl
-            # Patch 16: Upgraded logging with forecast and diagnostics
             log_entry = {
                 "t": t,
                 "input_signal": float(input_signal),
@@ -186,34 +174,32 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "recovery": float(state.recovery_scalar),
                 "residue_committed": bool(residue.is_committed),
                 "residue_reject_reasons": getattr(residue, 'reject_reasons', []),
-                "residue_qualification_reasons": getattr(residue, 'qualification_reasons', []),
                 "residue_score": float(getattr(residue, 'stability_score', 0.0)),
                 "bias": float(r_bias),
                 "hex": full_hex,
                 "C": float(scope_data['C']),
                 "E": float(scope_data['E']),
                 "V": scope_data['V'].tolist(),
-                "engine_mean": float(engine_mean),
-                "engine_steps": int(engine_steps),
                 "phi_current": phi_current.tolist(),
-                "phi_pred": phi_pred.tolist(),
-                "delta_phi": float(delta_phi),
-                "forecast_error": forecast_error,
-                "prediction_gain": prediction_gain,
+                "phi_continued": phi_continued.tolist(),
+                "continuation_mismatch": continuation_mismatch,
+                "continuation_mismatch_next": continuation_mismatch_next,
+                "trace_groove_size": len(phase_continuation.trace_buffer),
+                "traversal_count": phase_continuation.traversal_count,
                 "op_pressure": op_pressure
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} DeltaPhi={delta_phi:.4f} Err={forecast_error:.4f} -> {status}")
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={len(phase_continuation.trace_buffer)} -> {status}")
 
-            # Update last states for next cycle
             last_state = state
             last_residue = residue
 
     # 2. Finalize
+    phase_continuation.mark_traversal_complete()
     save_memory_state(memory_path, memory)
-    print(f"✅ Run Complete. Native memory updated. Summary: logs/feedback_trace_{run_id}.jsonl")
+    print(f"✅ Run Complete. Trace: logs/feedback_trace_{run_id}.jsonl")
     
     return {
         "run_id": run_id,

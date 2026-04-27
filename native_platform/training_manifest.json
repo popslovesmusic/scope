@@ -5,19 +5,19 @@
       "name": "baseline_learning",
       "input": "stable wave A",
       "passes": 3,
-      "goal": "low delta_phi, stable ++ pressure, residue commits"
+      "goal": "repeated traversal deepens groove, low continuation_mismatch"
     },
     {
       "name": "continuation_test",
       "input": "wave A with tail removed",
       "passes": 1,
-      "goal": "model continues phase trajectory internally"
+      "goal": "remove/reduce A and test whether internal phase path continues"
     },
     {
       "name": "perturbation_test",
       "input": "wave A plus noise or frequency drift",
       "passes": 2,
-      "goal": "delta_phi rises then recovery/-+ pressure appears"
+      "goal": "continuation_mismatch rises then recouples"
     },
     {
       "name": "contrast_learning",
@@ -29,7 +29,7 @@
       "name": "transition_learning",
       "input": "A -> unstable/event-like transition",
       "passes": 3,
-      "goal": "delta_phi rises before event region"
+      "goal": "continuation_mismatch rises before undesired event region"
     }
   ]
 }

@@ -41,7 +41,6 @@ def execute_tests(config_path="config/test1.json"):
             parts = []
             for seg in cfg["segments"]:
                 if "generator" in seg:
-                    # Logic for composite segments (simple version)
                     if seg["generator"] == "sine_A":
                         parts.append(generate_sine(5.0, 1.0, seg["frames"]))
                     elif seg["generator"] == "sine_with_noise":
@@ -76,23 +75,23 @@ def execute_tests(config_path="config/test1.json"):
         trace_path = summary["feedback_trace_path"]
         records = tail_jsonl(trace_path, len(input_wave))
         
-        # Compute summary metrics
-        d_phis = [r["delta_phi"] for r in records]
-        f_errors = [r.get("forecast_error", 0.0) for r in records]
-        p_gains = [r.get("prediction_gain", 0.0) for r in records]
+        # Compute summary metrics using new continuation keys
+        mismatches = [r.get("continuation_mismatch", 0.0) for r in records]
+        mismatches_next = [r.get("continuation_mismatch_next", 0.0) for r in records]
         cautions = [r["caution"] for r in records]
         recoveries = [r["recovery"] for r in records]
         commits = [1 if r["residue_committed"] else 0 for r in records]
+        groove_sizes = [r.get("trace_groove_size", 0) for r in records]
         
         run_summary = {
             "name": run_name,
-            "delta_phi_mean": float(np.mean(d_phis)),
-            "delta_phi_max": float(np.max(d_phis)),
-            "forecast_error_mean": float(np.mean(f_errors)),
-            "prediction_gain_mean": float(np.mean(p_gains)),
+            "continuation_mismatch_mean": float(np.mean(mismatches)),
+            "continuation_mismatch_max": float(np.max(mismatches)),
+            "continuation_mismatch_next_mean": float(np.mean(mismatches_next)),
             "caution_mean": float(np.mean(cautions)),
             "recovery_mean": float(np.mean(recoveries)),
             "residue_commit_rate": float(np.sum(commits) / len(commits)),
+            "final_groove_size": int(groove_sizes[-1]) if groove_sizes else 0,
             "trace_path": trace_path
         }
         
@@ -102,18 +101,17 @@ def execute_tests(config_path="config/test1.json"):
         with open(os.path.join(run_out_dir, "summary.json"), "w") as sf:
             json.dump(run_summary, sf, indent=2)
             
-        # Copy trace to run dir
         shutil.copy2(trace_path, os.path.join(run_out_dir, "feedback_trace.jsonl"))
         
         results.append(run_summary)
-        print(f"✅ Run Complete. Mean DeltaPhi: {run_summary['delta_phi_mean']:.4f}")
+        print(f"✅ Run Complete. Mean Mismatch: {run_summary['continuation_mismatch_mean']:.4f} Groove: {run_summary['final_groove_size']}")
 
     # 4. Generate Comparison Report
     report_path = os.path.join(output_base_dir, "comparison_report.json")
     with open(report_path, "w") as rf:
         json.dump(results, rf, indent=2)
         
-    print(f"\n📊 Phase 1 Tests Complete. Report saved to {report_path}")
+    print(f"\n📊 Phase 1 Tests (Continuation Refactor) Complete. Report: {report_path}")
 
 if __name__ == "__main__":
     execute_tests()

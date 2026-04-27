@@ -1,0 +1,218 @@
+{
+  "agent_patch": "rename_prediction_to_continuation_v1",
+  "goal": "Refactor the platform language and mechanics from prediction/forecasting to phase-aligned continuation with trace-feedback groove deepening.",
+
+  "core_rule": {
+    "wrong": "predict future A",
+    "right": "continue A internally when A is reduced, removed, or interrupted",
+    "learning_mechanism": "repeated traversal + trace feedback + groove deepening"
+  },
+
+  "rename_files": [
+    {
+      "old": "native_platform/phase_predictor.py",
+      "new": "native_platform/phase_continuation.py"
+    },
+    {
+      "old": "native_platform/residue_phase_predictor.py",
+      "new": "native_platform/residue_phase_continuation.py"
+    }
+  ],
+
+  "rename_symbols": {
+    "PhasePredictor": "PhaseContinuationEngine",
+    "ResiduePhasePredictor": "ResiduePhaseContinuation",
+    "predict_next": "continue_next",
+    "phi_pred": "phi_continued",
+    "delta_phi": "continuation_mismatch",
+    "forecast_error": "continuation_mismatch_next",
+    "prediction_gain": "continuation_alignment_gain"
+  },
+
+  "patches": [
+    {
+      "id": "P1_phase_continuation_engine",
+      "file": "native_platform/residue_phase_continuation.py",
+      "purpose": "Replace forecast framing with continuation and add trace-feedback groove deepening.",
+      "content": [
+        "import numpy as np",
+        "from .phase_space import normalize, phase_mismatch",
+        "",
+        "class ResiduePhaseContinuation:",
+        "    def __init__(self, history_size=64, trace_size=128, base_groove_gain=0.15, max_groove_gain=0.75):",
+        "        self.history = []",
+        "        self.trace_buffer = []",
+        "        self.history_size = int(history_size)",
+        "        self.trace_size = int(trace_size)",
+        "        self.base_groove_gain = float(base_groove_gain)",
+        "        self.max_groove_gain = float(max_groove_gain)",
+        "        self.traversal_count = 0",
+        "",
+        "    def update_history(self, phi):",
+        "        phi = np.asarray(phi, dtype=float)",
+        "        self.history.append(phi)",
+        "        if len(self.history) > self.history_size:",
+        "            self.history.pop(0)",
+        "",
+        "    def reinforce_trace(self, phi, mismatch, threshold=0.02):",
+        "        if mismatch <= threshold:",
+        "            self.trace_buffer.append(np.asarray(phi, dtype=float))",
+        "            if len(self.trace_buffer) > self.trace_size:",
+        "                self.trace_buffer.pop(0)",
+        "",
+        "    def groove_gain(self):",
+        "        # gain grows with repeated traversal but remains bounded",
+        "        growth = 1.0 - np.exp(-0.15 * float(self.traversal_count))",
+        "        return self.base_groove_gain + (self.max_groove_gain - self.base_groove_gain) * growth",
+        "",
+        "    def trace_groove_vector(self):",
+        "        if not self.trace_buffer:",
+        "            return None",
+        "        return normalize(np.mean(np.stack(self.trace_buffer, axis=0), axis=0))",
+        "",
+        "    def continue_next(self, phi_current, last_mismatch=None):",
+        "        phi_current = normalize(np.asarray(phi_current, dtype=float))",
+        "",
+        "        if len(self.history) < 2:",
+        "            self.update_history(phi_current)",
+        "            return phi_current",
+        "",
+        "        # local phase-flow continuation",
+        "        phi_prev = self.history[-1]",
+        "        phi_prev2 = self.history[-2]",
+        "        v1 = phi_current - phi_prev",
+        "        v2 = phi_prev - phi_prev2",
+        "        curvature = v1 - v2",
+        "",
+        "        local_continuation = normalize(phi_current + 1.15 * v1 + 0.35 * curvature)",
+        "",
+        "        # trace-feedback groove continuation",
+        "        groove = self.trace_groove_vector()",
+        "        if groove is not None:",
+        "            beta = self.groove_gain()",
+        "            phi_continued = normalize((1.0 - beta) * local_continuation + beta * groove)",
+        "        else:",
+        "            phi_continued = local_continuation",
+        "",
+        "        self.update_history(phi_current)",
+        "        return phi_continued",
+        "",
+        "    def mark_traversal_complete(self):",
+        "        self.traversal_count += 1"
+      ]
+    },
+    {
+      "id": "P2_run_loop_language_and_logic",
+      "file": "native_platform/run_native_platform.py",
+      "changes": [
+        "replace import: from .residue_phase_predictor import ResiduePhasePredictor",
+        "with: from .residue_phase_continuation import ResiduePhaseContinuation",
+        "",
+        "replace: phase_predictor = ResiduePhasePredictor(history_size=32)",
+        "with: phase_continuation = ResiduePhaseContinuation(history_size=64, trace_size=128)",
+        "",
+        "replace: phi_pred = phase_predictor.predict_next(phi_current, residue=last_residue)",
+        "with: phi_continued = phase_continuation.continue_next(phi_current, last_mismatch=last_continuation_mismatch)",
+        "",
+        "replace: delta_phi = phase_mismatch(phi_pred, phi_current)",
+        "with: continuation_mismatch = phase_mismatch(phi_continued, phi_current)",
+        "",
+        "after mismatch calculation add:",
+        "phase_continuation.reinforce_trace(phi_current, continuation_mismatch, threshold=0.02)",
+        "",
+        "replace all remaining delta_phi references with continuation_mismatch",
+        "replace phi_pred log field with phi_continued",
+        "replace forecast_error with continuation_mismatch_next",
+        "replace prediction_gain with continuation_alignment_gain"
+      ]
+    },
+    {
+      "id": "P3_next_frame_continuation_metric",
+      "file": "native_platform/run_native_platform.py",
+      "purpose": "Measure whether prior internal continuation aligns with next observed phase.",
+      "changes": [
+        "initialize pending_phi_continued = None before loop",
+        "inside loop after phi_current:",
+        "if pending_phi_continued is not None:",
+        "    continuation_mismatch_next = phase_mismatch(pending_phi_continued, phi_current)",
+        "else:",
+        "    continuation_mismatch_next = 0.0",
+        "",
+        "after phi_continued is computed:",
+        "pending_phi_continued = phi_continued.copy()",
+        "",
+        "log continuation_mismatch_next"
+      ]
+    },
+    {
+      "id": "P4_operator_pressure_language",
+      "file": "native_platform/phase_operator_map.py",
+      "changes": [
+        "rename function arguments delta_phi -> continuation_mismatch",
+        "rename delta_phi_prev -> continuation_mismatch_prev",
+        "update comments: rising mismatch = continuation divergence, falling mismatch = recoupling/recovery"
+      ]
+    },
+    {
+      "id": "P5_log_schema_update",
+      "file": "native_platform/run_native_platform.py",
+      "log_fields": {
+        "phi_continued": "phi_continued.tolist()",
+        "continuation_mismatch": "float(continuation_mismatch)",
+        "continuation_mismatch_next": "float(continuation_mismatch_next)",
+        "trace_groove_size": "len(phase_continuation.trace_buffer)",
+        "traversal_count": "phase_continuation.traversal_count",
+        "op_pressure": "op_pressure"
+      },
+      "remove_or_deprecate_fields": [
+        "phi_pred",
+        "delta_phi",
+        "forecast_error",
+        "prediction_gain"
+      ]
+    },
+    {
+      "id": "P6_training_manifest_language",
+      "file": "native_platform/training_manifest.json",
+      "replace_terms": {
+        "prediction": "continuation",
+        "forecast": "continuation",
+        "delta_phi": "continuation_mismatch"
+      },
+      "goal_updates": [
+        "baseline_learning: repeated traversal deepens groove",
+        "continuation_test: remove/reduce A and test whether internal phase path continues",
+        "perturbation_test: mismatch rises then recouples",
+        "transition_learning: mismatch rises before undesired event region"
+      ]
+    }
+  ],
+
+  "testing_plan": {
+    "run_sequence": [
+      "clear memory",
+      "A pass1",
+      "A pass2",
+      "A pass3",
+      "replay A",
+      "A with tail removed"
+    ],
+    "metrics": [
+      "continuation_mismatch_mean",
+      "continuation_mismatch_next_mean",
+      "trace_groove_size",
+      "caution_mean",
+      "recovery_mean",
+      "residue_commit_rate",
+      "hex_repeat_rate"
+    ],
+    "success": [
+      "trace_groove_size increases across A passes",
+      "continuation_mismatch_next decreases across repeated A traversal",
+      "replay A is lower mismatch than pass1",
+      "tail-removed A continues briefly before mismatch rises"
+    ]
+  },
+
+  "final_instruction": "Refactor the platform from prediction language to continuation language, and implement trace-feedback groove deepening so repeated traversal of A makes A easier to continue internally."
+}
