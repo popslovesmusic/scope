@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "cases": [
+    {
+      "name": "determinism_same_init",
+      "ok": true,
+      "details": {
+        "selected_class": 1,
+        "selected_operator_last": "++"
+      }
+    },
+    {
+      "name": "binary_heads_sanity",
+      "ok": true,
+      "details": {
+        "class0_selected": 0,
+        "class1_selected": 1
+      }
+    },
+    {
+      "name": "components_extracted",
+      "ok": true,
+      "details": {
+        "component_count": 5,
+        "active_component_id": 1,
+        "identity_persistence_last": 1.0
+      }
+    },
+    {
+      "name": "corridor_topology_gains_zero_neutral",
+      "ok": true,
+      "details": {
+        "max_abs_diff": 0.0
+      }
+    }
+  ]
+}

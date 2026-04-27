@@ -1,0 +1,131 @@
+
+{
+  "signature_size": 12,
+  "lambda": 0.2,
+  "kappa": 0.6,
+  "eta": 0.1,
+  "phases": 4,
+  "peak_threshold": 0.1,
+  "family_diffusion": 0.12,
+  "orientation_diffusion": 0.0,
+  "diffusion_boundary_mode": "wrap",
+  "use_wraparound_lattice": true,
+  "polarity_threshold": 0.01,
+  "zero_crossing_threshold": 0.02,
+  "corridor_zero_crossing_bonus": 0.05,
+  "corridor_polarity_consistency_bonus": 0.05,
+  "corridor_topology_support_gain": 0.18,
+  "corridor_zero_crossing_penalty": 0.12,
+  "corridor_run_support_gain": 0.1,
+  "corridor_crossing_decay": 1.5,
+  "corridor_require_signed_support_for_entry": true,
+  "enable_component_promotion": true,
+  "component_target_mode": "dominant",
+  "component_global_blend": 0.35,
+  "component_local_blend": 0.65,
+  "component_match_overlap_weight": 0.5,
+  "component_match_center_weight": 0.3,
+  "component_match_sign_weight": 0.2,
+  "component_min_support_mass": 0.05,
+  "component_min_width": 1,
+  "enable_trace_salience": true,
+  "trace_salience_window": 8,
+  "caution_similarity_weight": 0.6,
+  "caution_salience_weight": 0.4,
+  "caution_threshold": 0.7,
+  "caution_release_rate": 0.15,
+  "caution_corridor_penalty": 0.4,
+  "caution_operator_penalty": 0.5,
+  "caution_component_score_mode": "blended",
+  "caution_global_operator_penalty": 0.35,
+  "caution_local_operator_penalty": 0.5,
+  "caution_entry_penalty": 0.4,
+  "caution_exit_penalty": 0.2,
+  "enable_hold_state": true,
+  "hold_from_bounded_caution_only": true,
+  "hold_semantics": "decay",
+  "enable_recovery": true,
+  "recovery_rate": 0.12,
+  "recontextualization_weight": 0.35,
+  "hold_release_threshold": 0.25,
+  "hold_release_required_phases": 2,
+  "component_recovery_weight": 0.4,
+  "corridor_recovery_gain": 0.15,
+  "max_recovery_fraction_of_base_window": 0.5,
+  "enable_polarized_signature_summary": true,
+  "peak_detection": {
+    "min_height": 0.05,
+    "min_distance": 1,
+    "merge_radius": 1
+  },
+  "projection": {
+    "peak_gain": 0.25,
+    "neighbor_gain": 0.1
+  },
+  "corridor": {
+    "base_width": 1.0,
+    "width_gain": 2.0,
+    "stability_gain": 1.0,
+    "floor": 0.05,
+    "threshold": 0.1,
+    "exit_scale": 0.5
+  },
+  "symmetry_handling": {
+    "enabled": true,
+    "family_mode": "paired",
+    "inversion_pairs": [
+      ["++", "--"],
+      ["+-", "-+"]
+    ],
+    "magnitude_invariant": false,
+    "orientation_distinct": true
+  },
+  "output_model": {
+    "first_target": "binary classification demo",
+    "classifier": {
+      "mode": "binary",
+      "decision_rule": "max_corridor_supported_energy",
+      "class_heads": [
+        { "name": "class_0", "readout_family": [0, 1, 2] },
+        { "name": "class_1", "readout_family": [9, 10, 11] }
+      ]
+    }
+  },
+
+  "semantic_readout": {
+    "enabled": false,
+    "backend": "local",
+    "style": "hs_science",
+    "max_sentences": 4,
+    "include_followup_question": true,
+    "caution_hedge_threshold": 0.65,
+    "hold_explain": true,
+    "openai_compatible": {
+      "base_url": "https://api.openai.com",
+      "model": "",
+      "timeout_s": 12.0
+    }
+  },
+
+  "memory_layer": {
+    "enabled": false,
+    "persist": true,
+    "operator_bias_strength": 0.08,
+    "caution_baseline_strength": 0.25,
+    "structured_mode": "auto",
+
+    "qualify_min_score": 0.55,
+    "qualify_epsilon": 0.1,
+    "qualify_recovery_threshold": 0.02,
+    "qualify_max_switch_freq": 0.5,
+    "qualify_min_admissibility": 0.0,
+
+    "base_persistence_duration": 3,
+    "reinforce_duration": 2,
+    "max_persistence_duration": 12,
+
+    "memory_state_path": "sessions/memory_state.json",
+    "turn_residue_path": "sessions/turn_residue.jsonl",
+    "committed_residue_path": "sessions/committed_residue.jsonl"
+  }
+}

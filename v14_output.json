@@ -1,0 +1,1855 @@
+{
+  "state": {
+    "version": "v14_stage1_state_v1",
+    "step": 4,
+    "input_trace": [
+      {
+        "input": "phase5 demo",
+        "seed": null
+      }
+    ],
+    "signature": {
+      "signed_field": [
+        -0.444629334221655,
+        -0.29133423816148996,
+        -0.04869079824892081,
+        0.10527407315678013,
+        0.04515870090603306,
+        0.08014248877566259,
+        0.0455199303780774,
+        0.06508197665914911,
+        -0.12066555218458036,
+        -0.2931464071926264,
+        -0.33172063491045667,
+        -0.4062883906362626
+      ],
+      "amplitude": [
+        0.444629334221655,
+        0.29133423816148996,
+        0.04869079824892081,
+        0.10527407315678013,
+        0.04515870090603306,
+        0.08014248877566259,
+        0.0455199303780774,
+        0.06508197665914911,
+        0.12066555218458036,
+        0.2931464071926264,
+        0.33172063491045667,
+        0.4062883906362626
+      ],
+      "phase": [
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483,
+        0.7853981633974483
+      ],
+      "stability": [
+        0.9477123729168346,
+        0.9802872649803168,
+        0.9980805398125161,
+        0.9907108478295465,
+        0.9966913570155954,
+        0.9961221119691315,
+        0.9978677091861544,
+        0.9961051106351202,
+        0.9979874859897888,
+        0.9682407985143471,
+        0.9872757141498132,
+        0.9799982641454272
+      ],
+      "peaks": [
+        {
+          "family": 0,
+          "amplitude": 0.444629334221655
+        },
+        {
+          "family": 3,
+          "amplitude": 0.10527407315678013
+        },
+        {
+          "family": 5,
+          "amplitude": 0.08014248877566259
+        }
+      ],
+      "bands": [
+        {
+          "center_family": 0,
+          "left_family": 9,
+          "right_family": 1,
+          "width": 5,
+          "peak_amplitude": 0.444629334221655
+        },
+        {
+          "center_family": 3,
+          "left_family": 3,
+          "right_family": 3,
+          "width": 1,
+          "peak_amplitude": 0.10527407315678013
+        },
+        {
+          "center_family": 5,
+          "left_family": 6,
+          "right_family": 5,
+          "width": 12,
+          "peak_amplitude": 0.08014248877566259
+        }
+      ],
+      "polarity": [
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "zero_crossings": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.06508197665914911,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04869079824892081,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "mode_index": [
+        -1,
+        -1,
+        -1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "component_summary": {
+        "family": 0,
+        "dominant_amplitude": 0.444629334221655,
+        "dominant_phase": 0.0,
+        "dominant_polarity": -1,
+        "dominant_mode": -1,
+        "dominant_zero_crossing": {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04869079824892081,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        "dominant_signed_strength": -0.444629334221655
+      },
+      "components": [
+        {
+          "component_id": 0,
+          "stable_id": 0,
+          "sign": -1,
+          "start_family": 8,
+          "end_family": 2,
+          "width": 7,
+          "center_family": 10.939304079894388,
+          "support_mass": 2.4253585265566078,
+          "peak_family": 0,
+          "peak_amplitude": 0.5575794810263736,
+          "mean_signed_strength": -0.34647978950808683,
+          "adjacent_zero_crossings": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.12606141066592075,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.048098773490490375,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "mode_label": -1
+        },
+        {
+          "component_id": 1,
+          "stable_id": 3,
+          "sign": 1,
+          "start_family": 3,
+          "end_family": 7,
+          "width": 5,
+          "center_family": 4.814866480558443,
+          "support_mass": 0.47410981311883865,
+          "peak_family": 3,
+          "peak_amplitude": 0.16865257013455204,
+          "mean_signed_strength": 0.09482196262376773,
+          "adjacent_zero_crossings": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.12606141066592075,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.048098773490490375,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "mode_label": 2
+        }
+      ],
+      "active_component_id": 3,
+      "caution_scalar": 0.5833333333333334,
+      "caution_field": [
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "corridor": {
+      "window": [
+        1.0,
+        0.8925727435954356,
+        0.47710488717881144,
+        0.9358755054647139,
+        0.8619962364666269,
+        0.7483257551295981,
+        0.6167946497476294,
+        0.5853237928651811,
+        0.21538594753401044,
+        0.6480515057383696,
+        0.7770386958733303,
+        0.9045599542323289
+      ],
+      "entry_resistance": [
+        0.1,
+        0.20742725640456441,
+        0.6228951128211885,
+        0.06412449453528613,
+        0.13800376353337307,
+        0.2516742448704019,
+        0.38320535025237057,
+        0.4146762071348189,
+        0.8846140524659896,
+        0.4519484942616304,
+        0.3229613041266697,
+        0.19544004576767107
+      ],
+      "exit_resistance": [
+        0.04000000000000001,
+        0.09371362820228221,
+        0.3014475564105943,
+        0.03206224726764306,
+        0.06900188176668653,
+        0.12583712243520095,
+        0.19160267512618528,
+        0.20733810356740945,
+        0.4323070262329948,
+        0.21597424713081523,
+        0.15148065206333486,
+        0.08772002288383554
+      ],
+      "threshold": 0.1,
+      "topology_support_energy": 4.505255547655958,
+      "cancellation_penalty_energy": 6.7052292421007715,
+      "signed_run_count": 2,
+      "largest_signed_run_width": 7,
+      "corridor_topology_bias_applied": true
+    },
+    "orientation": {
+      "active_operator": "--",
+      "operator_family": [
+        "++",
+        "--",
+        "+-",
+        "-+"
+      ],
+      "operator_scores": [
+        0.02689263050102987,
+        0.026892630501029875,
+        0.02689263050102987,
+        0.026892630501029875
+      ]
+    },
+    "reasoning": {
+      "phase_index": 4,
+      "phase_history": [
+        {
+          "phase": 0,
+          "selected_operator": "++",
+          "top_peaks_before": [
+            {
+              "family": 0,
+              "amplitude": 0.9827159737620887
+            },
+            {
+              "family": 3,
+              "amplitude": 0.9225210472716632
+            },
+            {
+              "family": 7,
+              "amplitude": 0.9053135332904207
+            },
+            {
+              "family": 11,
+              "amplitude": 0.9026066873580616
+            },
+            {
+              "family": 5,
+              "amplitude": 0.8090108251465258
+            }
+          ],
+          "gated_update_energy": 0.808358181560846,
+          "top_peaks_after": [
+            {
+              "family": 0,
+              "amplitude": 0.8750722958448888
+            },
+            {
+              "family": 11,
+              "amplitude": 0.7572451036195107
+            },
+            {
+              "family": 9,
+              "amplitude": 0.6684924667361704
+            },
+            {
+              "family": 1,
+              "amplitude": 0.5814729846230294
+            },
+            {
+              "family": 10,
+              "amplitude": 0.5155748193893704
+            }
+          ],
+          "corridor_hits": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "corridor_blocks": [],
+          "decision_shift": 0.0,
+          "operator_scores": {
+            "++": 0.7277665725811368,
+            "--": 0.7277665725811366,
+            "+-": 0.7277665725811368,
+            "-+": 0.7277665725811366
+          },
+          "diffusion_energy": 1.754905746757864,
+          "spread_measure": 14.624214556315533,
+          "band_widths_after": [
+            5,
+            1,
+            3,
+            7,
+            5
+          ],
+          "dominant_polarity_before": -1,
+          "dominant_polarity_after": -1,
+          "zero_crossings_before": [
+            {
+              "left_index": 3,
+              "right_index": 4,
+              "crossing_position": 3.5,
+              "crossing_strength": 0.6362375344262716,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 4,
+              "right_index": 5,
+              "crossing_position": 4.5,
+              "crossing_strength": 0.6362375344262716,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 5,
+              "right_index": 6,
+              "crossing_position": 5.5,
+              "crossing_strength": 0.5437006703555862,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 6,
+              "right_index": 7,
+              "crossing_position": 6.5,
+              "crossing_strength": 0.5437006703555862,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.4914463581330175,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.15046620124260118,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "zero_crossings_after": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.2976056997221068,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 3,
+              "right_index": 4,
+              "crossing_position": 3.5,
+              "crossing_strength": 0.21184698074909097,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 4,
+              "right_index": 5,
+              "crossing_position": 4.5,
+              "crossing_strength": 0.21184698074909097,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 5,
+              "right_index": 6,
+              "crossing_position": 5.5,
+              "crossing_strength": 0.1581719961492512,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 6,
+              "right_index": 7,
+              "crossing_position": 6.5,
+              "crossing_strength": 0.1581719961492512,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.06872843637687998,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "polarity_shift": 0.0,
+          "dominant_component_summary_after": {
+            "family": 0,
+            "dominant_amplitude": 0.8750722958448888,
+            "dominant_phase": 0.0,
+            "dominant_polarity": -1,
+            "dominant_mode": -1,
+            "dominant_zero_crossing": {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.06872843637687998,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            "dominant_signed_strength": -0.8750722958448888
+          },
+          "topology_support_energy": 5.257554310161243,
+          "cancellation_penalty_energy": 6.195703957606777,
+          "signed_run_count": 6,
+          "largest_signed_run_width": 7,
+          "corridor_topology_bias_applied": true,
+          "component_count": 6,
+          "active_component_id": 0,
+          "active_component_sign": -1,
+          "active_component_width": 7,
+          "active_component_support_mass": 4.4933432544134435,
+          "operator_component_score": 0.7170841689934844,
+          "component_identity_persistence": 0.0,
+          "component_split_count": 0,
+          "component_merge_count": 0,
+          "salience_max": 0.0,
+          "similarity_max": 0.0,
+          "caution_scalar": 0.0,
+          "caution_peak": 0.0,
+          "hold_triggered": false,
+          "boundary_penalty_energy": 0.06075285945978344,
+          "corridor_block_count": 0
+        },
+        {
+          "phase": 1,
+          "selected_operator": "++",
+          "top_peaks_before": [
+            {
+              "family": 0,
+              "amplitude": 0.8750722958448888
+            },
+            {
+              "family": 11,
+              "amplitude": 0.7572451036195107
+            },
+            {
+              "family": 9,
+              "amplitude": 0.6684924667361704
+            },
+            {
+              "family": 1,
+              "amplitude": 0.5814729846230294
+            },
+            {
+              "family": 10,
+              "amplitude": 0.5155748193893704
+            }
+          ],
+          "gated_update_energy": 0.258063150193401,
+          "top_peaks_after": [
+            {
+              "family": 0,
+              "amplitude": 0.6980955062649513
+            },
+            {
+              "family": 11,
+              "amplitude": 0.6135895691745817
+            },
+            {
+              "family": 9,
+              "amplitude": 0.5105054082660428
+            },
+            {
+              "family": 10,
+              "amplitude": 0.4656960085153236
+            },
+            {
+              "family": 1,
+              "amplitude": 0.46189710227534464
+            }
+          ],
+          "corridor_hits": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "corridor_blocks": [],
+          "decision_shift": 0.0,
+          "operator_scores": {
+            "++": 0.05627936728976196,
+            "--": 0.056279367289761906,
+            "+-": 0.05627936728976196,
+            "-+": 0.05627936728976188
+          },
+          "diffusion_energy": 0.8200895042569172,
+          "spread_measure": 6.834079202140978,
+          "band_widths_after": [
+            5,
+            1,
+            1,
+            7,
+            5
+          ],
+          "dominant_polarity_before": -1,
+          "dominant_polarity_after": -1,
+          "zero_crossings_before": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.2976056997221068,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 3,
+              "right_index": 4,
+              "crossing_position": 3.5,
+              "crossing_strength": 0.21184698074909097,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 4,
+              "right_index": 5,
+              "crossing_position": 4.5,
+              "crossing_strength": 0.21184698074909097,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 5,
+              "right_index": 6,
+              "crossing_position": 5.5,
+              "crossing_strength": 0.1581719961492512,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 6,
+              "right_index": 7,
+              "crossing_position": 6.5,
+              "crossing_strength": 0.1581719961492512,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.06872843637687998,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "zero_crossings_after": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.20624710615436465,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.04971217138888486,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 3,
+              "right_index": 4,
+              "crossing_position": 3.5,
+              "crossing_strength": 0.0398176158988616,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 4,
+              "right_index": 5,
+              "crossing_position": 4.5,
+              "crossing_strength": 0.0398176158988616,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "polarity_shift": 0.0,
+          "dominant_component_summary_after": {
+            "family": 0,
+            "dominant_amplitude": 0.6980955062649513,
+            "dominant_phase": 0.0,
+            "dominant_polarity": -1,
+            "dominant_mode": -1,
+            "dominant_zero_crossing": {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.04971217138888486,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            "dominant_signed_strength": -0.6980955062649513
+          },
+          "topology_support_energy": 4.508532709857805,
+          "cancellation_penalty_energy": 6.799443443113709,
+          "signed_run_count": 6,
+          "largest_signed_run_width": 7,
+          "corridor_topology_bias_applied": true,
+          "component_count": 6,
+          "active_component_id": 1,
+          "active_component_sign": 1,
+          "active_component_width": 1,
+          "active_component_support_mass": 0.4973353719181318,
+          "operator_component_score": 0.0250091540010668,
+          "component_identity_persistence": 1.0,
+          "component_split_count": 0,
+          "component_merge_count": 0,
+          "salience_max": 0.3440062622802934,
+          "similarity_max": 0.96,
+          "caution_scalar": 0.5833333333333334,
+          "caution_peak": 1.0,
+          "hold_triggered": false,
+          "boundary_penalty_energy": 0.038740695564852656,
+          "corridor_block_count": 0
+        },
+        {
+          "phase": 2,
+          "selected_operator": "++",
+          "top_peaks_before": [
+            {
+              "family": 0,
+              "amplitude": 0.6980955062649513
+            },
+            {
+              "family": 11,
+              "amplitude": 0.6135895691745817
+            },
+            {
+              "family": 9,
+              "amplitude": 0.5105054082660428
+            },
+            {
+              "family": 10,
+              "amplitude": 0.4656960085153236
+            },
+            {
+              "family": 1,
+              "amplitude": 0.46189710227534464
+            }
+          ],
+          "gated_update_energy": 0.18086530738222545,
+          "top_peaks_after": [
+            {
+              "family": 0,
+              "amplitude": 0.5575794810263736
+            },
+            {
+              "family": 11,
+              "amplitude": 0.5005419567709795
+            },
+            {
+              "family": 10,
+              "amplitude": 0.4026533926050079
+            },
+            {
+              "family": 9,
+              "amplitude": 0.39391331726942835
+            },
+            {
+              "family": 1,
+              "amplitude": 0.36640093244919075
+            }
+          ],
+          "corridor_hits": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "corridor_blocks": [],
+          "decision_shift": 0.0,
+          "operator_scores": {
+            "++": 0.028060297234362135,
+            "--": 0.028060297234362132,
+            "+-": 0.028060297234362135,
+            "-+": 0.028060297234362125
+          },
+          "diffusion_energy": 0.41076624228479147,
+          "spread_measure": 3.423052019039928,
+          "band_widths_after": [
+            5,
+            1,
+            1
+          ],
+          "dominant_polarity_before": -1,
+          "dominant_polarity_after": -1,
+          "zero_crossings_before": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.20624710615436465,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.04971217138888486,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            {
+              "left_index": 3,
+              "right_index": 4,
+              "crossing_position": 3.5,
+              "crossing_strength": 0.0398176158988616,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 4,
+              "right_index": 5,
+              "crossing_position": 4.5,
+              "crossing_strength": 0.0398176158988616,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "zero_crossings_after": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.12606141066592075,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.048098773490490375,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "polarity_shift": 0.16666666666666666,
+          "dominant_component_summary_after": {
+            "family": 0,
+            "dominant_amplitude": 0.5575794810263736,
+            "dominant_phase": 0.0,
+            "dominant_polarity": -1,
+            "dominant_mode": -1,
+            "dominant_zero_crossing": {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.048098773490490375,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            "dominant_signed_strength": -0.5575794810263736
+          },
+          "topology_support_energy": 4.391959072574307,
+          "cancellation_penalty_energy": 6.0027201600867075,
+          "signed_run_count": 4,
+          "largest_signed_run_width": 7,
+          "corridor_topology_bias_applied": true,
+          "component_count": 4,
+          "active_component_id": 1,
+          "active_component_sign": 1,
+          "active_component_width": 1,
+          "active_component_support_mass": 0.2861001840112705,
+          "operator_component_score": 0.00977895997730266,
+          "component_identity_persistence": 1.0,
+          "component_split_count": 0,
+          "component_merge_count": 0,
+          "salience_max": 0.3440062622802934,
+          "similarity_max": 0.8335758882342885,
+          "caution_scalar": 0.5833333333333334,
+          "caution_peak": 1.0,
+          "hold_triggered": false,
+          "boundary_penalty_energy": 0.03771629716739244,
+          "corridor_block_count": 0
+        },
+        {
+          "phase": 3,
+          "selected_operator": "--",
+          "top_peaks_before": [
+            {
+              "family": 0,
+              "amplitude": 0.5575794810263736
+            },
+            {
+              "family": 11,
+              "amplitude": 0.5005419567709795
+            },
+            {
+              "family": 10,
+              "amplitude": 0.4026533926050079
+            },
+            {
+              "family": 9,
+              "amplitude": 0.39391331726942835
+            },
+            {
+              "family": 1,
+              "amplitude": 0.36640093244919075
+            }
+          ],
+          "gated_update_energy": 0.09503742165872886,
+          "top_peaks_after": [
+            {
+              "family": 0,
+              "amplitude": 0.444629334221655
+            },
+            {
+              "family": 11,
+              "amplitude": 0.4062883906362626
+            },
+            {
+              "family": 10,
+              "amplitude": 0.33172063491045667
+            },
+            {
+              "family": 9,
+              "amplitude": 0.2931464071926264
+            },
+            {
+              "family": 1,
+              "amplitude": 0.29133423816148996
+            }
+          ],
+          "corridor_hits": [
+            0,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "corridor_blocks": [],
+          "decision_shift": 0.0,
+          "operator_scores": {
+            "++": 0.02689263050102987,
+            "--": 0.026892630501029875,
+            "+-": 0.02689263050102987,
+            "-+": 0.026892630501029875
+          },
+          "diffusion_energy": 0.21749541749756765,
+          "spread_measure": 1.8124618124797305,
+          "band_widths_after": [
+            5,
+            1,
+            12
+          ],
+          "dominant_polarity_before": -1,
+          "dominant_polarity_after": -1,
+          "zero_crossings_before": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.12606141066592075,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.048098773490490375,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "zero_crossings_after": [
+            {
+              "left_index": 7,
+              "right_index": 8,
+              "crossing_position": 7.5,
+              "crossing_strength": 0.06508197665914911,
+              "left_polarity": 1,
+              "right_polarity": -1
+            },
+            {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.04869079824892081,
+              "left_polarity": -1,
+              "right_polarity": 1
+            }
+          ],
+          "polarity_shift": 0.0,
+          "dominant_component_summary_after": {
+            "family": 0,
+            "dominant_amplitude": 0.444629334221655,
+            "dominant_phase": 0.0,
+            "dominant_polarity": -1,
+            "dominant_mode": -1,
+            "dominant_zero_crossing": {
+              "left_index": 2,
+              "right_index": 3,
+              "crossing_position": 2.5,
+              "crossing_strength": 0.04869079824892081,
+              "left_polarity": -1,
+              "right_polarity": 1
+            },
+            "dominant_signed_strength": -0.444629334221655
+          },
+          "topology_support_energy": 4.516015643238779,
+          "cancellation_penalty_energy": 5.430601859184522,
+          "signed_run_count": 2,
+          "largest_signed_run_width": 7,
+          "corridor_topology_bias_applied": true,
+          "component_count": 2,
+          "active_component_id": 3,
+          "active_component_sign": 1,
+          "active_component_width": 5,
+          "active_component_support_mass": 0.47410981311883865,
+          "operator_component_score": 0.020121477975487953,
+          "component_identity_persistence": 1.0,
+          "component_split_count": 0,
+          "component_merge_count": 1,
+          "salience_max": 0.3440062622802934,
+          "similarity_max": 0.7870670566473226,
+          "caution_scalar": 0.5833333333333334,
+          "caution_peak": 1.0,
+          "hold_triggered": false,
+          "boundary_penalty_energy": 0.018111821768643545,
+          "corridor_block_count": 0
+        }
+      ],
+      "writeback_gain": 0.6,
+      "relaxation": 0.2,
+      "component_history": [
+        {
+          "count": 6,
+          "largest_width": 7,
+          "total_support_mass": 8.31012686490391,
+          "dominant_component_id": 0,
+          "dominant_sign": -1,
+          "dominant_support_mass": 4.4933432544134435
+        },
+        {
+          "count": 6,
+          "largest_width": 7,
+          "total_support_mass": 5.482103543289356,
+          "dominant_component_id": 0,
+          "dominant_sign": -1,
+          "dominant_support_mass": 3.764191806311956
+        },
+        {
+          "count": 4,
+          "largest_width": 7,
+          "total_support_mass": 3.7359110319749416,
+          "dominant_component_id": 0,
+          "dominant_sign": -1,
+          "dominant_support_mass": 3.0057428720394936
+        },
+        {
+          "count": 2,
+          "largest_width": 7,
+          "total_support_mass": 2.8994683396754466,
+          "dominant_component_id": 0,
+          "dominant_sign": -1,
+          "dominant_support_mass": 2.4253585265566078
+        }
+      ]
+    },
+    "output": {
+      "class_scores": [
+        0.7278969522859399,
+        0.8152459481671334
+      ],
+      "selected_class": 1,
+      "confidence": 0.05660460596289744
+    }
+  },
+  "trace": [
+    {
+      "phase": 0,
+      "selected_operator": "++",
+      "top_peaks_before": [
+        {
+          "family": 0,
+          "amplitude": 0.9827159737620887
+        },
+        {
+          "family": 3,
+          "amplitude": 0.9225210472716632
+        },
+        {
+          "family": 7,
+          "amplitude": 0.9053135332904207
+        },
+        {
+          "family": 11,
+          "amplitude": 0.9026066873580616
+        },
+        {
+          "family": 5,
+          "amplitude": 0.8090108251465258
+        }
+      ],
+      "gated_update_energy": 0.808358181560846,
+      "top_peaks_after": [
+        {
+          "family": 0,
+          "amplitude": 0.8750722958448888
+        },
+        {
+          "family": 11,
+          "amplitude": 0.7572451036195107
+        },
+        {
+          "family": 9,
+          "amplitude": 0.6684924667361704
+        },
+        {
+          "family": 1,
+          "amplitude": 0.5814729846230294
+        },
+        {
+          "family": 10,
+          "amplitude": 0.5155748193893704
+        }
+      ],
+      "corridor_hits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "corridor_blocks": [],
+      "decision_shift": 0.0,
+      "operator_scores": {
+        "++": 0.7277665725811368,
+        "--": 0.7277665725811366,
+        "+-": 0.7277665725811368,
+        "-+": 0.7277665725811366
+      },
+      "diffusion_energy": 1.754905746757864,
+      "spread_measure": 14.624214556315533,
+      "band_widths_after": [
+        5,
+        1,
+        3,
+        7,
+        5
+      ],
+      "dominant_polarity_before": -1,
+      "dominant_polarity_after": -1,
+      "zero_crossings_before": [
+        {
+          "left_index": 3,
+          "right_index": 4,
+          "crossing_position": 3.5,
+          "crossing_strength": 0.6362375344262716,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 4,
+          "right_index": 5,
+          "crossing_position": 4.5,
+          "crossing_strength": 0.6362375344262716,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 5,
+          "right_index": 6,
+          "crossing_position": 5.5,
+          "crossing_strength": 0.5437006703555862,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 6,
+          "right_index": 7,
+          "crossing_position": 6.5,
+          "crossing_strength": 0.5437006703555862,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.4914463581330175,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.15046620124260118,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "zero_crossings_after": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.2976056997221068,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 3,
+          "right_index": 4,
+          "crossing_position": 3.5,
+          "crossing_strength": 0.21184698074909097,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 4,
+          "right_index": 5,
+          "crossing_position": 4.5,
+          "crossing_strength": 0.21184698074909097,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 5,
+          "right_index": 6,
+          "crossing_position": 5.5,
+          "crossing_strength": 0.1581719961492512,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 6,
+          "right_index": 7,
+          "crossing_position": 6.5,
+          "crossing_strength": 0.1581719961492512,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.06872843637687998,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "polarity_shift": 0.0,
+      "dominant_component_summary_after": {
+        "family": 0,
+        "dominant_amplitude": 0.8750722958448888,
+        "dominant_phase": 0.0,
+        "dominant_polarity": -1,
+        "dominant_mode": -1,
+        "dominant_zero_crossing": {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.06872843637687998,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        "dominant_signed_strength": -0.8750722958448888
+      },
+      "topology_support_energy": 5.257554310161243,
+      "cancellation_penalty_energy": 6.195703957606777,
+      "signed_run_count": 6,
+      "largest_signed_run_width": 7,
+      "corridor_topology_bias_applied": true,
+      "component_count": 6,
+      "active_component_id": 0,
+      "active_component_sign": -1,
+      "active_component_width": 7,
+      "active_component_support_mass": 4.4933432544134435,
+      "operator_component_score": 0.7170841689934844,
+      "component_identity_persistence": 0.0,
+      "component_split_count": 0,
+      "component_merge_count": 0,
+      "salience_max": 0.0,
+      "similarity_max": 0.0,
+      "caution_scalar": 0.0,
+      "caution_peak": 0.0,
+      "hold_triggered": false,
+      "boundary_penalty_energy": 0.06075285945978344,
+      "corridor_block_count": 0
+    },
+    {
+      "phase": 1,
+      "selected_operator": "++",
+      "top_peaks_before": [
+        {
+          "family": 0,
+          "amplitude": 0.8750722958448888
+        },
+        {
+          "family": 11,
+          "amplitude": 0.7572451036195107
+        },
+        {
+          "family": 9,
+          "amplitude": 0.6684924667361704
+        },
+        {
+          "family": 1,
+          "amplitude": 0.5814729846230294
+        },
+        {
+          "family": 10,
+          "amplitude": 0.5155748193893704
+        }
+      ],
+      "gated_update_energy": 0.258063150193401,
+      "top_peaks_after": [
+        {
+          "family": 0,
+          "amplitude": 0.6980955062649513
+        },
+        {
+          "family": 11,
+          "amplitude": 0.6135895691745817
+        },
+        {
+          "family": 9,
+          "amplitude": 0.5105054082660428
+        },
+        {
+          "family": 10,
+          "amplitude": 0.4656960085153236
+        },
+        {
+          "family": 1,
+          "amplitude": 0.46189710227534464
+        }
+      ],
+      "corridor_hits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "corridor_blocks": [],
+      "decision_shift": 0.0,
+      "operator_scores": {
+        "++": 0.05627936728976196,
+        "--": 0.056279367289761906,
+        "+-": 0.05627936728976196,
+        "-+": 0.05627936728976188
+      },
+      "diffusion_energy": 0.8200895042569172,
+      "spread_measure": 6.834079202140978,
+      "band_widths_after": [
+        5,
+        1,
+        1,
+        7,
+        5
+      ],
+      "dominant_polarity_before": -1,
+      "dominant_polarity_after": -1,
+      "zero_crossings_before": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.2976056997221068,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 3,
+          "right_index": 4,
+          "crossing_position": 3.5,
+          "crossing_strength": 0.21184698074909097,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 4,
+          "right_index": 5,
+          "crossing_position": 4.5,
+          "crossing_strength": 0.21184698074909097,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 5,
+          "right_index": 6,
+          "crossing_position": 5.5,
+          "crossing_strength": 0.1581719961492512,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 6,
+          "right_index": 7,
+          "crossing_position": 6.5,
+          "crossing_strength": 0.1581719961492512,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.06872843637687998,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "zero_crossings_after": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.20624710615436465,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04971217138888486,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 3,
+          "right_index": 4,
+          "crossing_position": 3.5,
+          "crossing_strength": 0.0398176158988616,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 4,
+          "right_index": 5,
+          "crossing_position": 4.5,
+          "crossing_strength": 0.0398176158988616,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "polarity_shift": 0.0,
+      "dominant_component_summary_after": {
+        "family": 0,
+        "dominant_amplitude": 0.6980955062649513,
+        "dominant_phase": 0.0,
+        "dominant_polarity": -1,
+        "dominant_mode": -1,
+        "dominant_zero_crossing": {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04971217138888486,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        "dominant_signed_strength": -0.6980955062649513
+      },
+      "topology_support_energy": 4.508532709857805,
+      "cancellation_penalty_energy": 6.799443443113709,
+      "signed_run_count": 6,
+      "largest_signed_run_width": 7,
+      "corridor_topology_bias_applied": true,
+      "component_count": 6,
+      "active_component_id": 1,
+      "active_component_sign": 1,
+      "active_component_width": 1,
+      "active_component_support_mass": 0.4973353719181318,
+      "operator_component_score": 0.0250091540010668,
+      "component_identity_persistence": 1.0,
+      "component_split_count": 0,
+      "component_merge_count": 0,
+      "salience_max": 0.3440062622802934,
+      "similarity_max": 0.96,
+      "caution_scalar": 0.5833333333333334,
+      "caution_peak": 1.0,
+      "hold_triggered": false,
+      "boundary_penalty_energy": 0.038740695564852656,
+      "corridor_block_count": 0
+    },
+    {
+      "phase": 2,
+      "selected_operator": "++",
+      "top_peaks_before": [
+        {
+          "family": 0,
+          "amplitude": 0.6980955062649513
+        },
+        {
+          "family": 11,
+          "amplitude": 0.6135895691745817
+        },
+        {
+          "family": 9,
+          "amplitude": 0.5105054082660428
+        },
+        {
+          "family": 10,
+          "amplitude": 0.4656960085153236
+        },
+        {
+          "family": 1,
+          "amplitude": 0.46189710227534464
+        }
+      ],
+      "gated_update_energy": 0.18086530738222545,
+      "top_peaks_after": [
+        {
+          "family": 0,
+          "amplitude": 0.5575794810263736
+        },
+        {
+          "family": 11,
+          "amplitude": 0.5005419567709795
+        },
+        {
+          "family": 10,
+          "amplitude": 0.4026533926050079
+        },
+        {
+          "family": 9,
+          "amplitude": 0.39391331726942835
+        },
+        {
+          "family": 1,
+          "amplitude": 0.36640093244919075
+        }
+      ],
+      "corridor_hits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "corridor_blocks": [],
+      "decision_shift": 0.0,
+      "operator_scores": {
+        "++": 0.028060297234362135,
+        "--": 0.028060297234362132,
+        "+-": 0.028060297234362135,
+        "-+": 0.028060297234362125
+      },
+      "diffusion_energy": 0.41076624228479147,
+      "spread_measure": 3.423052019039928,
+      "band_widths_after": [
+        5,
+        1,
+        1
+      ],
+      "dominant_polarity_before": -1,
+      "dominant_polarity_after": -1,
+      "zero_crossings_before": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.20624710615436465,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04971217138888486,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        {
+          "left_index": 3,
+          "right_index": 4,
+          "crossing_position": 3.5,
+          "crossing_strength": 0.0398176158988616,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 4,
+          "right_index": 5,
+          "crossing_position": 4.5,
+          "crossing_strength": 0.0398176158988616,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "zero_crossings_after": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.12606141066592075,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.048098773490490375,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "polarity_shift": 0.16666666666666666,
+      "dominant_component_summary_after": {
+        "family": 0,
+        "dominant_amplitude": 0.5575794810263736,
+        "dominant_phase": 0.0,
+        "dominant_polarity": -1,
+        "dominant_mode": -1,
+        "dominant_zero_crossing": {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.048098773490490375,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        "dominant_signed_strength": -0.5575794810263736
+      },
+      "topology_support_energy": 4.391959072574307,
+      "cancellation_penalty_energy": 6.0027201600867075,
+      "signed_run_count": 4,
+      "largest_signed_run_width": 7,
+      "corridor_topology_bias_applied": true,
+      "component_count": 4,
+      "active_component_id": 1,
+      "active_component_sign": 1,
+      "active_component_width": 1,
+      "active_component_support_mass": 0.2861001840112705,
+      "operator_component_score": 0.00977895997730266,
+      "component_identity_persistence": 1.0,
+      "component_split_count": 0,
+      "component_merge_count": 0,
+      "salience_max": 0.3440062622802934,
+      "similarity_max": 0.8335758882342885,
+      "caution_scalar": 0.5833333333333334,
+      "caution_peak": 1.0,
+      "hold_triggered": false,
+      "boundary_penalty_energy": 0.03771629716739244,
+      "corridor_block_count": 0
+    },
+    {
+      "phase": 3,
+      "selected_operator": "--",
+      "top_peaks_before": [
+        {
+          "family": 0,
+          "amplitude": 0.5575794810263736
+        },
+        {
+          "family": 11,
+          "amplitude": 0.5005419567709795
+        },
+        {
+          "family": 10,
+          "amplitude": 0.4026533926050079
+        },
+        {
+          "family": 9,
+          "amplitude": 0.39391331726942835
+        },
+        {
+          "family": 1,
+          "amplitude": 0.36640093244919075
+        }
+      ],
+      "gated_update_energy": 0.09503742165872886,
+      "top_peaks_after": [
+        {
+          "family": 0,
+          "amplitude": 0.444629334221655
+        },
+        {
+          "family": 11,
+          "amplitude": 0.4062883906362626
+        },
+        {
+          "family": 10,
+          "amplitude": 0.33172063491045667
+        },
+        {
+          "family": 9,
+          "amplitude": 0.2931464071926264
+        },
+        {
+          "family": 1,
+          "amplitude": 0.29133423816148996
+        }
+      ],
+      "corridor_hits": [
+        0,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "corridor_blocks": [],
+      "decision_shift": 0.0,
+      "operator_scores": {
+        "++": 0.02689263050102987,
+        "--": 0.026892630501029875,
+        "+-": 0.02689263050102987,
+        "-+": 0.026892630501029875
+      },
+      "diffusion_energy": 0.21749541749756765,
+      "spread_measure": 1.8124618124797305,
+      "band_widths_after": [
+        5,
+        1,
+        12
+      ],
+      "dominant_polarity_before": -1,
+      "dominant_polarity_after": -1,
+      "zero_crossings_before": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.12606141066592075,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.048098773490490375,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "zero_crossings_after": [
+        {
+          "left_index": 7,
+          "right_index": 8,
+          "crossing_position": 7.5,
+          "crossing_strength": 0.06508197665914911,
+          "left_polarity": 1,
+          "right_polarity": -1
+        },
+        {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04869079824892081,
+          "left_polarity": -1,
+          "right_polarity": 1
+        }
+      ],
+      "polarity_shift": 0.0,
+      "dominant_component_summary_after": {
+        "family": 0,
+        "dominant_amplitude": 0.444629334221655,
+        "dominant_phase": 0.0,
+        "dominant_polarity": -1,
+        "dominant_mode": -1,
+        "dominant_zero_crossing": {
+          "left_index": 2,
+          "right_index": 3,
+          "crossing_position": 2.5,
+          "crossing_strength": 0.04869079824892081,
+          "left_polarity": -1,
+          "right_polarity": 1
+        },
+        "dominant_signed_strength": -0.444629334221655
+      },
+      "topology_support_energy": 4.516015643238779,
+      "cancellation_penalty_energy": 5.430601859184522,
+      "signed_run_count": 2,
+      "largest_signed_run_width": 7,
+      "corridor_topology_bias_applied": true,
+      "component_count": 2,
+      "active_component_id": 3,
+      "active_component_sign": 1,
+      "active_component_width": 5,
+      "active_component_support_mass": 0.47410981311883865,
+      "operator_component_score": 0.020121477975487953,
+      "component_identity_persistence": 1.0,
+      "component_split_count": 0,
+      "component_merge_count": 1,
+      "salience_max": 0.3440062622802934,
+      "similarity_max": 0.7870670566473226,
+      "caution_scalar": 0.5833333333333334,
+      "caution_peak": 1.0,
+      "hold_triggered": false,
+      "boundary_penalty_energy": 0.018111821768643545,
+      "corridor_block_count": 0
+    }
+  ]
+}

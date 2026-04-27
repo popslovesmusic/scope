@@ -1,0 +1,96 @@
+{
+  "patch_name": "soft_meta_domain_participation_v1",
+  "instruction": "Replace hard direction-gated meta-domain mapping with soft continuous participation so W1/W2/W3 can overlap simultaneously.",
+  "target_file": "signal_scope_audio_v0.py",
+  "problem": {
+    "name": "winner_take_all_meta_collapse",
+    "symptom": [
+      "global shell spikes to 1.0 for one domain at a time",
+      "ch7 presence stays 0",
+      "ch7 intensity stays 0",
+      "channel ratios behave like categorical switching instead of overlap"
+    ],
+    "cause": "direction gating suppresses domains with negative motion and destroys simultaneous participation"
+  },
+  "core_correction": {
+    "remove": "direction gating from meta-domain magnitude computation",
+    "preserve": "direction only as metadata for later axis projection",
+    "new_rule": "all active windows must be allowed to contribute softly to the shared meta-domain"
+  },
+  "code_changes": [
+    {
+      "action": "replace_function",
+      "name": "compute_meta_vector",
+      "code": "def compute_meta_vector(mag, eps=1e-12):\n    \"\"\"\n    Convert normalized motion magnitudes into soft continuous participation.\n    No direction gating here. Direction is metadata, not a participation killer.\n    \"\"\"\n    mag = np.abs(np.array(mag, dtype=np.float64))\n\n    total = float(np.sum(mag) + eps)\n    meta = mag / total\n\n    # soften winner-take-all collapse while preserving ordering\n    meta = np.sqrt(meta)\n    meta = meta / (np.sum(meta) + eps)\n\n    return meta\n"
+    },
+    {
+      "action": "modify_call_site",
+      "old": "meta = compute_meta_vector(mag, direction)",
+      "new": "meta = compute_meta_vector(mag)",
+      "note": "Do not use direction as a multiplier in meta-domain participation."
+    },
+    {
+      "action": "preserve_direction_metadata",
+      "details": [
+        "Keep direction = np.sign(delta).",
+        "Store direction in result object.",
+        "Do not use direction to zero out W1/W2/W3 participation."
+      ],
+      "example": {
+        "direction_metadata": {
+          "W1": "sign(delta_W1)",
+          "W2": "sign(delta_W2)",
+          "W3": "sign(delta_W3)"
+        }
+      }
+    },
+    {
+      "action": "update_ch7_presence",
+      "code": "ch7_presence = 1.0 if np.all(shell > 1e-6) else 0.0",
+      "note": "After soft participation, ch7 presence should usually be 1 when all windows are active."
+    },
+    {
+      "action": "keep_ch7_intensity",
+      "code": "ch7_intensity = float(np.min(shell) / (np.max(shell) + eps))",
+      "note": "This now measures balance of white/full-domain coupling instead of vanishing due to direction gating."
+    }
+  ],
+  "expected_plot_changes": {
+    "meta_domain_participation": [
+      "all three windows should show nonzero participation most frames",
+      "spikes should soften",
+      "winner-take-all switching should reduce"
+    ],
+    "global_shell": [
+      "should become continuous rather than binary",
+      "W1/W2/W3 should overlap instead of taking exclusive turns"
+    ],
+    "ch7_presence": [
+      "should rise to 1.0 after initialization if all windows participate"
+    ],
+    "ch7_white_coupling_intensity": [
+      "should become nonzero",
+      "should oscillate according to balance among W1/W2/W3"
+    ],
+    "channel_ratios": [
+      "should look layered/overlapping rather than categorical"
+    ]
+  },
+  "interpretation_rules": {
+    "high_ch7_intensity": "balanced participation across W1/W2/W3",
+    "low_ch7_intensity": "one domain weak relative to the others",
+    "ch7_presence_1": "all three windows are structurally present in the whole",
+    "meta_overlap": "the system is describing relational participation rather than choosing a single winning domain"
+  },
+  "success_conditions": [
+    "ch7 presence is no longer stuck at 0",
+    "ch7 intensity is nonzero and structured",
+    "global shell is not winner-take-all",
+    "direction still exists but only as metadata",
+    "channels remain ratios to the whole"
+  ],
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "Reintroduce direction as axis projection after soft meta-domain overlap is stable."
+  }
+}

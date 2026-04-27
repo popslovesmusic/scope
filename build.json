@@ -1,0 +1,77 @@
+{
+  "SBLLM_SignalScope_wave_residue_training": {
+    "principle": "The wave is the training material. Residue is the learned structure. Weights are not required.",
+
+    "training_mode": {
+      "name": "wave_residue_imprinting",
+      "description": "Repeated wave inputs are converted into signature traces and written into residue memory when admissible.",
+      "no_backprop": true,
+      "no_weight_training": true
+    },
+
+    "input": {
+      "type": "wave",
+      "examples": [
+        "EEG segment",
+        "audio waveform",
+        "simulation field",
+        "SBLLM internal trace wave"
+      ]
+    },
+
+    "pipeline": [
+      "wave_input",
+      "SignalScope feature extraction",
+      "local/global/meta participation windows",
+      "12-wheel signature projection",
+      "orientation pass",
+      "corridor/admissibility check",
+      "trace generation",
+      "residue qualification",
+      "residue memory update",
+      "future continuation shaped by residue"
+    ],
+
+    "memory_update": {
+      "object": "residue_memory",
+      "stores": [
+        "signature shape",
+        "phase path",
+        "orientation response",
+        "coupling pattern",
+        "imbalance pattern",
+        "flow direction",
+        "recurrence / attractor tendency",
+        "recovery behavior"
+      ],
+      "does_not_store": [
+        "raw wave as opaque blob only",
+        "unqualified trace as permanent memory",
+        "trained neural weights"
+      ]
+    },
+
+    "learning_rule": {
+      "if_trace_is_stable": "reinforce corresponding residue corridor",
+      "if_trace_is_repeated": "increase persistence duration",
+      "if_trace_predicts_recovery": "strengthen admissible recovery path",
+      "if_trace_enters_instability": "store as warning residue or reject persistence",
+      "if_trace_matches_existing_residue": "merge / reinforce",
+      "if_trace_is_new_but_admissible": "create new residue basin"
+    },
+
+    "future_effect": {
+      "residue_biases": [
+        "orientation selection",
+        "corridor width",
+        "phase continuation",
+        "caution baseline",
+        "recovery path",
+        "classification/readout"
+      ],
+      "meaning": "The system learns by changing what continuations become easier or harder."
+    },
+
+    "agent_instruction": "Implement wave-residue training as residue imprinting. Do not add weight matrices, gradient descent, or neural training loops unless explicitly requested."
+  }
+}

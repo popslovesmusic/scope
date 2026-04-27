@@ -1,0 +1,264 @@
+{
+  "patch_name": "v14_phase1_polarized_signature_consolidation",
+  "purpose": "Phase polarized sinusoidal signature structure into v14 without breaking the current Stage 1/2 field model. Preserve peaks, bands, corridor, diffusion, and trace, while adding polarity and zero-crossing awareness so v15 can emerge naturally.",
+  "applies_to": {
+    "surface": "v14",
+    "baseline": "v14 Stage 1 + native diffusion patch",
+    "intent": [
+      "keep current v14 behavior stable",
+      "reinterpret signature as polarized structure",
+      "make zero-crossing / cancellation axes visible",
+      "prepare for later component-native v15 evolution"
+    ],
+    "citations": [
+      ":contentReference[oaicite:0]{index=0}",
+      ":contentReference[oaicite:1]{index=1}"
+    ]
+  },
+  "phase_identity": {
+    "phase_name": "polarized-signature consolidation",
+    "not_yet": [
+      "full harmonic decomposition",
+      "full v15 renaming",
+      "replacement of peaks/bands with pure sinusoidal basis"
+    ],
+    "goal": "Add polarity, zero-crossing, and lightweight component summaries to the existing signature-native loop."
+  },
+  "conceptual_shift": {
+    "before": "signature interpreted mainly through peaks, bands, and corridor support",
+    "after": "signature interpreted as a polarized field where peaks and bands are lobe structure and zero crossings are candidate emission/cancellation axes",
+    "frozen_statement": "The signature is a polarized distribution over family space. Peaks and troughs encode opposite orientation branches, while emitted continuation corresponds to shared zero-crossing cancellation axes."
+  },
+  "state_changes": {
+    "add_to_signature": {
+      "polarity": {
+        "type": "array<float>",
+        "meaning": "sign branch or local orientation branch per family slot"
+      },
+      "zero_crossings": {
+        "type": "array<object>",
+        "meaning": "detected cancellation axes or sign-transition locations"
+      },
+      "mode_index": {
+        "type": "array<int|float>",
+        "meaning": "coarse local family-mode label or inferred component index"
+      },
+      "component_summary": {
+        "type": "object",
+        "meaning": "lightweight summary of dominant polarized component structure"
+      }
+    },
+    "signature_field_interpretation": {
+      "peak": "local maximum of positive or negative lobe support",
+      "band": "connected support region of a lobe after diffusion",
+      "corridor": "admissibility envelope around polarized support",
+      "zero_crossing": "shared cancellation axis between opposite-polarity branches"
+    }
+  },
+  "files_to_modify": [
+    {
+      "path": "v14/core/signature_state.py",
+      "changes": [
+        "add polarity array to state",
+        "add zero_crossings field",
+        "add mode_index field",
+        "add component_summary field",
+        "provide helper to recompute component summary from amplitude/phase/polarity"
+      ]
+    },
+    {
+      "path": "v14/core/peak_detector.py",
+      "changes": [
+        "add polarity-aware peak labeling (positive vs negative lobe peaks)",
+        "add zero-crossing detection from neighboring sign changes",
+        "keep existing peak/band outputs for compatibility"
+      ]
+    },
+    {
+      "path": "v14/core/corridor_gate.py",
+      "changes": [
+        "retain existing band-derived corridor logic",
+        "add optional weighting from local polarity consistency",
+        "add optional weighting from proximity to zero-crossing axes"
+      ]
+    },
+    {
+      "path": "v14/core/reasoning_loop.py",
+      "changes": [
+        "refresh polarity and zero-crossings after diffusion and band refresh",
+        "record dominant polarity before/after each phase",
+        "record zero crossings before/after each phase",
+        "record polarity_shift metric"
+      ]
+    },
+    {
+      "path": "v14/core/trace_schema.py",
+      "changes": [
+        "add dominant_polarity_before",
+        "add dominant_polarity_after",
+        "add zero_crossings_before",
+        "add zero_crossings_after",
+        "add polarity_shift",
+        "add dominant_component_summary_after"
+      ]
+    },
+    {
+      "path": "v14/config/config_v14_scaffold.json",
+      "changes": [
+        "add polarity_threshold",
+        "add zero_crossing_threshold",
+        "add corridor_zero_crossing_bonus",
+        "add corridor_polarity_consistency_bonus",
+        "add enable_polarized_signature_summary"
+      ]
+    }
+  ],
+  "optional_file_to_add": [
+    {
+      "path": "v14/core/polarity_ops.py",
+      "responsibility": [
+        "helpers for polarity assignment",
+        "zero-crossing extraction",
+        "dominant component summarization"
+      ],
+      "note": "Optional; logic can also live in signature_state.py and peak_detector.py if you prefer fewer files."
+    }
+  ],
+  "new_config_fields": {
+    "polarity_threshold": {
+      "type": "float",
+      "default": 0.01,
+      "meaning": "values with magnitude below this are treated as near-neutral when assigning polarity"
+    },
+    "zero_crossing_threshold": {
+      "type": "float",
+      "default": 0.02,
+      "meaning": "minimum neighboring contrast for a sign transition to count as a stable zero crossing"
+    },
+    "corridor_zero_crossing_bonus": {
+      "type": "float",
+      "default": 0.05,
+      "meaning": "small corridor weighting based on proximity to a stable zero-crossing axis"
+    },
+    "corridor_polarity_consistency_bonus": {
+      "type": "float",
+      "default": 0.05,
+      "meaning": "small corridor weighting for stable local polarity support"
+    },
+    "enable_polarized_signature_summary": {
+      "type": "boolean",
+      "default": true,
+      "meaning": "emit dominant component summary into state and trace"
+    }
+  },
+  "detection_logic": {
+    "polarity_assignment": {
+      "rule": "polarity[i] = +1 if amplitude[i] > polarity_threshold, -1 if amplitude[i] < -polarity_threshold, else 0",
+      "note": "If amplitude is clipped nonnegative in current implementation, compute polarity from signed pre-clamp or signed delta field instead."
+    },
+    "zero_crossing_detection": {
+      "rule": "A zero crossing exists where adjacent family slots have opposite polarity and both exceed zero_crossing_threshold in absolute support or contrast.",
+      "output_fields": [
+        "left_index",
+        "right_index",
+        "crossing_position",
+        "crossing_strength",
+        "left_polarity",
+        "right_polarity"
+      ]
+    },
+    "dominant_component_summary": {
+      "fields": [
+        "dominant_amplitude",
+        "dominant_phase",
+        "dominant_polarity",
+        "dominant_mode",
+        "dominant_zero_crossing"
+      ],
+      "meaning": "A lightweight summary of the strongest polarized lobe / component, not a full spectral decomposition."
+    }
+  },
+  "important_implementation_note": {
+    "warning": "If amplitude is currently clipped to [0,1], polarity cannot be read directly from final amplitude alone.",
+    "recommended_solution": [
+      "derive polarity from signed pre-clamp update field",
+      "or derive polarity from signed projection/gated_delta before final clipping",
+      "or add an auxiliary signed_field buffer for polarity-only interpretation"
+    ],
+    "priority": "high"
+  },
+  "corridor_adjustment": {
+    "strategy": "Keep corridor behavior mostly unchanged, but add small structural bias terms.",
+    "phase_1_rule": {
+      "base": "existing peak/band-derived corridor",
+      "plus": [
+        "polarity consistency bonus",
+        "zero-crossing proximity bonus"
+      ]
+    },
+    "example_formula": {
+      "window_weight_i": "base_weight_i + a * local_polarity_consistency_i + b * zero_crossing_proximity_i",
+      "constraints": [
+        "keep bonuses small in Phase 1",
+        "do not replace existing band support logic",
+        "do not destabilize current readout"
+      ]
+    }
+  },
+  "trace_additions": {
+    "phase_trace_fields": {
+      "dominant_polarity_before": "int",
+      "dominant_polarity_after": "int",
+      "zero_crossings_before": "list<object>",
+      "zero_crossings_after": "list<object>",
+      "polarity_shift": "float",
+      "dominant_component_summary_after": "object"
+    },
+    "purpose": [
+      "make polarized structure visible",
+      "show whether a phase reinforces or flips branch orientation",
+      "show whether reasoning moves toward or away from stable cancellation axes"
+    ]
+  },
+  "minimal_pseudocode": {
+    "in_reasoning_loop_after_diffusion": [
+      "signed_source = pre_clamp_amplitude_or_signed_delta",
+      "polarity = assign_polarity(signed_source, polarity_threshold)",
+      "zero_crossings = detect_zero_crossings(signed_source, polarity, zero_crossing_threshold)",
+      "peaks, bands = detect_peaks_and_bands(current_amplitude, ...)",
+      "component_summary = summarize_dominant_component(current_amplitude, phase, polarity, zero_crossings)",
+      "corridor = build_corridor(peaks, bands, amplitude=current_amplitude, polarity=polarity, zero_crossings=zero_crossings)",
+      "append_trace_fields(...)"
+    ]
+  },
+  "backward_compatibility": {
+    "preserve": [
+      "existing peak detection",
+      "existing band outputs",
+      "existing corridor fields",
+      "existing binary readout",
+      "existing diffusion metrics"
+    ],
+    "new_fields_are_additive": true
+  },
+  "success_criteria": [
+    "v14 still runs and existing tests still pass with minimal adjustments",
+    "state artifact now includes polarity, zero crossings, and component summary",
+    "trace exposes polarity before/after and zero-crossing evolution per phase",
+    "corridor remains stable and readable",
+    "signature is now interpretable as polarized structure rather than only peak/band support"
+  ],
+  "non_goals": [
+    "full sinusoidal basis fit",
+    "harmonic superposition engine",
+    "operator rewrite around Fourier components",
+    "v15 rename or branch split"
+  ],
+  "next_after_phase_1": {
+    "phase_2": "make corridor explicitly zero-crossing and polarity aware",
+    "phase_3": "promote component summaries into native polarized components",
+    "phase_4": "let operators act directly on polarized components",
+    "phase_5": "v15 emerges naturally as fully polarized-signature-native"
+  },
+  "one_line_summary": "Phase 1 adds polarity and zero-crossing structure to v14 so the current field model can be reinterpreted as a polarized signature surface without breaking the existing reasoning loop."
+}

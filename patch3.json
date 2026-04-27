@@ -1,0 +1,81 @@
+{
+  "patch_name": "domain_equalization_before_global_shell_v1",
+  "instruction": "Normalize W1/W2/W3 into comparable dimensionless participation values before building the global shell.",
+  "target_file": "signal_scope_audio_v0.py",
+  "problem": {
+    "name": "unit dominance",
+    "symptom": "W3 frequency dominates the global shell because its numeric scale is much larger than W1 amplitude and W2 phase.",
+    "effect": "channel ratios measure unit scale instead of relational participation."
+  },
+  "core_rule": {
+    "before": "global_shell = abs([W1_delta, W2_delta, W3_delta]) / sum(abs(...))",
+    "after": "equalize each domain first, then build global_shell",
+    "principle": "channels should report ratios of relation, not raw units."
+  },
+  "code_changes": [
+    {
+      "action": "add_function",
+      "name": "equalize_domains",
+      "insert_before": "normalize_to_global_shell",
+      "code": "def equalize_domains(w_delta, eps=1e-12):\n    \"\"\"\n    Convert W1/W2/W3 deltas into comparable dimensionless participation values.\n    This prevents frequency-scale dominance over amplitude/phase.\n    \"\"\"\n    W = np.abs(np.array(w_delta, dtype=np.float64))\n\n    # Local frame-wise compression: preserves ordering but limits unit dominance.\n    W = np.log1p(W)\n\n    # Normalize by max so all domains live in [0, 1].\n    max_w = float(np.max(W) + eps)\n    W_eq = W / max_w\n\n    return W_eq\n"
+    },
+    {
+      "action": "replace_function",
+      "name": "normalize_to_global_shell",
+      "code": "def normalize_to_global_shell(w_delta, eps=1e-12):\n    W_eq = equalize_domains(w_delta, eps=eps)\n\n    total = float(np.sum(W_eq) + eps)\n    shell = W_eq / total\n    shell_magnitude = float(np.linalg.norm(W_eq))\n\n    return shell, shell_magnitude\n"
+    },
+    {
+      "action": "modify_compute_channel_ratios",
+      "details": [
+        "Keep existing min-based channel construction.",
+        "Use the new normalize_to_global_shell output.",
+        "Do not compute shell from raw W1/W2/W3 units."
+      ]
+    },
+    {
+      "action": "add_debug_fields_to_result",
+      "fields": [
+        "domain_equalized_values"
+      ],
+      "implementation": "Inside compute_channel_ratios, add 'domain_equalized_values': W_eq.tolist() by returning W_eq from normalize_to_global_shell or recomputing it once."
+    }
+  ],
+  "preferred_replace_full_functions": {
+    "equalize_domains": "def equalize_domains(w_delta, eps=1e-12):\n    W = np.abs(np.array(w_delta, dtype=np.float64))\n    W = np.log1p(W)\n    max_w = float(np.max(W) + eps)\n    return W / max_w\n",
+    "normalize_to_global_shell": "def normalize_to_global_shell(w_delta, eps=1e-12):\n    W_eq = equalize_domains(w_delta, eps=eps)\n    total = float(np.sum(W_eq) + eps)\n    shell = W_eq / total\n    shell_magnitude = float(np.linalg.norm(W_eq))\n    return shell, shell_magnitude, W_eq\n",
+    "compute_channel_ratios": "def compute_channel_ratios(w_delta, eps=1e-12):\n    shell, shell_magnitude, W_eq = normalize_to_global_shell(w_delta, eps=eps)\n    W1, W2, W3 = shell\n\n    raw = np.array([\n        W1,\n        W2,\n        W3,\n        min(W1, W2),\n        min(W1, W3),\n        min(W2, W3),\n        min(W1, W2, W3)\n    ], dtype=np.float64)\n\n    whole = float(np.sum(raw) + eps)\n    ratios = raw / whole\n\n    ch7_presence = 1.0 if np.all(shell > eps) else 0.0\n    ch7_intensity = float(np.min(shell) / (np.max(shell) + eps))\n\n    return {\n        'whole': whole,\n        'shell_magnitude': shell_magnitude,\n        'domain_equalized_values': W_eq.tolist(),\n        'global_shell': shell.tolist(),\n        'raw_channels': raw.tolist(),\n        'channel_ratios': ratios.tolist(),\n        'ch7_presence': ch7_presence,\n        'ch7_intensity': ch7_intensity\n    }\n"
+  },
+  "plot_updates": [
+    {
+      "title": "Domain Equalized W1/W2/W3 Values",
+      "data": [
+        "domain_equalized_values[0]",
+        "domain_equalized_values[1]",
+        "domain_equalized_values[2]"
+      ],
+      "purpose": "confirm frequency is no longer overwhelming the other domains"
+    },
+    {
+      "title": "Global Shell W1/W2/W3 Participation",
+      "expected_after_patch": "W3 should no longer sit at ~0.9 constantly unless the signal is truly frequency-dominant after equalization."
+    },
+    {
+      "title": "ch7 White Coupling Intensity",
+      "expected_after_patch": "ch7 should become visibly nonzero when all three domains participate."
+    }
+  ],
+  "validation": {
+    "success_conditions": [
+      "global shell no longer permanently dominated by W3",
+      "W1/W2/W3 all show visible participation when active",
+      "ch7 intensity is no longer collapsed to near zero purely because of unit scale",
+      "channel ratios still sum to approximately 1.0",
+      "V_DOF remains bounded"
+    ],
+    "warning": "If W2 remains tiny after equalization, the issue is not scale but the phase metric itself."
+  },
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "Add diagonal direction measurement after equalized global shell is stable."
+  }
+}

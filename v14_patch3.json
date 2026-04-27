@@ -1,0 +1,52 @@
+{
+  "phase": "v14_phase2_persistent_signed_field",
+  "status": "next",
+  "goal": "make polarity and zero crossings intrinsic by introducing a persistent signed field",
+  "core_changes": [
+    {
+      "id": "state_add_signed_field",
+      "change": "add signed_field to SignatureState and persist it in artifacts"
+    },
+    {
+      "id": "derive_amplitude_from_signed_field",
+      "change": "compute amplitude as abs(signed_field) while preserving signed_field as the primary branch-bearing surface"
+    },
+    {
+      "id": "route_polarity_from_signed_field",
+      "change": "compute polarity from sign(signed_field) using thresholded polarity assignment"
+    },
+    {
+      "id": "route_zero_crossings_from_signed_field",
+      "change": "compute zero crossings from persistent sign transitions instead of short-lived phase-local deltas"
+    },
+    {
+      "id": "diffuse_signed_field",
+      "change": "run family diffusion on signed_field, then re-derive amplitude, polarity, mode_index, and component summary"
+    },
+    {
+      "id": "corridor_keep_compatibility",
+      "change": "preserve current peak/band corridor logic but feed it intrinsic polarity and zero-crossing structure"
+    }
+  ],
+  "files_most_likely_to_change": [
+    "signature_state.py",
+    "reasoning_loop.py",
+    "sim_v14_stage1.py",
+    "diffusion_ops.py",
+    "peak_detector.py",
+    "polarity_ops.py"
+  ],
+  "files_likely_to_remain_stable": [
+    "orientation_ops.py",
+    "readout_heads.py",
+    "io_state.py"
+  ],
+  "acceptance_criteria": [
+    "signed_field persists across phases",
+    "amplitude is derived rather than primary",
+    "polarity is stable under replay",
+    "zero crossings are structural outputs of signed_field",
+    "corridor behavior remains backward compatible on old configs",
+    "artifact output includes signed_field and signed-field-derived diagnostics"
+  ]
+}

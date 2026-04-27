@@ -1,0 +1,164 @@
+{
+  "patch_name": "hue_meta_overlay_live_visual_v1",
+  "instruction": "Add RGB/hue overlay and optional live visualization to the existing signal scope without changing the core dynamics.",
+  "target_file": "signal_scope_audio_v0.py",
+  "core_rule": {
+    "hue_is_overlay": true,
+    "hue_is_not_new_dynamics": true,
+    "source": "soft meta-domain participation",
+    "channels_remain_ratios_to_whole": true,
+    "direction_remains_metadata": true
+  },
+  "rgb_mapping": {
+    "W1_meta": "R",
+    "W2_meta": "G",
+    "W3_meta": "B",
+    "white_overlay": "balanced W1/W2/W3",
+    "brightness_source": "ch7_intensity",
+    "optional_brightness_source": "V_DOF / whole activity"
+  },
+  "new_outputs": {
+    "per_frame": [
+      "rgb_color",
+      "hsv_color",
+      "hue_angle",
+      "saturation",
+      "brightness",
+      "hex_color"
+    ],
+    "plots": [
+      "RGB hue strip over time",
+      "Hue angle over time",
+      "Saturation over time",
+      "Brightness / ch7 intensity over time",
+      "Color-coded 8-way scatter"
+    ],
+    "live_visual": [
+      "current RGB color tile",
+      "scrolling hue strip",
+      "live ch7 intensity bar",
+      "live meta-domain bars",
+      "8-way direction compass"
+    ]
+  },
+  "code_changes": [
+    {
+      "action": "add_import",
+      "code": "import colorsys"
+    },
+    {
+      "action": "add_function",
+      "name": "rgb_from_meta",
+      "code": "def rgb_from_meta(meta, brightness=1.0, eps=1e-12):\n    \"\"\"\n    Convert W1/W2/W3 meta-domain participation into RGB.\n    W1 -> R, W2 -> G, W3 -> B.\n    Brightness can be ch7_intensity or whole activity.\n    \"\"\"\n    meta = np.array(meta, dtype=np.float64)\n    meta = np.clip(meta, 0.0, 1.0)\n\n    # Normalize RGB so color reflects proportions.\n    rgb = meta / (np.max(meta) + eps)\n\n    # Apply brightness while preserving hue.\n    brightness = float(np.clip(brightness, 0.0, 1.0))\n    rgb = rgb * brightness\n\n    return np.clip(rgb, 0.0, 1.0)\n"
+    },
+    {
+      "action": "add_function",
+      "name": "hsv_from_rgb",
+      "code": "def hsv_from_rgb(rgb):\n    r, g, b = [float(x) for x in rgb]\n    h, s, v = colorsys.rgb_to_hsv(r, g, b)\n    return {\n        'hue_angle': float(h * 360.0),\n        'saturation': float(s),\n        'brightness': float(v),\n        'hsv': [float(h), float(s), float(v)]\n    }\n"
+    },
+    {
+      "action": "add_function",
+      "name": "rgb_to_hex",
+      "code": "def rgb_to_hex(rgb):\n    r, g, b = [int(np.clip(x, 0.0, 1.0) * 255) for x in rgb]\n    return f'#{r:02x}{g:02x}{b:02x}'\n"
+    },
+    {
+      "action": "modify_main_loop",
+      "details": [
+        "After meta_vector and ch7_intensity are computed, create RGB and HSV overlay values.",
+        "Store overlay values in each result frame.",
+        "Do not feed hue values back into channel ratios yet."
+      ],
+      "code_hint": "rgb = rgb_from_meta(meta, brightness=ch7_intensity)\nhsv_data = hsv_from_rgb(rgb)\nhex_color = rgb_to_hex(rgb)\n"
+    },
+    {
+      "action": "update_result_object",
+      "fields": {
+        "rgb_color": "[R, G, B]",
+        "hex_color": "#rrggbb",
+        "hsv_color": "[H, S, V]",
+        "hue_angle": "degrees 0-360",
+        "saturation": "0-1",
+        "brightness": "0-1"
+      }
+    }
+  ],
+  "plot_additions": [
+    {
+      "title": "RGB Hue Strip over Time",
+      "type": "image_strip",
+      "code": "def plot_hue_strip(results):\n    rgb_values = np.array([r['rgb_color'] for r in results], dtype=np.float64)\n    strip = rgb_values[np.newaxis, :, :]\n\n    plt.figure(figsize=(12, 1.5))\n    plt.imshow(strip, aspect='auto')\n    plt.title('RGB Hue Strip over Time')\n    plt.yticks([])\n    plt.xlabel('Frame')\n    plt.show()\n"
+    },
+    {
+      "title": "Hue Angle over Time",
+      "type": "line_plot",
+      "code": "def plot_hue_angle(results):\n    t = np.array([r['t'] for r in results])\n    hue = np.array([r['hue_angle'] for r in results])\n\n    plt.figure()\n    plt.plot(t, hue)\n    plt.title('Hue Angle over Time')\n    plt.xlabel('Time (s)')\n    plt.ylabel('Hue angle (degrees)')\n    plt.show()\n"
+    },
+    {
+      "title": "Saturation over Time",
+      "type": "line_plot",
+      "code": "def plot_saturation(results):\n    t = np.array([r['t'] for r in results])\n    sat = np.array([r['saturation'] for r in results])\n\n    plt.figure()\n    plt.plot(t, sat)\n    plt.title('Saturation over Time')\n    plt.xlabel('Time (s)')\n    plt.ylabel('Saturation')\n    plt.show()\n"
+    },
+    {
+      "title": "Color-Coded Axis Projection Scatter",
+      "type": "scatter",
+      "code": "def plot_colored_axis_scatter(results, window='W1'):\n    xs = []\n    ys = []\n    colors = []\n\n    for r in results:\n        proj = r.get('axis_projection_8way', {}).get(window)\n        if proj is None:\n            continue\n        xs.append(proj['dx_delta'])\n        ys.append(proj['dy_meta_deviation'])\n        colors.append(r['rgb_color'])\n\n    plt.figure()\n    plt.scatter(xs, ys, c=colors, alpha=0.75)\n    plt.title(f'{window} Axis Projection Scatter Colored by RGB Meta-Hue')\n    plt.xlabel('dx_delta')\n    plt.ylabel('dy_meta_deviation')\n    plt.grid(True)\n    plt.show()\n"
+    }
+  ],
+  "live_visual_spec": {
+    "mode": "matplotlib_animation",
+    "dependency_additions": [],
+    "optional_dependency_additions": [
+      "sounddevice for live microphone input later"
+    ],
+    "visual_panels": [
+      {
+        "name": "current_color_tile",
+        "description": "large square showing current RGB meta-hue"
+      },
+      {
+        "name": "scrolling_hue_strip",
+        "description": "last N frames of RGB color history"
+      },
+      {
+        "name": "meta_domain_bars",
+        "description": "three bars for W1/W2/W3 meta participation"
+      },
+      {
+        "name": "ch7_intensity_bar",
+        "description": "white coupling intensity from 0 to 1"
+      },
+      {
+        "name": "direction_readout",
+        "description": "current 8-way direction labels for W1/W2/W3"
+      }
+    ],
+    "default_history_frames": 256,
+    "update_interval_ms": 50,
+    "code_stub": "def live_visualize_results(results, history_frames=256, interval_ms=50):\n    from matplotlib.animation import FuncAnimation\n\n    fig, axes = plt.subplots(4, 1, figsize=(10, 8))\n    ax_tile, ax_strip, ax_bars, ax_ch7 = axes\n\n    tile_img = ax_tile.imshow(np.ones((10, 10, 3)))\n    ax_tile.set_title('Current RGB Meta-Hue')\n    ax_tile.set_xticks([])\n    ax_tile.set_yticks([])\n\n    strip_data = np.zeros((1, history_frames, 3))\n    strip_img = ax_strip.imshow(strip_data, aspect='auto')\n    ax_strip.set_title('Scrolling Hue Strip')\n    ax_strip.set_yticks([])\n\n    bars = ax_bars.bar(['W1/R', 'W2/G', 'W3/B'], [0, 0, 0])\n    ax_bars.set_ylim(0, 1)\n    ax_bars.set_title('Meta-Domain Participation')\n\n    ch7_bar = ax_ch7.bar(['ch7 white'], [0])[0]\n    ax_ch7.set_ylim(0, 1)\n    ax_ch7.set_title('ch7 White Coupling Intensity')\n\n    def update(frame_idx):\n        r = results[frame_idx % len(results)]\n        rgb = np.array(r['rgb_color'])\n        meta = np.array(r['meta_vector'])\n        ch7 = float(r['ch7_intensity'])\n\n        tile_img.set_data(np.ones((10, 10, 3)) * rgb)\n\n        start = max(0, frame_idx - history_frames + 1)\n        recent = results[start:frame_idx + 1]\n        colors = np.array([x['rgb_color'] for x in recent])\n        strip_data[:] = 0\n        strip_data[0, -len(colors):, :] = colors\n        strip_img.set_data(strip_data)\n\n        for bar, value in zip(bars, meta):\n            bar.set_height(float(value))\n\n        ch7_bar.set_height(ch7)\n\n        dirs = r.get('axis_projection_8way', {})\n        dir_text = ' | '.join([f'{k}:{v.get(\"direction_8way\", \"NA\")}' for k, v in dirs.items()])\n        fig.suptitle(f't={r[\"t\"]:.3f}s  hue={r[\"hue_angle\"]:.1f}°  {dir_text}')\n\n        return [tile_img, strip_img, *bars, ch7_bar]\n\n    ani = FuncAnimation(fig, update, frames=len(results), interval=interval_ms, blit=False)\n    plt.show()\n"
+  },
+  "interpretation_rules": {
+    "near_white": "balanced W1/W2/W3 participation with high ch7 intensity",
+    "red_shift": "W1/amplitude participation dominates",
+    "green_shift": "W2/phase participation dominates",
+    "blue_shift": "W3/frequency participation dominates",
+    "cycling_hue": "domains are rotating dominance over time",
+    "stable_hue": "finite stable signal relation",
+    "chaotic_hue": "high entropy or noisy signal relation",
+    "high_saturation": "unbalanced domain participation",
+    "low_saturation": "balanced/white-ish participation",
+    "high_brightness": "strong full-domain coupling",
+    "low_brightness": "weak coupling or low whole activity"
+  },
+  "success_conditions": [
+    "RGB hue strip is generated",
+    "hue angle plot is generated",
+    "saturation plot is generated",
+    "ch7 still remains nonzero and structured",
+    "meta-domain behavior is unchanged by hue overlay",
+    "live visual plays through stored result frames"
+  ],
+  "next_patch_after_success": {
+    "name": "live_audio_input_v1",
+    "purpose": "Replace file playback analysis with microphone/audio-stream input while preserving hue overlay and signal-scope metrics."
+  }
+}

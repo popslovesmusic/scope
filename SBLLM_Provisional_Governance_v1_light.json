@@ -1,0 +1,11 @@
+{
+  "name": "SBLLM_Provisional_Governance_v1_light",
+  "purpose": "Lightweight governance scaffold for drift control and verification.",
+  "rules": [
+    "All outputs include diff_guard_config",
+    "Declare intent for every change",
+    "List protected units",
+    "List expected invariants",
+    "Produce JSON report"
+  ]
+}

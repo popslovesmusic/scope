@@ -1,0 +1,433 @@
+{
+  "summary": {
+    "overall_status": "pass_with_minor_gaps",
+    "confidence": 0.9,
+    "read_only_compliance": false
+  },
+  "project_state": {
+    "detected_version": "v14",
+    "detected_phases": [
+      "stage1_base_runtime",
+      "stage2_native_diffusion",
+      "phase1_polarized_signature_consolidation",
+      "phase2_persistent_signed_field",
+      "phase3_corridor_reanchoring_v1",
+      "phase4_component_promotion_v1",
+      "phase5_trace_salience_caution_v1",
+      "v14_phase5b_control_refinement_v1",
+      "v14_phase6_runtime_consistency_v1",
+      "v14_phase6b_agent_guidance_policy_v1",
+      "v14_phase7_recovery_recontextualization_v1",
+      "v14_phase8_terminal_shell_v1",
+      "v14_phase9_baseline_freeze_pack_v1"
+    ],
+    "architectural_position": "Signed-field-first v14 runtime with peak/band magnitude compatibility, topology-anchored corridor gating, component promotion/identity, trace-driven salience/caution + hold + recovery, plus a terminal shell and baseline freeze pack."
+  },
+  "module_audit": [
+    {
+      "module": "sim_v14_stage1.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Persists `state.signature.signed_field` and derived fields (polarity/zero_crossings/components/caution). (sim_v14_stage1.py:133-146)",
+        "Persists `state.reasoning.component_history`. (sim_v14_stage1.py:169)",
+        "Final corridor snapshot is built with `components` and `caution_field` wired in. (sim_v14_stage1.py:85)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Artifact contains both `state.reasoning.phase_history` and a top-level `trace` (redundancy); unclear if intentional."
+      ]
+    },
+    {
+      "module": "core/signature_state.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "`signed_field` is primary state; `amplitude` is derived from `abs(signed_field)`. (core/signature_state.py:10-13,37-38)",
+        "Polarized overlay fields exist (polarity/zero_crossings/mode_index/component_summary).",
+        "Component promotion state exists (components/component_history/active_component_id). (core/signature_state.py:27-30)",
+        "Trace salience + caution state exists (trace_salience/caution_scalar/caution_field). (core/signature_state.py:33-35)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/reasoning_loop.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Operator scoring/selection exists and is symmetry-aware. (core/reasoning_loop.py:_score_operator/_select_operator)",
+        "Diffusion runs on persistent `signed_field` and amplitude is re-derived. (core/reasoning_loop.py:335+)",
+        "Polarity + zero crossings are recomputed from persistent `signed_field`. (core/reasoning_loop.py:343+)",
+        "Components are extracted, matched across phases, and an active component is targeted with local/global blending. (core/reasoning_loop.py:265-316)",
+        "Trace salience + caution is computed from prior trace and projected onto component masks; component targeting is caution-aware. (core/reasoning_loop.py:319-356)",
+        "Hold logic exists when caution exceeds threshold. (core/reasoning_loop.py:386-397)",
+        "Trace includes salience/similarity/caution/hold and structural metrics. (core/reasoning_loop.py:462-479)",
+        "Hold semantics configurable via `hold_semantics` (\"decay\" vs \"freeze\")."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/orientation_ops.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Operators `++`, `--`, `+-`, `-+` exist as read/write transforms. (core/orientation_ops.py:37-41)",
+        "Masked/local operator helper exists. (core/orientation_ops.py:47)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "The masked helper is not the mechanism used in the reasoning loop (the loop uses delta blending instead). This is fine as equivalent masked/local application, but usage is inconsistent across code."
+      ]
+    },
+    {
+      "module": "core/peak_detector.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Peak + band detection exists with optional wraparound lattice support. (core/peak_detector.py:35+)",
+        "Polarity helpers exist (labeling + polarity/zero-crossings from signed source). (core/peak_detector.py:131+)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Band model is heuristic (threshold expansion); not a full connected-component band segmentation beyond local expansion."
+      ]
+    },
+    {
+      "module": "core/polarity_ops.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Polarity assignment exists (3-state -1/0/+1).",
+        "Zero-crossing detection exists with wraparound option.",
+        "Run extraction exists (wraparound merge supported).",
+        "Mode/run labeling exists (`compute_mode_index`)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/diffusion_ops.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Family-lattice Laplacian exists. (core/diffusion_ops.py:8+)",
+        "Boundary modes implemented: wrap/reflect/clamp. (core/diffusion_ops.py:15-25)",
+        "Family diffusion helper exists and returns diagnostics (diff_term, lap). (core/diffusion_ops.py:61+)",
+        "Orientation-channel Laplacian and diffusion helper exist. (core/diffusion_ops.py:38+,80+)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/corridor_gate.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Base corridor window exists (peak/band driven) with entry/exit resistance. (core/corridor_gate.py:126+)",
+        "Threshold-based admissibility exists in `apply_gate` (entry blocked under threshold). (core/corridor_gate.py:335)",
+        "Topology support + cancellation penalty fields exist and re-anchor the corridor. (core/corridor_gate.py (topology_support/cancellation_penalty fields and blending))",
+        "Entry can require topology support. (core/corridor_gate.py:339+)",
+        "Caution modulation exists (caution_field reduces window + tightens entry/exit). (core/corridor_gate.py:289-305)",
+        "Can accept explicit `components` to drive topology support. (core/corridor_gate.py (components parameter))",
+        "Supports wraparound vs non-wrap lattice corridor distances/topology via `wraparound_lattice`."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/component_ops.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Component extraction from polarity runs exists.",
+        "Component matching across phases exists with persistence metrics.",
+        "Component masks exist.",
+        "Component caution aggregation exists (`component_caution_scores`)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Split/merge counts are approximations via overlap graph, not a full tracking model."
+      ]
+    },
+    {
+      "module": "core/trace_ops.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Trace salience computation exists (heuristic).",
+        "Structural similarity computation exists (coarse).",
+        "Caution scalar + caution field projection exists."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Salience/similarity definitions are heuristic; correctness depends on intended semantics (not formally specified)."
+      ]
+    },
+    {
+      "module": "core/readout_heads.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Binary readout exists and consumes amplitude + corridor_window + class_heads. (core/readout_heads.py:9+)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "core/io_state.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "State/trace JSON persistence exists via `save_state`. (core/io_state.py:4-6)"
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Saves both `state.reasoning.phase_history` (inside state_dict) and a top-level `trace` (duplicate trace)."
+      ]
+    },
+    {
+      "module": "core/session_state.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Interactive session container exists for terminal use (turn history, debug toggles, last output)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "config/config_v14_scaffold.json",
+      "present": true,
+      "imports_cleanly_if_checked": null,
+      "key_findings": [
+        "Contains keys for phases 15 (signed field, topology corridor, components, salience/caution/hold).",
+        "Contains `orientation_diffusion` (consumed) and `hold_semantics` (consumed)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "config/config_v14_terminal.json",
+      "present": true,
+      "imports_cleanly_if_checked": null,
+      "key_findings": [
+        "Terminal-oriented defaults exist (inline trace, readback level, debug toggles) for `interfaces/chat_shell.py`."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "interfaces/chat_shell.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Interactive terminal shell exists with session history and command routing (`/trace`, `/state`, `/debug`, `/reset`, `/save`, `/load`)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "interfaces/response_renderer.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Response rendering and layered trace summaries exist (default response/readback/debug panel)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "scripts/run_sbllmv14_cli.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "CLI entrypoint exists for launching terminal shell (`--config`, `--seed`)."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "scripts/gen_v14_baseline_snapshot.py",
+      "present": true,
+      "imports_cleanly_if_checked": true,
+      "key_findings": [
+        "Baseline snapshot generator exists and writes `baseline/v14_baseline_snapshot.json` + `baseline/v14_baseline_manifest.json`."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "baseline/v14_baseline_snapshot.json",
+      "present": true,
+      "imports_cleanly_if_checked": null,
+      "key_findings": [
+        "Deterministic compact baseline snapshot exists for regression anchoring."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "`generated_at` is metadata and is not treated as a determinism signal."
+      ]
+    },
+    {
+      "module": "baseline/v14_baseline_manifest.json",
+      "present": true,
+      "imports_cleanly_if_checked": null,
+      "key_findings": [
+        "File hash manifest exists for baseline-relevant sources and snapshot provenance."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": []
+    },
+    {
+      "module": "tests/",
+      "present": true,
+      "imports_cleanly_if_checked": null,
+      "key_findings": [
+        "Pytest suite exists and passes.",
+        "Coverage includes diffusion, corridor gating, polarity/zero crossings, components, trace salience/hold/recovery, terminal shell, and baseline freeze regression."
+      ],
+      "expected_but_missing": [],
+      "uncertain_items": [
+        "Determinism is anchored both by `tests/test_baseline_freeze.py` and by `scripts/test_v14_model.py`."
+      ]
+    }
+  ],
+  "feature_matrix": [
+    {
+      "feature": "signed_field exists",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/signature_state.py:11"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "amplitude derived from abs(signed_field)",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/signature_state.py:37-38"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "operators ++,--,+-,-+ exist",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/orientation_ops.py:37-41"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "diffusion boundary modes implemented",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/diffusion_ops.py:15-25"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "corridor caution modulation exists",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/corridor_gate.py:289-305"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "orientation_diffusion implemented/used",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/diffusion_ops.py:38",
+        "core/diffusion_ops.py:80",
+        "core/reasoning_loop.py:259"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "symmetry_handling extended fields consumed (family_mode/magnitude_invariant/orientation_distinct)",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "core/reasoning_loop.py:_select_operator"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "terminal shell interface exists",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "interfaces/chat_shell.py"
+      ],
+      "status": "present"
+    },
+    {
+      "feature": "baseline freeze snapshot + manifest + regression test exist",
+      "expected": true,
+      "present": true,
+      "evidence": [
+        "baseline/v14_baseline_snapshot.json",
+        "baseline/v14_baseline_manifest.json",
+        "tests/test_baseline_freeze.py"
+      ],
+      "status": "present"
+    }
+  ],
+  "tests": {
+    "pytest_detected": true,
+    "pytest_result": "pass",
+    "notable_test_coverage": [
+      "Diffusion Laplacian + spreading (family + orientation) (tests/test_diffusion_ops.py)",
+      "Corridor gating + topology penalties + signed-support entry gating + non-wrap regression (tests/test_corridor_gating.py)",
+      "Polarity + zero-crossings + shift metric (tests/test_polarity_ops.py)",
+      "Component extraction/matching/masked operator + global-only equivalence (tests/test_component_ops.py)",
+      "Trace salience/caution/hold + hold semantics freeze + recovery/release (tests/test_trace_salience.py)",
+      "Terminal shell commands + save/load + seed determinism (tests/test_terminal_shell.py)",
+      "Baseline freeze pack snapshot + manifest regression anchor (tests/test_baseline_freeze.py)"
+    ],
+    "untested_critical_areas": [
+      "Operator ranking changes under strong caution (explicit comparative ranking assertions are limited)",
+      "Frequency/rarity of hold triggers under realistic configs (only threshold-forced tests exist)"
+    ]
+  },
+  "runtime_checks": {
+    "smoke_run_attempted": true,
+    "smoke_run_result": "pass",
+    "observed_outputs": [
+      "Existing `v14_output.json` shows persisted `signed_field`, `polarity`, `zero_crossings`, `components`, and `caution_scalar`.",
+      "Existing `v14_model_test_report.json` shows PASS for determinism/binary sanity/components extracted/corridor neutrality checks.",
+      "Baseline freeze snapshot/manifest generation succeeded (`python scripts/gen_v14_baseline_snapshot.py --write`)."
+    ],
+    "runtime_notes": [
+      "Baseline and terminal entrypoints add repo-root to `sys.path` so they can be executed from `scripts/`."
+    ]
+  },
+  "inconsistencies": [
+    {
+      "type": "artifact",
+      "description": "Artifact duplicates trace: `state.reasoning.phase_history` inside state plus a top-level `trace` saved by `core/io_state.py`.",
+      "severity": "low"
+    }
+  ],
+  "missing_or_uncertain": [],
+  "risk_assessment": {
+    "current_risks": [
+      "Heuristic nature of salience/similarity/caution may require calibration to avoid over-triggering or under-triggering hold.",
+      "Component targeting + caution-aware re-targeting can change control flow; tuning errors could destabilize operator selection.",
+      "Corridor reanchoring + caution penalties can make admissibility too strict (possible under high penalties/thresholds)."
+    ],
+    "stability_estimate": "Good for a prototype: tests pass and core wiring appears consistent; main risks are tuning/semantics rather than missing functionality."
+  },
+  "recommended_next_step": {
+    "type": "audit_only_recommendation",
+    "description": "If desired, de-duplicate trace storage (keep either `state.reasoning.phase_history` or top-level `trace`), and add targeted tests for operator ranking shifts under caution plus hold-trigger frequency under realistic configs."
+  }
+}

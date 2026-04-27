@@ -1,0 +1,312 @@
+{
+  "instruction_type": "project_evaluation_no_change",
+  "name": "v14_runtime_audit_report_only_v1",
+  "intent": "Evaluate the current project state, make no modifications, and deliver a structured report on what is present, working, missing, uncertain, or inconsistent.",
+  "hard_constraints": {
+    "make_no_changes": true,
+    "no_file_edits": true,
+    "no_patch_generation": true,
+    "no_auto_fixes": true,
+    "no_rewrites": true,
+    "no_refactors": true,
+    "no_new_files": true,
+    "read_only_audit": true
+  },
+  "primary_goal": "Inspect the current v14 project and verify which expected systems, functions, data flows, diagnostics, and tests are actually present and operational.",
+  "expected_project_scope": {
+    "version_focus": "v14",
+    "phases_expected": [
+      "stage1_base_runtime",
+      "stage2_native_diffusion",
+      "phase1_polarized_signature_consolidation",
+      "phase2_persistent_signed_field",
+      "phase3_corridor_reanchoring_v1",
+      "phase4_component_promotion_v1",
+      "phase5_trace_salience_caution_v1"
+    ]
+  },
+  "evaluation_mode": {
+    "source_of_truth_order": [
+      "actual source files",
+      "tests",
+      "configs",
+      "runnable behavior",
+      "saved artifacts",
+      "status notes if present"
+    ],
+    "report_only": true,
+    "prefer_direct_evidence": true,
+    "do_not_assume_implementation_from_notes_alone": true
+  },
+  "files_and_modules_to_check": [
+    "sim_v14_stage1.py",
+    "core/signature_state.py",
+    "core/reasoning_loop.py",
+    "core/orientation_ops.py",
+    "core/peak_detector.py",
+    "core/polarity_ops.py",
+    "core/diffusion_ops.py",
+    "core/corridor_gate.py",
+    "core/component_ops.py",
+    "core/trace_ops.py",
+    "core/readout_heads.py",
+    "core/io_state.py",
+    "config/config_v14_scaffold.json",
+    "tests/"
+  ],
+  "audit_checklist": {
+    "core_state": [
+      "signed_field exists",
+      "amplitude is derived from abs(signed_field) or equivalent derived relation",
+      "phase exists",
+      "stability exists",
+      "polarity exists",
+      "zero_crossings exist",
+      "mode_index exists",
+      "component_summary exists",
+      "components exist",
+      "component_history exists or equivalent history tracking exists",
+      "active_component_id exists",
+      "trace_salience exists",
+      "caution_scalar exists",
+      "caution_field exists"
+    ],
+    "orientation_layer": [
+      "operators ++, --, +-, -+ exist",
+      "operator scoring exists",
+      "operator selection exists",
+      "component-targeted operator application exists or equivalent masked/local application exists"
+    ],
+    "peak_band_topology": [
+      "peak detection exists",
+      "band detection exists",
+      "wraparound lattice support exists if expected",
+      "polarity assignment exists",
+      "zero-crossing detection exists",
+      "mode/run labeling exists",
+      "dominant component summary exists"
+    ],
+    "signed_field_transition": [
+      "signed_field is computationally primary or effectively primary",
+      "diffusion runs on signed_field or equivalent signed topology surface",
+      "polarity is derived from persistent signed structure",
+      "zero crossings are derived from persistent signed structure"
+    ],
+    "diffusion_layer": [
+      "family diffusion exists",
+      "laplacian exists",
+      "boundary modes are implemented",
+      "diffusion diagnostics exist"
+    ],
+    "corridor_layer": [
+      "base corridor window exists",
+      "entry resistance exists",
+      "exit resistance exists",
+      "threshold-based admissibility exists",
+      "polarity and/or zero-crossing bias hooks exist",
+      "topology support field exists or equivalent topology-aware corridor modulation exists",
+      "zero-crossing penalty field exists or equivalent cancellation penalty exists",
+      "entry can require signed/topological support if enabled",
+      "corridor caution modulation exists"
+    ],
+    "component_layer": [
+      "component extraction exists",
+      "component masks or equivalent targeting support exist",
+      "component matching across phases exists or equivalent persistence logic exists",
+      "component targeting influences operator selection or projection",
+      "component caution aggregation exists"
+    ],
+    "trace_salience_caution_layer": [
+      "trace salience computation exists",
+      "structural similarity computation exists",
+      "caution scalar computation exists",
+      "caution field computation exists",
+      "hold logic exists",
+      "trace fields for salience/similarity/caution/hold exist"
+    ],
+    "readout_and_artifacts": [
+      "binary readout exists",
+      "artifact save path exists",
+      "signed_field is persisted in artifacts",
+      "component information is persisted in artifacts if expected",
+      "caution information is persisted in artifacts if expected"
+    ],
+    "tests_and_runtime": [
+      "pytest suite exists",
+      "tests pass or current failing tests are listed clearly",
+      "basic smoke run is possible or current blocker is stated clearly",
+      "determinism evidence exists if test present",
+      "baseline-compatibility evidence exists if test present"
+    ]
+  },
+  "required_actions": [
+    {
+      "step": 1,
+      "action": "Inspect project structure and enumerate relevant files without changing anything."
+    },
+    {
+      "step": 2,
+      "action": "Read each target module and map expected features to actual implementation."
+    },
+    {
+      "step": 3,
+      "action": "Check whether names, data flow, and persistence behavior are consistent across modules."
+    },
+    {
+      "step": 4,
+      "action": "Review config keys and confirm whether each expected runtime knob is actually consumed."
+    },
+    {
+      "step": 5,
+      "action": "Review tests and determine which capabilities are directly verified."
+    },
+    {
+      "step": 6,
+      "action": "Run read-only verification commands if safe, such as test execution or smoke-run inspection, but do not alter files."
+    },
+    {
+      "step": 7,
+      "action": "Deliver a report only."
+    }
+  ],
+  "allowed_commands": {
+    "read_only": [
+      "list files",
+      "open files",
+      "search text",
+      "run tests",
+      "run smoke test with existing configs",
+      "inspect generated output files if they already exist or are produced without modifying source"
+    ],
+    "forbidden": [
+      "edit files",
+      "write files",
+      "apply patches",
+      "rename files",
+      "delete files",
+      "format code",
+      "auto-fix failures",
+      "generate replacement implementations"
+    ]
+  },
+  "verification_focus": [
+    "presence",
+    "correct wiring",
+    "consistency",
+    "runtime evidence",
+    "backward compatibility",
+    "determinism where applicable",
+    "traceability of outputs"
+  ],
+  "report_format": {
+    "format": "json",
+    "top_level_keys": [
+      "summary",
+      "project_state",
+      "module_audit",
+      "feature_matrix",
+      "tests",
+      "runtime_checks",
+      "inconsistencies",
+      "missing_or_uncertain",
+      "risk_assessment",
+      "recommended_next_step"
+    ]
+  },
+  "report_schema": {
+    "summary": {
+      "overall_status": "string",
+      "confidence": "float_0_to_1",
+      "read_only_compliance": "boolean"
+    },
+    "project_state": {
+      "detected_version": "string",
+      "detected_phases": [
+        "string"
+      ],
+      "architectural_position": "string"
+    },
+    "module_audit": [
+      {
+        "module": "string",
+        "present": "boolean",
+        "imports_cleanly_if_checked": "boolean_or_null",
+        "key_findings": [
+          "string"
+        ],
+        "expected_but_missing": [
+          "string"
+        ],
+        "uncertain_items": [
+          "string"
+        ]
+      }
+    ],
+    "feature_matrix": [
+      {
+        "feature": "string",
+        "expected": "boolean",
+        "present": "boolean",
+        "evidence": [
+          "string"
+        ],
+        "status": "present|partial|missing|uncertain"
+      }
+    ],
+    "tests": {
+      "pytest_detected": "boolean",
+      "pytest_result": "pass|fail|not_run",
+      "notable_test_coverage": [
+        "string"
+      ],
+      "untested_critical_areas": [
+        "string"
+      ]
+    },
+    "runtime_checks": {
+      "smoke_run_attempted": "boolean",
+      "smoke_run_result": "pass|fail|not_run",
+      "observed_outputs": [
+        "string"
+      ],
+      "runtime_notes": [
+        "string"
+      ]
+    },
+    "inconsistencies": [
+      {
+        "type": "naming|wiring|config|artifact|test|runtime",
+        "description": "string",
+        "severity": "low|medium|high"
+      }
+    ],
+    "missing_or_uncertain": [
+      {
+        "item": "string",
+        "reason": "string",
+        "severity": "low|medium|high"
+      }
+    ],
+    "risk_assessment": {
+      "current_risks": [
+        "string"
+      ],
+      "stability_estimate": "string"
+    },
+    "recommended_next_step": {
+      "type": "audit_only_recommendation",
+      "description": "string"
+    }
+  },
+  "agent_behavior_rules": [
+    "Do not change any project file under any circumstance.",
+    "Do not silently fix anything.",
+    "Do not convert this into a patch task.",
+    "Prefer saying uncertain over guessing.",
+    "Base conclusions on actual inspected evidence.",
+    "If a feature is claimed in notes but not found in code, mark it as unverified or missing.",
+    "If a test passes but only partially proves a feature, say so clearly.",
+    "If smoke run is not possible, explain why without modifying the project."
+  ],
+  "success_condition": "A complete JSON audit report is delivered, no files are modified, and the report clearly separates confirmed, partial, missing, and uncertain project capabilities."
+}

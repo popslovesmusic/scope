@@ -1,0 +1,209 @@
+{
+  "id": "v14_turn_record_pack_v1",
+  "purpose": "Define turn-level records that separate full trace, highlighted review evidence, raw residue, and committed persistence outcomes.",
+  "branch": "v14",
+  "kind": "example_pack",
+  "records": [
+    {
+      "example_id": "turn_stable_commit_001",
+      "scenario": "User asks for a straightforward explanatory response and the continuation remains stable.",
+      "turn_record": {
+        "turn_id": "t001",
+        "user_input_class": "question",
+        "reply_mode": "explanatory",
+        "response_outcome": "answered",
+        "trace_record": {
+          "turn_id": "t001",
+          "phase_count": 4,
+          "operator_path": ["++", "++", "++", "++"],
+          "switch_fraction": 0.0,
+          "caution_series": [0.22, 0.25, 0.24, 0.23],
+          "raw_caution_terminal": 0.23,
+          "caution_after_recovery": 0.21,
+          "hold_events": [],
+          "hold_terminal": false,
+          "recovery_series": [0.01, 0.02, 0.03, 0.03],
+          "recovery_terminal": 0.03,
+          "corridor_width_series": [0.84, 0.82, 0.83, 0.82],
+          "selected_class": "explanatory_stable"
+        },
+        "highlight_record": {
+          "turn_id": "t001",
+          "triggered_properties": [],
+          "review_summary": "No significant pressure signatures detected. Continuation remained admissible and stable."
+        },
+        "raw_residue_record": {
+          "turn_id": "t001",
+          "intent_class": "question",
+          "reply_mode": "explanatory",
+          "operator_histogram": { "++": 4, "--": 0, "+-": 0, "-+": 0 },
+          "switch_fraction": 0.0,
+          "caution_terminal": 0.23,
+          "hold_terminal": false,
+          "recovery_terminal": 0.03,
+          "qualified": true,
+          "qualification_reasons": ["stable_operator_path", "low_switching", "no_hold", "recoverable", "mode_consistent"]
+        },
+        "committed_residue_record": {
+          "turn_id": "t001",
+          "commit_decision": "commit",
+          "commit_reasons": ["qualified", "intent_mode_aligned", "no_highlighted_risk_properties"],
+          "operator_bias_delta": { "++": 0.03, "--": 0.0, "+-": 0.0, "-+": 0.0 },
+          "caution_baseline_delta": -0.01,
+          "persistence_duration": 4
+        }
+      }
+    },
+    {
+      "example_id": "turn_review_only_001",
+      "scenario": "User request produces a structurally unstable continuation that should be reviewed but not committed.",
+      "turn_record": {
+        "turn_id": "t002",
+        "user_input_class": "instruction",
+        "reply_mode": "explanatory",
+        "response_outcome": "review",
+        "trace_record": {
+          "turn_id": "t002",
+          "phase_count": 4,
+          "operator_path": ["++", "+-", "++", "-+"],
+          "switch_fraction": 0.75,
+          "caution_series": [0.31, 0.46, 0.58, 0.67],
+          "raw_caution_terminal": 0.67,
+          "caution_after_recovery": 0.61,
+          "hold_events": [],
+          "hold_terminal": false,
+          "recovery_series": [0.02, 0.02, 0.01, 0.01],
+          "recovery_terminal": 0.01,
+          "corridor_width_series": [0.79, 0.67, 0.58, 0.54],
+          "selected_class": "unstable_attempt"
+        },
+        "highlight_record": {
+          "turn_id": "t002",
+          "triggered_properties": [
+            {
+              "property_name": "operator_instability",
+              "phase_indices": [0, 1, 2, 3],
+              "supporting_fields": { "switch_fraction": 0.75 },
+              "summary_text": "Operator path did not settle."
+            },
+            {
+              "property_name": "caution_rise",
+              "phase_indices": [1, 2, 3],
+              "supporting_fields": { "raw_caution_terminal": 0.67, "caution_after_recovery": 0.61 },
+              "summary_text": "Continuation pressure rose across phases."
+            },
+            {
+              "property_name": "corridor_narrowing",
+              "phase_indices": [1, 2, 3],
+              "supporting_fields": { "corridor_width_series": [0.79, 0.67, 0.58, 0.54] },
+              "summary_text": "Admissible continuation range contracted."
+            }
+          ],
+          "review_summary": "Continuation remained active but unstable under pressure and should not shape persistence."
+        },
+        "raw_residue_record": {
+          "turn_id": "t002",
+          "intent_class": "instruction",
+          "reply_mode": "explanatory",
+          "operator_histogram": { "++": 2, "--": 0, "+-": 1, "-+": 1 },
+          "switch_fraction": 0.75,
+          "caution_terminal": 0.67,
+          "hold_terminal": false,
+          "recovery_terminal": 0.01,
+          "qualified": false,
+          "qualification_reasons": [],
+          "reject_reasons": ["excessive_switching", "high_caution", "weak_recovery"]
+        },
+        "committed_residue_record": {
+          "turn_id": "t002",
+          "commit_decision": "reject",
+          "commit_reasons": [],
+          "reject_reasons": ["highlighted_instability", "non-settled_path"],
+          "operator_bias_delta": {},
+          "caution_baseline_delta": 0.0,
+          "persistence_duration": 0
+        }
+      }
+    },
+    {
+      "example_id": "turn_refusal_noncommit_001",
+      "scenario": "Continuation enters hold and fails to restabilize, so the system refuses advancement and suppresses persistence.",
+      "turn_record": {
+        "turn_id": "t003",
+        "user_input_class": "instruction",
+        "reply_mode": "review_or_refuse",
+        "response_outcome": "refused",
+        "trace_record": {
+          "turn_id": "t003",
+          "phase_count": 4,
+          "operator_path": ["+-", "-+", "-+", "-+"],
+          "switch_fraction": 0.25,
+          "caution_series": [0.44, 0.62, 0.76, 0.81],
+          "raw_caution_terminal": 0.81,
+          "caution_after_recovery": 0.74,
+          "hold_events": [{ "phase_index": 2, "hold_reason": "bounded_caution_exceeded" }],
+          "hold_terminal": true,
+          "recovery_series": [0.01, 0.01, 0.0, 0.0],
+          "recovery_terminal": 0.0,
+          "hold_release_counter": 0,
+          "hold_release_reason": "none",
+          "corridor_width_series": [0.72, 0.61, 0.42, 0.38],
+          "selected_class": "non_restabilizing_hold"
+        },
+        "highlight_record": {
+          "turn_id": "t003",
+          "triggered_properties": [
+            {
+              "property_name": "hold_onset",
+              "phase_indices": [2],
+              "supporting_fields": { "hold_reason": "bounded_caution_exceeded" },
+              "summary_text": "Continuation entered hold."
+            },
+            {
+              "property_name": "recovery_difficulty",
+              "phase_indices": [2, 3],
+              "supporting_fields": { "recovery_terminal": 0.0, "hold_release_counter": 0 },
+              "summary_text": "Continuation did not recover to an admissible path."
+            },
+            {
+              "property_name": "caution_rise",
+              "phase_indices": [1, 2, 3],
+              "supporting_fields": { "raw_caution_terminal": 0.81 },
+              "summary_text": "Resistance escalated beyond stable continuation."
+            }
+          ],
+          "review_summary": "Continuation failed to restabilize and should not advance or persist."
+        },
+        "raw_residue_record": {
+          "turn_id": "t003",
+          "intent_class": "instruction",
+          "reply_mode": "review_or_refuse",
+          "operator_histogram": { "++": 0, "--": 0, "+-": 1, "-+": 3 },
+          "switch_fraction": 0.25,
+          "caution_terminal": 0.81,
+          "hold_terminal": true,
+          "recovery_terminal": 0.0,
+          "qualified": false,
+          "qualification_reasons": [],
+          "reject_reasons": ["hold_entered", "failed_recovery", "high_caution_terminal"]
+        },
+        "committed_residue_record": {
+          "turn_id": "t003",
+          "commit_decision": "reject",
+          "commit_reasons": [],
+          "reject_reasons": ["hold_plus_failed_recovery", "review_triggered_suppression"],
+          "operator_bias_delta": {},
+          "caution_baseline_delta": 0.0,
+          "persistence_duration": 0
+        }
+      }
+    }
+  ],
+  "record_rules": {
+    "trace_record": "Operational history only. Never used directly as persistent memory.",
+    "highlight_record": "Derived on demand from trace. Compact and reviewable.",
+    "raw_residue_record": "Append-only turn residue eligible for qualification analysis.",
+    "committed_residue_record": "Only exists when persistence outcome is decided."
+  }
+}
+

@@ -1,0 +1,37 @@
+{
+  "id": "v14_trace_highlight_extractor_v1",
+  "purpose": "Extract a compact, inspectable highlight stream from trace records.",
+  "branch": "v14",
+  "kind": "config",
+  "depends_on": ["v14_trace_property_schema_v1"],
+  "extraction_mode": "on_demand",
+  "windowing": {
+    "mode": "recent_turn_or_requested_turn",
+    "default_recent_turns": 3,
+    "max_turns": 12
+  },
+  "selection": {
+    "include_only_triggered_properties": true,
+    "max_highlights_per_turn": 8,
+    "sort_by": [
+      "hold_onset",
+      "residue_rejection",
+      "intent_mode_mismatch",
+      "caution_rise",
+      "operator_instability",
+      "recovery_difficulty",
+      "corridor_narrowing"
+    ]
+  },
+  "rendering": {
+    "include_phase_indices": true,
+    "include_supporting_values": true,
+    "include_plain_summary": true,
+    "include_raw_trace_dump": false
+  },
+  "commands": {
+    "shell_aliases": ["/trace highlights", "/trace highlights N", "/trace review"]
+  },
+  "storage": { "persist_highlights": false, "highlight_cache_turns": 16 }
+}
+

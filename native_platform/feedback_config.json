@@ -1,0 +1,10 @@
+{
+  "feedback": {
+    "enabled": true,
+    "mode": "admissible_bias",
+    "gain": 0.5,
+    "decay": 0.95,
+    "max_bias": 2.0,
+    "min_bias": 0.5
+  }
+}

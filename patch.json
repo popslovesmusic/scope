@@ -1,0 +1,101 @@
+{
+  "patch_name": "signal_scope_w2_phase_fix_v1",
+
+  "goals": [
+    "stabilize W2 phase measurement",
+    "convert phase from point-sample to frame-representative metric",
+    "restore W2 as equal domain alongside W1 and W3",
+    "add visualization for W2",
+    "improve DOF sensitivity"
+  ],
+
+  "file_target": "signal_scope_audio_v0.py",
+
+  "modifications": [
+
+    {
+      "type": "replace_block",
+      "target": "W2_phase computation",
+      "find": "W2_phase = np.unwrap(np.angle(analytic))[-1]",
+      "replace": [
+        "phase = np.unwrap(np.angle(analytic))",
+        "W2_phase = np.mean(np.diff(phase))"
+      ],
+      "reason": "use phase progression (delta) instead of single sample for stability and meaning"
+    },
+
+    {
+      "type": "ensure_variable",
+      "target": "plot_results function",
+      "add_before_use": "W2 = np.array([r['W2_phase'] for r in results])",
+      "reason": "make W2 available for plotting"
+    },
+
+    {
+      "type": "add_block",
+      "target": "plot_results function",
+      "insert_after": "W1 plot block",
+      "code": [
+        "plt.figure()",
+        "plt.plot(t, W2)",
+        "plt.title('W2 Phase Progression over time')",
+        "plt.xlabel('Time (s)')",
+        "plt.ylabel('Phase change')",
+        "plt.show()"
+      ],
+      "reason": "visualize phase domain"
+    },
+
+    {
+      "type": "normalize_ticks",
+      "target": "tick scaling",
+      "find": "scale = np.array([1.0, np.pi, sr / 2])",
+      "replace": "scale = np.array([1.0, 1.0, sr / 2])",
+      "reason": "phase progression already normalized via diff; remove π scaling distortion"
+    },
+
+    {
+      "type": "optional_smoothing",
+      "target": "W2_phase calculation",
+      "insert_after": "W2_phase assignment",
+      "code": [
+        "# optional smoothing for noise reduction",
+        "W2_phase = np.tanh(W2_phase)"
+      ],
+      "enabled": false,
+      "reason": "limit extreme phase jumps (enable if noisy signals)"
+    }
+
+  ],
+
+  "expected_outcome": {
+    "W2_behavior": "smooth, structured signal instead of noisy spikes",
+    "system_balance": "all three domains W1/W2/W3 active and meaningful",
+    "DOF_detection": "improved sensitivity to phase-driven structure",
+    "plots": [
+      "W2 now visible",
+      "phase evolution comparable to amplitude and frequency"
+    ]
+  },
+
+  "validation_tests": [
+    {
+      "signal": "pure sine",
+      "expected": "W2 shows steady progression (linear trend)"
+    },
+    {
+      "signal": "two-tone",
+      "expected": "W2 shows modulation pattern"
+    },
+    {
+      "signal": "noise",
+      "expected": "W2 chaotic but bounded"
+    }
+  ],
+
+  "next_recommended_patch": [
+    "phase-amplitude coupling metric (W2 ↔ W1)",
+    "phase-frequency coupling metric (W2 ↔ W3)",
+    "entropy-based DOF estimator"
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "patch_set": "v14_phase5_trace_salience_caution_v1",
+  "status": "proposed_next",
+  "goal": "add internal trace salience and caution pressure so prior unstable continuations can narrow admissibility without relying on the external governance sidecar",
+  "reason": "the external metadata/governance wrapper has been separated into a v15 bolt-on track, so v14 should continue developing its native internal control dynamics",
+  "patches": [
+    {
+      "file": "core/trace_ops.py",
+      "ops": [
+        {
+          "op": "create_file",
+          "exports": [
+            "compute_trace_salience",
+            "compute_trace_similarity",
+            "compute_caution_field"
+          ]
+        },
+        {
+          "op": "add_function",
+          "name": "compute_trace_salience",
+          "purpose": "score prior phase history by instability, boundary penalty, blocked entry, and cancellation exposure"
+        },
+        {
+          "op": "add_function",
+          "name": "compute_trace_similarity",
+          "purpose": "compare current component/topology structure to recent high-salience trace structure"
+        },
+        {
+          "op": "add_function",
+          "name": "compute_caution_field",
+          "purpose": "project salience-weighted similarity back onto the family lattice as a scalar caution value and local caution field"
+        }
+      ]
+    },
+    {
+      "file": "core/signature_state.py",
+      "ops": [
+        {
+          "op": "add_fields",
+          "fields": [
+            {
+              "name": "trace_salience",
+              "type": "list",
+              "init": "[]"
+            },
+            {
+              "name": "caution_scalar",
+              "type": "float",
+              "init": 0.0
+            },
+            {
+              "name": "caution_field",
+              "type": "np.ndarray",
+              "init": "zeros_like(signed_field)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/reasoning_loop.py",
+      "ops": [
+        {
+          "op": "add_stage",
+          "name": "trace_salience_evaluation",
+          "position": "after component extraction and before operator selection",
+          "change": [
+            "compute salience over recent trace entries",
+            "compute similarity between current topology/components and prior salient states",
+            "derive caution_scalar and caution_field",
+            "store results in state"
+          ]
+        },
+        {
+          "op": "modify_operator_scoring",
+          "change": [
+            "penalize candidate operators when they reinforce high-caution structure",
+            "reduce local operator preference in regions with strong caution_field"
+          ]
+        },
+        {
+          "op": "add_hold_logic",
+          "change": [
+            "if caution_scalar exceeds threshold, reduce writeback gain",
+            "optionally enter hold_state for one phase instead of committing a risky update"
+          ]
+        },
+        {
+          "op": "add_trace_fields",
+          "fields": [
+            "salience_max",
+            "similarity_max",
+            "caution_scalar",
+            "caution_peak",
+            "hold_triggered"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/corridor_gate.py",
+      "ops": [
+        {
+          "op": "add_optional_input",
+          "target": "build_dynamic_corridor",
+          "parameter": "caution_field"
+        },
+        {
+          "op": "modify_logic",
+          "change": [
+            "subtract caution_field from corridor window before normalization",
+            "reduce entry openness in locally high-caution regions",
+            "optionally increase exit resistance under elevated caution"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/component_ops.py",
+      "ops": [
+        {
+          "op": "add_function",
+          "name": "component_caution_scores",
+          "purpose": "aggregate caution_field over component masks so component targeting is caution-aware"
+        }
+      ]
+    },
+    {
+      "file": "sim_v14_stage1.py",
+      "ops": [
+        {
+          "op": "modify_output",
+          "target": "state.signature",
+          "change": [
+            "persist caution_scalar",
+            "persist caution_field summary"
+          ]
+        },
+        {
+          "op": "modify_output",
+          "target": "state.reasoning.phase_history",
+          "change": [
+            "persist salience and hold metrics"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "config/config_v14_scaffold.json",
+      "ops": [
+        {
+          "op": "add_keys",
+          "keys": {
+            "enable_trace_salience": true,
+            "trace_salience_window": 8,
+            "caution_similarity_weight": 0.6,
+            "caution_salience_weight": 0.4,
+            "caution_threshold": 0.7,
+            "caution_corridor_penalty": 0.4,
+            "caution_operator_penalty": 0.5,
+            "enable_hold_state": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "tests/test_trace_salience.py",
+      "ops": [
+        {
+          "op": "create_file",
+          "cases": [
+            "high similarity to high-salience prior trace increases caution_scalar",
+            "caution_field narrows corridor locally",
+            "operator ranking changes under strong caution",
+            "hold_state triggers only above threshold",
+            "disabling trace salience restores phase4-like behavior"
+          ]
+        }
+      ]
+    }
+  ],
+  "acceptance_checks": [
+    "when trace salience is disabled, behavior stays close to phase4",
+    "caution localizes to structurally similar regions",
+    "hold_state is rare and thresholded",
+    "component targeting becomes caution-aware without breaking determinism"
+  ],
+  "note": "this patch develops native internal ethical restraint inside v14, while the sbmeta sidecar remains an external v15 development/governance wrapper"
+}

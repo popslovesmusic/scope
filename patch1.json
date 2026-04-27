@@ -1,0 +1,142 @@
+{
+  "patch_name": "signal_scope_channel_ratio_model_v1",
+  "instruction": "Make it so.",
+  "target_file": "signal_scope_audio_v0.py",
+  "core_correction": {
+    "windows_are_dynamic": true,
+    "channels_are_dynamic": false,
+    "channels_are": "ratio readouts relative to the whole",
+    "current_axes": ["up", "down", "left", "right"],
+    "future_axes": ["up", "down", "left", "right", "up_right", "up_left", "down_right", "down_left"]
+  },
+  "required_model": {
+    "windows": {
+      "W1": "amplitude",
+      "W2": "phase_progression",
+      "W3": "frequency_centroid"
+    },
+    "raw_components": {
+      "ch1": "abs(W1_delta)",
+      "ch2": "abs(W2_delta)",
+      "ch3": "abs(W3_delta)",
+      "ch4": "abs(W1_delta * W2_delta)",
+      "ch5": "abs(W1_delta * W3_delta)",
+      "ch6": "abs(W2_delta * W3_delta)",
+      "ch7": "abs(W1_delta * W2_delta * W3_delta)"
+    },
+    "whole": "sum(ch1..ch7) + epsilon",
+    "channel_ratios": {
+      "ch1_ratio": "ch1 / whole",
+      "ch2_ratio": "ch2 / whole",
+      "ch3_ratio": "ch3 / whole",
+      "ch4_ratio": "ch4 / whole",
+      "ch5_ratio": "ch5 / whole",
+      "ch6_ratio": "ch6 / whole",
+      "ch7_ratio": "ch7 / whole"
+    }
+  },
+  "code_changes": [
+    {
+      "action": "replace",
+      "old_behavior": "channels store + / - / nc as primary values",
+      "new_behavior": "channels store numeric ratios to whole; direction is metadata"
+    },
+    {
+      "action": "add_function",
+      "name": "direction_4way",
+      "purpose": "Convert window delta vector into current 4-axis direction labels.",
+      "code": "def direction_4way(dx, dy, threshold=1e-6):\n    if abs(dx) < threshold and abs(dy) < threshold:\n        return 'nc'\n    if abs(dx) >= abs(dy):\n        return 'right' if dx > 0 else 'left'\n    return 'up' if dy > 0 else 'down'\n"
+    },
+    {
+      "action": "add_function",
+      "name": "compute_channel_ratios",
+      "purpose": "Compute ch1..ch7 as ratios of whole signal relation.",
+      "code": "def compute_channel_ratios(w_delta, eps=1e-12):\n    W1, W2, W3 = [abs(float(x)) for x in w_delta]\n\n    raw = np.array([\n        W1,\n        W2,\n        W3,\n        W1 * W2,\n        W1 * W3,\n        W2 * W3,\n        W1 * W2 * W3\n    ], dtype=np.float64)\n\n    whole = float(np.sum(raw) + eps)\n    ratios = raw / whole\n\n    return {\n        'whole': whole,\n        'raw_channels': raw.tolist(),\n        'channel_ratios': ratios.tolist()\n    }\n"
+    },
+    {
+      "action": "modify_main_loop",
+      "details": [
+        "After computing ticks or normalized deltas for W1/W2/W3, call compute_channel_ratios(ticks).",
+        "Store channel_ratios instead of symbolic + / - / nc as primary channel state.",
+        "Keep symbolic direction separately if useful."
+      ],
+      "example_result_object": {
+        "t": "time_seconds",
+        "W1_amplitude": "float",
+        "W2_phase": "float",
+        "W3_frequency": "float",
+        "ticks": ["dW1", "dW2", "dW3"],
+        "whole": "float",
+        "channel_ratios": ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7"],
+        "raw_channels": ["raw_ch1", "raw_ch2", "raw_ch3", "raw_ch4", "raw_ch5", "raw_ch6", "raw_ch7"],
+        "direction_metadata": {
+          "W1": "up/down/left/right/nc",
+          "W2": "up/down/left/right/nc",
+          "W3": "up/down/left/right/nc"
+        }
+      }
+    },
+    {
+      "action": "replace_v_dof",
+      "old": "V_DOF = sum(abs(symbolic_channel_states))",
+      "new": "V_DOF = whole",
+      "note": "V_DOF now means total relational activity before normalization."
+    },
+    {
+      "action": "replace_ch7_plot",
+      "old": "plot symbolic ch7 + / - / nc",
+      "new": "plot channel_ratios[:, 6]",
+      "title": "ch7 Ratio to Whole"
+    },
+    {
+      "action": "add_plot",
+      "title": "Channel Ratios to Whole",
+      "content": "plot ch1_ratio through ch7_ratio over time"
+    }
+  ],
+  "plot_requirements": [
+    "W1 amplitude over time",
+    "W2 phase progression over time",
+    "W3 frequency over time",
+    "V_DOF / whole relational activity",
+    "ch7 ratio to whole",
+    "all channel ratios over time"
+  ],
+  "interpretation_rules": {
+    "high_ch1_ch2_ch3": "single-domain dominance",
+    "high_ch4_ch5_ch6": "pairwise relation dominance",
+    "high_ch7": "full W1-W2-W3 relation contributes strongly to whole",
+    "stable_ratios": "finite or bounded DOF behavior",
+    "wandering_ratios": "higher or externally driven DOF behavior",
+    "ratio_plateau": "recurrent structure / closure",
+    "ratio_drift": "changing effective state-space"
+  },
+  "validation": [
+    {
+      "input": "pure sine wave",
+      "expected": "stable ratio pattern, likely low ch7 unless phase is strongly coupled"
+    },
+    {
+      "input": "two-tone signal",
+      "expected": "stronger pairwise relation channels and visible beat structure"
+    },
+    {
+      "input": "white noise",
+      "expected": "unstable ratios and high whole activity variation"
+    },
+    {
+      "input": "speech",
+      "expected": "bursty, structured ratio changes"
+    }
+  ],
+  "success_condition": {
+    "channels_sum_to_one": true,
+    "ch7_is_ratio_not_oscillator": true,
+    "windows_remain_only_dynamic_objects": true,
+    "plots_show_ratios": true
+  },
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "Add diagonal directions after 4-axis ratio model is stable."
+  }
+}

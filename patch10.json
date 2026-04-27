@@ -1,0 +1,198 @@
+{
+  "agent_task": "build_native_wave_residue_platform",
+
+  "base_rules": {
+    "start_from": "v14",
+    "preserve": "all existing v14 behavior",
+    "extension_only": true,
+    "no_rewrites": [
+      "v14 reasoning loop",
+      "corridor logic",
+      "residue qualification"
+    ]
+  },
+
+  "inputs": {
+    "cpp_engine": {
+      "files_expected": [
+        "analog_universal_node_engine_avx2.cpp",
+        "analog_universal_node_engine_avx2.h"
+      ],
+      "requirement": "must compile standalone before integration"
+    }
+  },
+
+  "build_steps": [
+    {
+      "step": 1,
+      "name": "compile_cpp_engine",
+      "actions": [
+        "create bindings.cpp using pybind11",
+        "expose class AnalogCellularEngineAVX2",
+        "expose methods: runMission, runMissionOptimized, getMetrics",
+        "expose node outputs accessor (add if missing)",
+        "build shared library: engine_bridge.so"
+      ]
+    },
+
+    {
+      "step": 2,
+      "name": "engine_bridge_python",
+      "file": "native_platform/engine_bridge.py",
+      "create": [
+        "class EngineBridge:",
+        "  def __init__(self, num_nodes):",
+        "  def step(self, input_signal):",
+        "  def get_node_outputs(self):",
+        "  def get_node_states(self):"
+      ]
+    },
+
+    {
+      "step": 3,
+      "name": "scope_adapter",
+      "file": "native_platform/scope_adapter.py",
+      "create": [
+        "def compute_W(node_outputs):",
+        "  mean_energy = mean(abs(node_outputs))",
+        "  variance = var(node_outputs)",
+        "  gradient = mean(abs(diff(node_outputs)))",
+        "  W_raw = [mean_energy, gradient, variance]",
+        "  normalize to sum=1",
+        "  return W",
+
+        "def compute_metrics(W_prev, W):",
+        "  C = min(W)/max(W)",
+        "  E = distance from [1/3,1/3,1/3]",
+        "  V = W - W_prev",
+        "  return C, E, V"
+      ]
+    },
+
+    {
+      "step": 4,
+      "name": "signalscope_core",
+      "file": "native_platform/signalscope_core.py",
+      "create": [
+        "class SignalScope:",
+        "  maintains local/global/meta windows",
+        "  applies recursive lifting",
+        "  outputs W_local, W_global, W_meta",
+        "  computes C, E, V, K"
+      ]
+    },
+
+    {
+      "step": 5,
+      "name": "hex_layer",
+      "file": "native_platform/hex_state.py",
+      "create": [
+        "def w_to_hex(W):",
+        "  convert to RGB 0-255",
+        "  return #RRGGBB",
+        "def make_full_hex(local, global, meta):",
+        "  return 'local.global.meta'"
+      ]
+    },
+
+    {
+      "step": 6,
+      "name": "wheel12_projection",
+      "file": "native_platform/wheel12_projection.py",
+      "create": [
+        "def project_to_12(W, C, E):",
+        "  map W into 12 slots using radial distribution",
+        "  encode orientation bias from V",
+        "  return signature_12"
+      ]
+    },
+
+    {
+      "step": 7,
+      "name": "v14_bridge",
+      "file": "native_platform/v14_bridge.py",
+      "create": [
+        "class V14Bridge:",
+        "  loads existing v14 system",
+        "  injects signature_12 as input state",
+        "  runs reasoning loop",
+        "  extracts trace + residue"
+      ]
+    },
+
+    {
+      "step": 8,
+      "name": "residue_imprinting",
+      "file": "native_platform/residue_imprinter.py",
+      "create": [
+        "def qualify_and_commit(trace):",
+        "  if stable:",
+        "    compress trajectory",
+        "    store as residue",
+        "  else:",
+        "    discard or store as warning"
+      ]
+    },
+
+    {
+      "step": 9,
+      "name": "main_loop",
+      "file": "native_platform/run_native_platform.py",
+      "create": [
+        "initialize EngineBridge",
+        "initialize SignalScope",
+        "initialize V14Bridge",
+        "loop over frames:",
+        "  inject signal into engine",
+        "  step engine",
+        "  read node outputs",
+        "  compute W via adapter",
+        "  update SignalScope",
+        "  encode hex",
+        "  project to 12-wheel",
+        "  run v14",
+        "  imprint residue",
+        "  feed residue bias forward"
+      ]
+    }
+  ],
+
+  "tests": [
+    {
+      "name": "engine_runs",
+      "expect": "node outputs available"
+    },
+    {
+      "name": "scope_valid",
+      "expect": "sum(W)==1 at all times"
+    },
+    {
+      "name": "hex_valid",
+      "expect": "valid #RRGGBB output"
+    },
+    {
+      "name": "v14_unchanged",
+      "expect": "baseline identical when scope disabled"
+    },
+    {
+      "name": "learning_effect",
+      "expect": "second pass reduces instability"
+    }
+  ],
+
+  "critical_rules": {
+    "never": [
+      "train weights",
+      "bypass residue qualification",
+      "collapse field to scalar too early"
+    ],
+    "always": [
+      "treat engine as primary dynamics",
+      "treat scope as measurement layer",
+      "treat v14 as reasoning + memory",
+      "treat residue as learning"
+    ]
+  },
+
+  "final_instruction": "Build a unified platform where waves drive an analog field, the field is measured by SignalScope, and SBLLM v14 learns continuation through residue imprinting."
+}

@@ -1,0 +1,70 @@
+{
+  "configs": {
+    "config/config_v14_scaffold.json": {
+      "active_component_id": 0,
+      "active_operator": "++",
+      "caution_scalar": 0.325607,
+      "component_count": 3,
+      "confidence": 0.66808,
+      "hold_semantics": "decay",
+      "hold_state": false,
+      "operator_scores_used": [
+        0.072112,
+        0.072112,
+        0.072112,
+        0.072112
+      ],
+      "orientation_diffusion_applied": false,
+      "phase_count": 4,
+      "raw_caution_scalar": 0.617067,
+      "recovery_scalar": 0.027245,
+      "selected_class": 1,
+      "symmetry_mode_used": "paired(magnitude_invariant=False,orientation_distinct=True)",
+      "trace_last": {
+        "caution_after_recovery": 0.325607,
+        "hold_reason": "none",
+        "hold_release_counter": 0,
+        "hold_release_reason": "none",
+        "hold_released": false
+      },
+      "wraparound_lattice": true
+    },
+    "config/config_v14_terminal.json": {
+      "active_component_id": 0,
+      "active_operator": "++",
+      "caution_scalar": 0.323972,
+      "component_count": 3,
+      "confidence": 0.718698,
+      "hold_semantics": "decay",
+      "hold_state": false,
+      "operator_scores_used": [
+        0.086875,
+        0.086875,
+        0.086875,
+        0.086875
+      ],
+      "orientation_diffusion_applied": true,
+      "phase_count": 4,
+      "raw_caution_scalar": 0.617337,
+      "recovery_scalar": 0.027232,
+      "selected_class": 1,
+      "symmetry_mode_used": "paired(magnitude_invariant=False,orientation_distinct=True)",
+      "trace_last": {
+        "caution_after_recovery": 0.323972,
+        "hold_reason": "none",
+        "hold_release_counter": 0,
+        "hold_release_reason": "none",
+        "hold_released": false
+      },
+      "wraparound_lattice": true
+    }
+  },
+  "generated_at": "2026-04-12T18:53:57.444315Z",
+  "prompt": "v14_baseline_freeze",
+  "seed": 123,
+  "snapshot_version": 1,
+  "trace_digests": {
+    "config/config_v14_scaffold.json": "7f2b432db597ea81ee2c36d51ac53e098a191b28884a5dafdc19ea9f44909a55",
+    "config/config_v14_terminal.json": "891dc01ae7e1a0e9ae04924ea041c7f05b85c974351afea5400794b3df8e54b1"
+  }
+}

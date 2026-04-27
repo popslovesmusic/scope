@@ -1,0 +1,28 @@
+{
+  "id": "v14_turn_record_validation_v1",
+  "branch": "v14",
+  "kind": "validation",
+  "checks": [
+    {
+      "name": "stable_commit_has_no_highlights",
+      "expect": "A stable committed turn may have zero triggered highlight properties."
+    },
+    {
+      "name": "review_turn_rejects_commit",
+      "expect": "A review-only turn must reject persistence even if a response is still produced."
+    },
+    {
+      "name": "refusal_turn_has_hold_or_failed_recovery",
+      "expect": "A refusal turn must be grounded in trace features such as hold onset or failed restabilization."
+    },
+    {
+      "name": "trace_never_equals_memory",
+      "expect": "Full trace is stored separately from committed residue and must not directly act as persistence."
+    },
+    {
+      "name": "highlight_is_derived",
+      "expect": "Highlight records must be derivable from trace fields and not invented independently."
+    }
+  ]
+}
+

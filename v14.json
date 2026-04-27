@@ -1,0 +1,368 @@
+{
+  "v14_spec": {
+    "name": "v14_spectral_signature_native",
+    "status": "new surface after freezing v13",
+    "purpose": "Make signature the primary computational state, with corridor, orientation, and reasoning living in the same native state model.",
+    "source_basis": {
+      "v13_frozen_role": "corridor-native baseline and comparison line",
+      "v14_shift": "signature-native reasoning surface",
+      "citations": [
+        ":contentReference[oaicite:1]{index=1}",
+        ":contentReference[oaicite:2]{index=2}"
+      ]
+    },
+    "design_statement": "v14 represents system state as a spectral signature field over token-family space. Reasoning proceeds by orientation-conditioned projection, bounded by a signature-defined admissibility window, with outputs formed from peak selection and controlled recomposition.",
+    "core_principles": [
+      "signature is primary",
+      "tokens are extracted summaries of signature peaks/bands",
+      "corridor is derived from signature, not bolted on externally",
+      "orientation operators are native transforms, not metadata",
+      "reasoning is bounded writeback over signature"
+    ],
+    "top_level_pipeline": [
+      "input",
+      "encode_to_signature_field",
+      "detect_peaks_and_bands",
+      "apply_orientation_operators",
+      "build_dynamic_corridor",
+      "gate_projection_through_corridor",
+      "write_back_into_signature",
+      "relax_and_persist",
+      "repeat_for_reasoning_phases",
+      "collapse_to_output"
+    ],
+    "primary_state_object": {
+      "signature_field": {
+        "axes": [
+          "family_index",
+          "orientation_channel",
+          "amplitude"
+        ],
+        "representation": "dense array",
+        "domain": "12-slot token-family lattice"
+      }
+    },
+    "state_schema": {
+      "version": "v14_stage1_state_v1",
+      "step": 0,
+      "input_trace": [],
+      "signature": {
+        "amplitude": [],
+        "phase": [],
+        "stability": [],
+        "peaks": [],
+        "bands": []
+      },
+      "corridor": {
+        "window": [],
+        "entry_resistance": [],
+        "exit_resistance": [],
+        "threshold": 0.0
+      },
+      "orientation": {
+        "active_operator": null,
+        "operator_family": [
+          "++",
+          "--",
+          "+-",
+          "-+"
+        ],
+        "operator_scores": []
+      },
+      "reasoning": {
+        "phase_index": 0,
+        "phase_history": [],
+        "writeback_gain": 0.0,
+        "relaxation": 0.0
+      },
+      "output": {
+        "class_scores": [],
+        "selected_class": null,
+        "confidence": 0.0
+      }
+    },
+    "native_primitives": [
+      "signature",
+      "peak",
+      "band",
+      "corridor",
+      "orientation_operator",
+      "writeback"
+    ],
+    "token_model": {
+      "role": "derived, not primitive",
+      "token_summary_fields": [
+        "family_id",
+        "peak_amplitude",
+        "peak_phase",
+        "bandwidth",
+        "corridor_weight",
+        "stability"
+      ]
+    },
+    "orientation_model": {
+      "operators": [
+        "++",
+        "--",
+        "+-",
+        "-+"
+      ],
+      "operator_schema": {
+        "name": "++",
+        "read_kernel": [],
+        "write_kernel": [],
+        "phase_shift": 0.0,
+        "symmetry_class": "paired"
+      },
+      "meaning": "Operators determine how the same signature is read, scored, and written back."
+    },
+    "corridor_model": {
+      "definition": "Dynamic admissibility envelope derived from active signature peaks and bands.",
+      "rule": "window_i = f(peak_amplitude_i, bandwidth_i, stability_i)",
+      "corridor_unit": {
+        "center_family": 0,
+        "width": 0.0,
+        "entry_resistance": 0.0,
+        "exit_resistance": 0.0,
+        "peak_anchor": 0.0
+      },
+      "intended_behavior": [
+        "strong peak widens admissibility",
+        "weak peak narrows admissibility",
+        "entry and exit resistance may differ",
+        "hysteresis emerges from asymmetric corridor resistance"
+      ]
+    },
+    "reasoning_loop": [
+      "phase_read: project signature under each operator",
+      "phase_score: evaluate peak support, corridor fit, conflict",
+      "phase_choose: select operator or operator blend",
+      "phase_gate: apply corridor and admissibility bounds",
+      "phase_write: bounded writeback into signature",
+      "phase_relax: smooth, decay, persist",
+      "phase_trace: record operator choice, peak changes, corridor hits/blocks"
+    ],
+    "update_rule": {
+      "conceptual_form": "signature_next = (1 - lambda) * signature_current + kappa * gated_projection - eta * boundary_penalty",
+      "terms": {
+        "lambda": "relaxation / overwrite permeability",
+        "kappa": "write gain",
+        "eta": "boundary penalty"
+      }
+    },
+    "peak_detection": {
+      "schema": {
+        "min_height": 0.05,
+        "min_distance": 1,
+        "merge_radius": 1,
+        "track_identity": true
+      },
+      "goal": "Persistent and readable peak/band structure across reasoning phases."
+    },
+    "symmetry_handling": {
+      "enabled": true,
+      "family_mode": "equivalence_class",
+      "inversion_pairs": [
+        [
+          "++",
+          "--"
+        ],
+        [
+          "+-",
+          "-+"
+        ]
+      ],
+      "magnitude_invariant": true,
+      "orientation_distinct": true
+    },
+    "output_model": {
+      "first_target": "binary classification demo",
+      "classifier": {
+        "mode": "binary",
+        "decision_rule": "max_corridor_supported_energy",
+        "class_heads": [
+          {
+            "name": "class_0",
+            "readout_family": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "name": "class_1",
+            "readout_family": [
+              9,
+              10,
+              11
+            ]
+          }
+        ]
+      }
+    },
+    "trace_model": {
+      "trace_step": {
+        "phase": 0,
+        "selected_operator": "++",
+        "top_peaks_before": [],
+        "gated_update_energy": 0.0,
+        "top_peaks_after": [],
+        "corridor_hits": [],
+        "corridor_blocks": [],
+        "decision_shift": 0.0
+      },
+      "purpose": "Reasoning anchor and readable internal trace."
+    },
+    "acceptance_targets": [
+      "binary task succeeds on small symmetry-aware demo set",
+      "mirrored or inverted inputs can map to same class with different internal orientation traces",
+      "corridor gate prevents runaway write amplification",
+      "same input family stabilizes into similar peak patterns",
+      "trace is readable and phase-local"
+    ],
+    "first_milestone_only": [
+      "12-slot signature field",
+      "4 orientation operators",
+      "dynamic corridor from peaks",
+      "binary readout head",
+      "full reasoning trace"
+    ]
+  },
+  "needed_files": {
+    "repo_layout": [
+      "v14/",
+      "v14/config/",
+      "v14/core/",
+      "v14/scripts/",
+      "v14/tests/"
+    ],
+    "config_files": [
+      {
+        "path": "v14/config/config_v14_scaffold.json",
+        "purpose": "Base config for all v14 runs."
+      },
+      {
+        "path": "v14/config/config_v14_binary_demo.json",
+        "purpose": "Minimal binary demo task."
+      },
+      {
+        "path": "v14/config/config_v14_corridor_low.json",
+        "purpose": "Low corridor/admissibility influence profile."
+      },
+      {
+        "path": "v14/config/config_v14_corridor_mid.json",
+        "purpose": "Balanced first real test profile."
+      },
+      {
+        "path": "v14/config/config_v14_corridor_high.json",
+        "purpose": "Stress profile for rigidity / over-gating."
+      }
+    ],
+    "core_files": [
+      {
+        "path": "v14/core/signature_state.py",
+        "purpose": "Own the main signature tensor, state init, persistence helpers, and state summaries."
+      },
+      {
+        "path": "v14/core/peak_detector.py",
+        "purpose": "Detect peaks and bands, merge nearby peaks, track identities across phases."
+      },
+      {
+        "path": "v14/core/corridor_gate.py",
+        "purpose": "Build dynamic corridors from peaks and apply entry/exit resistance."
+      },
+      {
+        "path": "v14/core/orientation_ops.py",
+        "purpose": "Implement ++, --, +-, -+ read/write transforms and operator scoring."
+      },
+      {
+        "path": "v14/core/reasoning_loop.py",
+        "purpose": "Run multi-phase read/score/choose/gate/write/relax cycles and emit trace steps."
+      },
+      {
+        "path": "v14/core/readout_heads.py",
+        "purpose": "Map final signature state to binary class scores and confidence."
+      },
+      {
+        "path": "v14/core/io_state.py",
+        "purpose": "Save/load v14 state artifacts and maintain deterministic replay metadata."
+      },
+      {
+        "path": "v14/core/trace_schema.py",
+        "purpose": "Standardize reasoning trace records and summaries."
+      }
+    ],
+    "entrypoint_files": [
+      {
+        "path": "v14/sim_v14_stage1.py",
+        "purpose": "Main v14 stage-1 runner for signature-native demo and reporting."
+      },
+      {
+        "path": "v14/chat_v14_session.py",
+        "purpose": "Optional later surface for chat-style testing after binary demo is stable."
+      }
+    ],
+    "script_files": [
+      {
+        "path": "v14/scripts/run_v14_binary_demo.py",
+        "purpose": "Run the first binary demonstration end to end."
+      },
+      {
+        "path": "v14/scripts/run_v14_phase_trace.py",
+        "purpose": "Render or dump per-phase traces for debugging and interpretation."
+      },
+      {
+        "path": "v14/scripts/compare_v14_runs.py",
+        "purpose": "Compare v14 runs across configs and tasks."
+      }
+    ],
+    "test_files": [
+      {
+        "path": "v14/tests/test_signature_peaks.py",
+        "purpose": "Validate peak detection and band tracking."
+      },
+      {
+        "path": "v14/tests/test_corridor_gating.py",
+        "purpose": "Validate corridor construction and resistance behavior."
+      },
+      {
+        "path": "v14/tests/test_orientation_symmetry.py",
+        "purpose": "Validate symmetry handling and operator distinctness."
+      },
+      {
+        "path": "v14/tests/test_binary_demo.py",
+        "purpose": "Smoke-test binary task behavior."
+      }
+    ],
+    "doc_files": [
+      {
+        "path": "v14/V14_SPEC.md",
+        "purpose": "Human-readable version of the spec."
+      },
+      {
+        "path": "v14/README.md",
+        "purpose": "Usage, layout, and run instructions."
+      }
+    ]
+  },
+  "minimum_build_order": [
+    "create config_v14_scaffold.json",
+    "build signature_state.py",
+    "build peak_detector.py",
+    "build corridor_gate.py",
+    "build orientation_ops.py",
+    "build reasoning_loop.py",
+    "build readout_heads.py",
+    "build sim_v14_stage1.py",
+    "build run_v14_binary_demo.py",
+    "add tests"
+  ],
+  "explicit_non_goals_for_first_pass": [
+    "full chat replacement",
+    "large task suite",
+    "full agentization",
+    "complex corridor memory reuse across long sessions",
+    "large-scale token generation"
+  ],
+  "one_line_charter": "v14 redefines the system around a native spectral-signature state where corridor, token family, and orientation operator are intrinsic computational objects rather than overlays on a token pipeline."
+}

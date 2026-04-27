@@ -1,0 +1,14 @@
+BRANCHING DISCIPLINE:
+- Treat v14 as the active system.
+- Do not introduce v15 as the primary architecture.
+- New capabilities must be implemented as additive extensions to v14 unless explicitly flagged.
+- If a proposed change resembles identity systems, agent spawning, orchestration, or conditioning loops, evaluate whether it can remain a bolt-on within v14.
+- Only escalate to v15 when integration into v14 would distort the system.
+
+TRANSITION RULE:
+- v15 is not triggered by planning or partial implementation.
+- v15 is triggered when the next required capability cannot fit cleanly into v14.
+
+GUARDRAIL:
+- Avoid premature architectural migration.
+- Prefer refinement, clarity, and consistency inside v14 before introducing new system layers.

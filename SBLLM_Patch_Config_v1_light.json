@@ -1,0 +1,22 @@
+{
+  "diff_guard_config": {
+    "intent": {
+      "type": "refactor",
+      "description": "example"
+    },
+    "target": "sim.py",
+    "change_scope": {
+      "allowed_units": [],
+      "forbidden_units": []
+    },
+    "protected_units": [],
+    "expected_invariants": [],
+    "verification": {
+      "pre_hash": true,
+      "post_hash": true
+    },
+    "report": {
+      "json": true
+    }
+  }
+}

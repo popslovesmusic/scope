@@ -1,0 +1,25 @@
+{
+  "branching_policy": {
+    "active_branch": "v14",
+    "continuation_rule": "Continue development in v14 as long as new capabilities can be added additively without breaking or distorting the current architecture.",
+    "v15_definition": "v15 is not a version increment but a structural shift where the organizing center of the system changes (e.g., identity core, agent spawning, orchestration layers).",
+    "non_switch_conditions": [
+      "Existence of a v15 specification",
+      "Draft folder structures or plans",
+      "Partial implementation of future modules",
+      "Conceptual alignment with v15 ideas"
+    ],
+    "switch_conditions": [
+      "The next required capability cannot be integrated into v14 without architectural distortion",
+      "A new layer changes the organizing center of the system (e.g., identity-first instead of field-first)",
+      "Maintaining the feature inside v14 would create false cohesion or hidden coupling",
+      "A parallel v15 path demonstrates equal or better behavior on agreed baseline checks"
+    ],
+    "execution_policy": {
+      "v14_role": "stable executable reference and active development line",
+      "v15_role": "emergent architecture, explored but not primary until switch conditions are met",
+      "requirement": "All new work must preserve v14 behavior unless explicitly behind a flag or side path"
+    },
+    "design_principle": "v15 is adopted when it becomes necessary, not when it becomes visible."
+  }
+}

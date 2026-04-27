@@ -1,0 +1,59 @@
+{
+  "id": "v14_trace_property_schema_v1",
+  "purpose": "Define structurally meaningful properties that can be highlighted from trace on demand.",
+  "branch": "v14",
+  "kind": "schema",
+  "design_rule": "Properties are inferred from trace structure and continuation dynamics, not from an explicit moral scoring module.",
+  "properties": [
+    {
+      "name": "caution_rise",
+      "source_fields": ["raw_caution_scalar", "caution_after_recovery", "caution_threshold"],
+      "trigger": {
+        "type": "delta_or_threshold",
+        "delta_min": 0.08,
+        "threshold_mode": "above_config_threshold"
+      },
+      "meaning": "Continuation encountered elevated resistance."
+    },
+    {
+      "name": "corridor_narrowing",
+      "source_fields": ["corridor_width", "entry_window", "exit_window"],
+      "trigger": { "type": "relative_drop", "drop_fraction_min": 0.2 },
+      "meaning": "Admissible continuation range contracted."
+    },
+    {
+      "name": "operator_instability",
+      "source_fields": ["operator_path", "switch_fraction", "operator_scores_used"],
+      "trigger": { "type": "switching", "switch_fraction_min": 0.45 },
+      "meaning": "Continuation could not hold a stable orientational path."
+    },
+    {
+      "name": "hold_onset",
+      "source_fields": ["hold_state", "hold_reason"],
+      "trigger": { "type": "boolean", "value": true },
+      "meaning": "Continuation entered a non-advance state."
+    },
+    {
+      "name": "recovery_difficulty",
+      "source_fields": ["recovery_scalar", "hold_release_counter", "hold_release_reason"],
+      "trigger": { "type": "compound", "recovery_below": 0.03, "release_counter_min": 2 },
+      "meaning": "Return to admissible continuation was difficult."
+    },
+    {
+      "name": "residue_rejection",
+      "source_fields": ["qualified", "commit_decision", "reject_reasons"],
+      "trigger": { "type": "equals", "field": "commit_decision", "value": "reject" },
+      "meaning": "Turn structure was not accepted for persistence."
+    },
+    {
+      "name": "intent_mode_mismatch",
+      "source_fields": ["intent_class", "reply_mode", "commit_decision"],
+      "trigger": { "type": "comparison", "require_alignment": false },
+      "meaning": "The continuation mode drifted from the inferred task mode."
+    }
+  ],
+  "output_contract": {
+    "highlight_record_fields": ["turn_id", "phase_index", "property_name", "triggered", "supporting_fields", "summary_text"]
+  }
+}
+

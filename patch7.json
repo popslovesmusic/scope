@@ -1,0 +1,133 @@
+{
+  "patch_name": "axis_projection_8way_v1",
+  "instruction": "Add 8-direction axis projection as metadata on top of the stable soft meta-domain system. Do not use direction to suppress participation.",
+  "target_file": "signal_scope_audio_v0.py",
+  "core_rule": {
+    "windows_are_dynamic": true,
+    "meta_domain_is_continuous": true,
+    "channels_are_ratios_to_whole": true,
+    "direction_is_metadata": true,
+    "direction_must_not_gate_or_zero_channels": true
+  },
+  "direction_set": {
+    "N": "up / +Y",
+    "S": "down / -Y",
+    "E": "right / +X",
+    "W": "left / -X",
+    "NE": "+X +Y",
+    "NW": "-X +Y",
+    "SE": "+X -Y",
+    "SW": "-X -Y",
+    "NC": "no change / below threshold"
+  },
+  "new_model": {
+    "x_axis": "local delta direction",
+    "y_axis": "meta-domain participation deviation from center",
+    "center": "balanced participation baseline",
+    "baseline": 0.3333333333333333,
+    "purpose": "project each window motion into a directional signature while preserving soft overlap"
+  },
+  "code_changes": [
+    {
+      "action": "add_function",
+      "name": "direction_8way",
+      "code": "def direction_8way(dx, dy, threshold=1e-6):\n    \"\"\"\n    Convert a 2D displacement into one of 8 compass directions plus NC.\n    Direction is metadata only; it must not gate participation.\n    \"\"\"\n    if abs(dx) < threshold and abs(dy) < threshold:\n        return 'NC'\n\n    angle = np.degrees(np.arctan2(dy, dx))\n\n    if -22.5 <= angle < 22.5:\n        return 'E'\n    if 22.5 <= angle < 67.5:\n        return 'NE'\n    if 67.5 <= angle < 112.5:\n        return 'N'\n    if 112.5 <= angle < 157.5:\n        return 'NW'\n    if angle >= 157.5 or angle < -157.5:\n        return 'W'\n    if -157.5 <= angle < -112.5:\n        return 'SW'\n    if -112.5 <= angle < -67.5:\n        return 'S'\n    if -67.5 <= angle < -22.5:\n        return 'SE'\n\n    return 'NC'\n"
+    },
+    {
+      "action": "add_function",
+      "name": "compute_axis_projection_8way",
+      "code": "def compute_axis_projection_8way(delta, meta, eps=1e-12):\n    \"\"\"\n    Project W1/W2/W3 into 8-direction metadata.\n    dx = signed window delta\n    dy = deviation from balanced meta-domain participation\n    \"\"\"\n    delta = np.array(delta, dtype=np.float64)\n    meta = np.array(meta, dtype=np.float64)\n\n    baseline = 1.0 / 3.0\n    projection = {}\n\n    for i, key in enumerate(['W1', 'W2', 'W3']):\n        dx = float(delta[i])\n        dy = float(meta[i] - baseline)\n        direction = direction_8way(dx, dy, threshold=eps)\n\n        projection[key] = {\n            'dx_delta': dx,\n            'dy_meta_deviation': dy,\n            'direction_8way': direction\n        }\n\n    return projection\n"
+    },
+    {
+      "action": "modify_main_loop",
+      "details": [
+        "After computing meta_vector, call compute_axis_projection_8way(w_delta, meta_vector).",
+        "Store result as axis_projection_8way in each frame result.",
+        "Do not use axis_projection_8way to change meta_vector, shell, ch7, or channel ratios."
+      ],
+      "code_hint": "axis_projection = compute_axis_projection_8way(w_delta, meta)\n"
+    },
+    {
+      "action": "update_result_object",
+      "fields": [
+        "axis_projection_8way"
+      ],
+      "example": {
+        "axis_projection_8way": {
+          "W1": {
+            "dx_delta": "float",
+            "dy_meta_deviation": "float",
+            "direction_8way": "NE"
+          },
+          "W2": {
+            "dx_delta": "float",
+            "dy_meta_deviation": "float",
+            "direction_8way": "SW"
+          },
+          "W3": {
+            "dx_delta": "float",
+            "dy_meta_deviation": "float",
+            "direction_8way": "E"
+          }
+        }
+      }
+    }
+  ],
+  "plot_updates": [
+    {
+      "title": "8-Way Direction Timeline",
+      "type": "categorical",
+      "recommended_encoding": {
+        "NC": 0,
+        "E": 1,
+        "NE": 2,
+        "N": 3,
+        "NW": 4,
+        "W": 5,
+        "SW": 6,
+        "S": 7,
+        "SE": 8
+      },
+      "data": [
+        "W1 direction code over time",
+        "W2 direction code over time",
+        "W3 direction code over time"
+      ]
+    },
+    {
+      "title": "8-Way Direction Counts",
+      "type": "bar_chart",
+      "purpose": "show which directions dominate for each window"
+    },
+    {
+      "title": "Axis Projection Scatter",
+      "type": "scatter",
+      "x": "dx_delta",
+      "y": "dy_meta_deviation",
+      "purpose": "show actual directional phase-space geometry"
+    }
+  ],
+  "interpretation_rules": {
+    "N": "window participation rising above balanced baseline with little horizontal change",
+    "S": "window participation falling below baseline with little horizontal change",
+    "E": "positive raw motion with near-baseline participation",
+    "W": "negative raw motion with near-baseline participation",
+    "NE": "positive motion plus rising participation",
+    "NW": "negative motion plus rising participation",
+    "SE": "positive motion plus falling participation",
+    "SW": "negative motion plus falling participation",
+    "NC": "below threshold / no meaningful directional motion"
+  },
+  "success_conditions": [
+    "8-way directions appear for W1/W2/W3",
+    "soft meta-domain plots remain unchanged",
+    "ch7 presence remains active",
+    "ch7 intensity remains nonzero and structured",
+    "channel ratios remain ratios to the whole",
+    "direction metadata does not cause winner-take-all collapse"
+  ],
+  "next_patch_after_success": {
+    "name": "directional_entropy_dof_v1",
+    "purpose": "Use 8-way direction diversity and recurrence to estimate effective DOF."
+  }
+}

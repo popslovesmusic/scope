@@ -1,0 +1,54 @@
+{
+  "id": "v14_review_triggered_suppression_v1",
+  "purpose": "Allow highlighted trace properties to suppress persistence or force review-oriented response behavior.",
+  "branch": "v14",
+  "kind": "policy",
+  "design_rule": "Use trace-derived properties as gates; do not perform explicit ethical scoring.",
+  "suppression_rules": [
+    {
+      "name": "reject_on_hold_and_recovery_failure",
+      "when": {
+        "all": [
+          { "property": "hold_onset", "triggered": true },
+          { "property": "recovery_difficulty", "triggered": true }
+        ]
+      },
+      "actions": {
+        "allow_commit": false,
+        "response_mode_override": "review_or_refuse",
+        "tag": "continuation_failed_to_restabilize"
+      }
+    },
+    {
+      "name": "reject_on_instability_plus_caution",
+      "when": {
+        "all": [
+          { "property": "operator_instability", "triggered": true },
+          { "property": "caution_rise", "triggered": true }
+        ]
+      },
+      "actions": {
+        "allow_commit": false,
+        "response_mode_override": "review",
+        "tag": "unstable_high_pressure_path"
+      }
+    },
+    {
+      "name": "reject_on_intent_mismatch",
+      "when": {
+        "all": [{ "property": "intent_mode_mismatch", "triggered": true }]
+      },
+      "actions": {
+        "allow_commit": false,
+        "response_mode_override": "repair_to_intent",
+        "tag": "task_mode_drift"
+      }
+    }
+  ],
+  "response_modes": {
+    "review": "Return compact trace-grounded explanation of why continuation became inadmissible or unstable.",
+    "review_or_refuse": "Refuse advancement when the trace indicates non-restabilizing continuation.",
+    "repair_to_intent": "Re-anchor to inferred task mode before any persistence decision."
+  }
+}
+

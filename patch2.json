@@ -1,0 +1,97 @@
+{
+  "patch_name": "global_constraint_shell_v1",
+  "instruction": "Add a bounded whole-system constraint so channels are ratios inside one shared signal shell, not isolated window products.",
+  "target_file": "signal_scope_audio_v0.py",
+  "core_correction": {
+    "windows_are_dynamic": true,
+    "channels_are_ratio_readouts": true,
+    "global_constraint_required": true,
+    "ch7_is_white_overlay": true,
+    "ch7_can_weaken": true,
+    "ch7_should_not_disappear_as_structure": true
+  },
+  "new_model": {
+    "local_windows": {
+      "W1": "amplitude",
+      "W2": "phase_progression",
+      "W3": "frequency_centroid"
+    },
+    "global_shell": {
+      "definition": "shared bounded normalized relation of W1/W2/W3",
+      "purpose": "keeps all three domains inside one whole signal state",
+      "output_range": [0.0, 1.0]
+    },
+    "ch7": {
+      "presence": "all three windows exist inside the global shell",
+      "intensity": "balance/coherence of all three domains",
+      "formula": "min(W1,W2,W3) / (max(W1,W2,W3) + eps)"
+    }
+  },
+  "code_changes": [
+    {
+      "action": "add_function",
+      "name": "normalize_to_global_shell",
+      "code": "def normalize_to_global_shell(w_delta, eps=1e-12):\n    W = np.abs(np.array(w_delta, dtype=np.float64))\n    total = float(np.sum(W) + eps)\n    shell = W / total\n    shell_magnitude = float(np.linalg.norm(W))\n    return shell, shell_magnitude\n"
+    },
+    {
+      "action": "replace_function",
+      "name": "compute_channel_ratios",
+      "code": "def compute_channel_ratios(w_delta, eps=1e-12):\n    shell, shell_magnitude = normalize_to_global_shell(w_delta, eps=eps)\n    W1, W2, W3 = shell\n\n    raw = np.array([\n        W1,\n        W2,\n        W3,\n        min(W1, W2),\n        min(W1, W3),\n        min(W2, W3),\n        min(W1, W2, W3)\n    ], dtype=np.float64)\n\n    whole = float(np.sum(raw) + eps)\n    ratios = raw / whole\n\n    ch7_presence = 1.0 if np.all(shell > eps) else 0.0\n    ch7_intensity = float(np.min(shell) / (np.max(shell) + eps))\n\n    return {\n        'whole': whole,\n        'shell_magnitude': shell_magnitude,\n        'global_shell': shell.tolist(),\n        'raw_channels': raw.tolist(),\n        'channel_ratios': ratios.tolist(),\n        'ch7_presence': ch7_presence,\n        'ch7_intensity': ch7_intensity\n    }\n"
+    },
+    {
+      "action": "modify_main_loop",
+      "details": [
+        "After computing normalized W1/W2/W3 deltas, call compute_channel_ratios(ticks).",
+        "Store global_shell, shell_magnitude, ch7_presence, and ch7_intensity in each result.",
+        "Keep channels as ratios, not symbolic dynamic states."
+      ]
+    },
+    {
+      "action": "replace_plot",
+      "old_title": "ch7 Ratio to Whole",
+      "new_title": "ch7 White Coupling Intensity",
+      "plot_value": "results[i]['ch7_intensity']"
+    },
+    {
+      "action": "add_plot",
+      "title": "Global Shell W1/W2/W3 Participation",
+      "plot_values": [
+        "global_shell[0]",
+        "global_shell[1]",
+        "global_shell[2]"
+      ]
+    },
+    {
+      "action": "add_plot",
+      "title": "ch7 Presence",
+      "plot_value": "results[i]['ch7_presence']"
+    }
+  ],
+  "interpretation_rules": {
+    "global_shell": {
+      "balanced": "W1/W2/W3 participate equally",
+      "dominated": "one window controls most of the whole",
+      "drifting": "effective DOF structure is changing over time"
+    },
+    "ch7_intensity": {
+      "near_1": "strong white/full-domain coupling",
+      "middle": "partial but real three-domain participation",
+      "near_0": "one or more domains weak relative to whole"
+    },
+    "ch7_presence": {
+      "1": "white overlay exists structurally",
+      "0": "one or more windows are below threshold"
+    }
+  },
+  "success_conditions": [
+    "channels remain ratios to the bounded whole",
+    "ch7 is no longer treated as disappearing structure",
+    "ch7 intensity shows coupling strength instead of raw product collapse",
+    "global shell shows W1/W2/W3 participation over time",
+    "channel ratios still sum to approximately 1.0"
+  ],
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "Add diagonal direction measurement after global shell is stable."
+  }
+}

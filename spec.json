@@ -1,0 +1,297 @@
+{
+  "SignalScope": {
+    "version": "0.2.0",
+    "type": "recursive_constrained_participation_instrument",
+
+    "definition": "SignalScope maps evolving multi-domain systems into nested bounded participation windows, where each window expresses relative participation, coupling, imbalance, flow, and residue under a conserved sum constraint.",
+
+    "core_principle": {
+      "name": "conserved_participation",
+      "rule": "At every valid scope level, all channels have values and sum to 1.",
+      "constraint": "sum(W_i) = 1",
+      "non_negative": "W_i >= 0",
+      "zero_interpretation": "A channel may approach effective zero participation, but it is not undefined."
+    },
+
+    "window_model": {
+      "local_window": {
+        "symbol": "W",
+        "channels": ["w1", "w2", "w3"],
+        "constraint": "w1 + w2 + w3 = 1",
+        "geometry": "2-simplex",
+        "meaning": "bounded relational state inside one scope window"
+      },
+
+      "global_window": {
+        "symbol": "G",
+        "channels": ["g1", "g2", "g3"],
+        "constraint": "g1 + g2 + g3 = 1",
+        "source": "renormalized aggregation of local windows",
+        "meaning": "higher-scale participation state"
+      },
+
+      "meta_window": {
+        "symbol": "M",
+        "channels": ["m1", "m2", "m3"],
+        "constraint": "m1 + m2 + m3 = 1",
+        "source": "renormalized aggregation of global windows",
+        "meaning": "lifted state of the system as a whole"
+      }
+    },
+
+    "recursive_lift": {
+      "description": "Three constrained windows can define a higher constrained window. Three global windows can define a meta window using the same rule.",
+      "operator": "Lift",
+      "generic_rule": "Level[n+1] = Normalize(weighted_aggregate(Level[n]_1, Level[n]_2, Level[n]_3))",
+      "scale_property": "same law, different resolution",
+      "not_identity_warning": "Higher levels are not identical to lower levels; they are renormalized projections."
+    },
+
+    "normalization": {
+      "function": "Normalize",
+      "input": "raw vector X = [x1, x2, x3]",
+      "steps": [
+        "clamp or rectify raw values to non-negative domain",
+        "sum S = x1 + x2 + x3",
+        "if S > floor: W = X / S",
+        "if S <= floor: use fallback policy"
+      ],
+      "fallback_policies": {
+        "neutral": "[1/3, 1/3, 1/3]",
+        "hold_last": "W(t) = W(t-1)",
+        "decay_to_center": "W(t) = lerp(W(t-1), [1/3,1/3,1/3], decay_rate)"
+      },
+      "recommended_default": "decay_to_center"
+    },
+
+    "primary_observables": {
+      "participation": {
+        "symbol": "W(t)",
+        "formula": "[w1(t), w2(t), w3(t)]",
+        "meaning": "relative allocation across three domains"
+      },
+      "coupling": {
+        "symbol": "C(t)",
+        "formula": "min(W(t)) / max(W(t))",
+        "range": "[0,1]",
+        "meaning": "degree of simultaneous participation across domains"
+      },
+      "imbalance": {
+        "symbol": "E_scope(t)",
+        "formula": "distance(W(t), [1/3,1/3,1/3])",
+        "meaning": "deviation from balanced participation"
+      },
+      "dominance": {
+        "symbol": "D(t)",
+        "formula": "max(W(t))",
+        "meaning": "strength of leading channel"
+      },
+      "flow": {
+        "symbol": "V(t)",
+        "formula": "W(t) - W(t-1)",
+        "meaning": "direction of state change"
+      },
+      "flow_speed": {
+        "symbol": "|V(t)|",
+        "formula": "norm(V(t))",
+        "meaning": "rate of state movement"
+      },
+      "curvature": {
+        "symbol": "K(t)",
+        "formula": "angle_between(V(t), V(t-1))",
+        "meaning": "turning or switching in state trajectory"
+      },
+      "residue": {
+        "symbol": "R_scope(t)",
+        "formula": "EMA(W, V, C, E_scope)",
+        "meaning": "memory trace of prior state evolution"
+      }
+    },
+
+    "projection": {
+      "rgb": {
+        "R": "w1",
+        "G": "w2",
+        "B": "w3"
+      },
+      "white_or_intensity": {
+        "source": "C(t)",
+        "meaning": "global coupling / phase-lock brightness"
+      },
+      "hue": {
+        "source": "orientation of W inside simplex",
+        "meaning": "perceptual phase"
+      },
+      "saturation": {
+        "source": "E_scope(t)",
+        "meaning": "imbalance intensity"
+      },
+      "brightness": {
+        "source": "activity or coupling",
+        "meaning": "readability / coherence strength"
+      }
+    },
+
+    "flow_projection": {
+      "type": "8_way_discrete_direction",
+      "source": "V(t)",
+      "directions": [
+        "N",
+        "NE",
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW"
+      ],
+      "meaning": "coarse vector-field direction over the participation manifold"
+    },
+
+    "event_detectors": {
+      "balanced_lock": {
+        "condition": "C(t) high AND E_scope(t) low",
+        "meaning": "strong integrated participation"
+      },
+      "single_channel_collapse": {
+        "condition": "D(t) high AND C(t) low",
+        "meaning": "one domain dominates while others are suppressed"
+      },
+      "transition_burst": {
+        "condition": "|V(t)| high OR K(t) high",
+        "meaning": "rapid state transition"
+      },
+      "stable_attractor": {
+        "condition": "low variance in W over a window OR repeated trajectory loop",
+        "meaning": "persistent state pattern"
+      },
+      "decoupling": {
+        "condition": "C(t) below coupling_floor for N frames",
+        "meaning": "shared participation is breaking down"
+      },
+      "recoupling": {
+        "condition": "C(t) rises above recoupling_threshold after decoupling",
+        "meaning": "domains re-enter shared participation"
+      },
+      "phase_lock_spike": {
+        "condition": "C(t) spikes upward AND |V(t)| drops",
+        "meaning": "sudden coherence stabilization"
+      },
+      "chaotic_flicker": {
+        "condition": "high hue variance AND high direction entropy",
+        "meaning": "unstable or noisy transition regime"
+      }
+    },
+
+    "cross_scale_coupling": {
+      "bottom_up": {
+        "formula": "G(t) = Normalize(sum_i alpha_i * W_i(t))",
+        "meaning": "local windows define global participation"
+      },
+      "top_down": {
+        "formula": "W_i'(t+1) = Normalize((1 - beta) * W_i(t+1) + beta * G(t))",
+        "meaning": "global state biases local continuation"
+      },
+      "meta_lift": {
+        "formula": "M(t) = Normalize(sum_j gamma_j * G_j(t))",
+        "meaning": "global windows define meta participation"
+      },
+      "consistency_condition": {
+        "rule": "Higher levels must be derivable from lower levels, and lower levels must remain admissible under higher-level constraints.",
+        "failure_mode": "scale drift"
+      }
+    },
+
+    "admissibility": {
+      "definition": "Allowed region of the participation manifold.",
+      "rules": [
+        "W_i must remain non-negative",
+        "sum(W_i) must equal 1",
+        "flow speed may be bounded",
+        "coupling may have floors or thresholds",
+        "certain regions may be forbidden or discouraged depending on application"
+      ],
+      "meaning": "not every next state is allowed; continuation is constrained"
+    },
+
+    "ontology_mapping": {
+      "epsilon": "E_scope(t), imbalance or deviation from balanced participation",
+      "rho": "C(t), coupling or sustaining participation capacity",
+      "R": "R_scope(t), residue of prior trajectory",
+      "orientation": "hue / simplex angle",
+      "continuation": "next admissible W(t+1)",
+      "decoupling": "C(t) approaches effective zero",
+      "recoupling": "C(t) rises after suppressed shared participation",
+      "zero": "effective floor or symmetry limit, not undefined absence"
+    },
+
+    "input_adapters": {
+      "audio": {
+        "example_domains": {
+          "w1": "low band energy",
+          "w2": "mid band energy",
+          "w3": "high band energy"
+        }
+      },
+      "brainwave_eeg": {
+        "example_domains": {
+          "w1": "low frequency bands",
+          "w2": "mid frequency bands",
+          "w3": "high frequency bands"
+        },
+        "warning": "SignalScope does not read thoughts; it tracks participation dynamics."
+      },
+      "sbllm": {
+        "example_domains": {
+          "w1": "trace",
+          "w2": "memory",
+          "w3": "coherence"
+        }
+      },
+      "pde_simulation": {
+        "example_domains": {
+          "w1": "epsilon field activity",
+          "w2": "rho field activity",
+          "w3": "residue field activity"
+        }
+      }
+    },
+
+    "logging_schema": {
+      "format": "jsonl",
+      "frame": {
+        "t": "timestamp_or_frame_index",
+        "level": "local | global | meta",
+        "window_id": "string",
+        "W": ["float", "float", "float"],
+        "C": "float",
+        "E_scope": "float",
+        "D": "float",
+        "V": ["float", "float", "float"],
+        "speed": "float",
+        "curvature": "float",
+        "R_scope": "object_or_vector",
+        "hue": "float",
+        "saturation": "float",
+        "brightness": "float",
+        "direction_8way": "string",
+        "events": ["string"]
+      }
+    },
+
+    "implementation_requirements": [
+      "Keep raw feature extraction separate from SignalScope normalization.",
+      "Every valid frame must produce W values.",
+      "Never allow undefined channels inside the scope.",
+      "Use floor thresholds for practical zero detection.",
+      "Preserve local, global, and meta levels separately.",
+      "Do not collapse levels unless explicitly requested.",
+      "Log both raw feature values and normalized participation values.",
+      "Support recursive lift from local to global to meta.",
+      "Support top-down feedback from higher windows to lower windows.",
+      "Expose event detections as structured labels, not only colors."
+    ],
+
+    "final_statement": "SignalScope is a recursively liftable state-dynamics instrument: local windows, global windows, and meta windows all obey the same conserved participation law, allowing complex systems to be observed as nested trajectories of coupling, imbalance, residue, and flow."
+  }
+}

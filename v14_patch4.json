@@ -1,0 +1,270 @@
+{
+  "patch_set": "v14_phase4_component_promotion_v1",
+  "status": "proposed_next",
+  "goal": "promote signed lobes from summaries into operator-addressable components so control can act on structured regions instead of only raw arrays",
+  "why_now": {
+    "completed_before": [
+      "persistent signed_field is primary",
+      "polarity and zero crossings are structural",
+      "corridor reanchoring v1 is applied"
+    ],
+    "remaining_gap": "operators still act on full fields, while components remain descriptive summaries rather than persistent control targets"
+  },
+  "source_basis": [
+    "Phase 3 corridor reanchoring v1 is marked applied, with topology-first corridor behavior and signed-run diagnostics. :contentReference[oaicite:0]{index=0}",
+    "The current status still describes polarity runs and component summaries, but not persistent operator-targetable components. :contentReference[oaicite:1]{index=1}"
+  ],
+  "patches": [
+    {
+      "file": "core/component_ops.py",
+      "ops": [
+        {
+          "op": "create_file",
+          "exports": [
+            "extract_signed_components",
+            "match_components_across_phases",
+            "build_component_masks",
+            "summarize_component_set"
+          ]
+        },
+        {
+          "op": "add_function",
+          "name": "extract_signed_components",
+          "purpose": "convert polarity runs and signed_field support into explicit component objects",
+          "inputs": [
+            "signed_field",
+            "amplitude",
+            "polarity",
+            "mode_index",
+            "zero_crossings",
+            "wraparound_lattice"
+          ],
+          "outputs": [
+            "components"
+          ],
+          "component_schema": {
+            "component_id": "temporary int for current phase",
+            "sign": "int",
+            "start_family": "int",
+            "end_family": "int",
+            "width": "int",
+            "center_family": "float",
+            "support_mass": "float",
+            "peak_family": "int",
+            "peak_amplitude": "float",
+            "mean_signed_strength": "float",
+            "adjacent_zero_crossings": "list",
+            "mode_label": "int"
+          }
+        },
+        {
+          "op": "add_function",
+          "name": "match_components_across_phases",
+          "purpose": "assign stable identities to components by overlap, sign, and center proximity",
+          "inputs": [
+            "previous_components",
+            "current_components",
+            "size"
+          ],
+          "outputs": [
+            "matched_components"
+          ]
+        },
+        {
+          "op": "add_function",
+          "name": "build_component_masks",
+          "purpose": "produce per-component masks for targeted operator application and gating",
+          "inputs": [
+            "components",
+            "size"
+          ],
+          "outputs": [
+            "component_masks"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/signature_state.py",
+      "ops": [
+        {
+          "op": "add_fields",
+          "fields": [
+            {
+              "name": "components",
+              "type": "list",
+              "init": "[]"
+            },
+            {
+              "name": "component_history",
+              "type": "list",
+              "init": "[]"
+            },
+            {
+              "name": "active_component_id",
+              "type": "int|null",
+              "init": "null"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/orientation_ops.py",
+      "ops": [
+        {
+          "op": "add_function",
+          "name": "apply_operator_to_masked_region",
+          "purpose": "apply an orientation operator to a masked component region while preserving the surrounding field",
+          "inputs": [
+            "field",
+            "operator",
+            "mask"
+          ],
+          "outputs": [
+            "projected_field"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/reasoning_loop.py",
+      "ops": [
+        {
+          "op": "add_stage",
+          "name": "component_extraction",
+          "position": "after polarity/zero_crossing recomputation and before operator scoring",
+          "change": [
+            "extract components from current signed topology",
+            "match them against prior phase components",
+            "store stable component identities in state.components",
+            "append compact summary to state.component_history"
+          ]
+        },
+        {
+          "op": "modify_operator_scoring",
+          "target": "per-phase operator scoring",
+          "change": "score candidate operators both globally and on the dominant or selected component; combine with configurable weights"
+        },
+        {
+          "op": "add_component_targeting",
+          "change": [
+            "select active_component_id from dominant component by default",
+            "allow config to choose dominant, widest, highest-support, or global-only targeting modes",
+            "apply the chosen operator to the active component mask first, then blend with global projection"
+          ]
+        },
+        {
+          "op": "add_trace_fields",
+          "fields": [
+            "component_count",
+            "active_component_id",
+            "active_component_sign",
+            "active_component_width",
+            "active_component_support_mass",
+            "operator_component_score",
+            "component_identity_persistence",
+            "component_split_count",
+            "component_merge_count"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "core/corridor_gate.py",
+      "ops": [
+        {
+          "op": "add_optional_input",
+          "target": "build_dynamic_corridor",
+          "parameter": "components",
+          "purpose": "allow corridor shaping to reference explicit components in addition to polarity runs"
+        },
+        {
+          "op": "modify_logic",
+          "target": "topology support construction",
+          "change": "when components are supplied, prefer component masks and support_mass over raw run-only estimates"
+        }
+      ]
+    },
+    {
+      "file": "sim_v14_stage1.py",
+      "ops": [
+        {
+          "op": "modify_output",
+          "target": "state.signature",
+          "change": "persist components and active_component_id in artifact output"
+        },
+        {
+          "op": "modify_output",
+          "target": "state.reasoning",
+          "change": "persist component_history summaries in the saved trace artifact"
+        }
+      ]
+    },
+    {
+      "file": "config/config_v14_scaffold.json",
+      "ops": [
+        {
+          "op": "add_keys",
+          "keys": {
+            "enable_component_promotion": true,
+            "component_target_mode": "dominant",
+            "component_global_blend": 0.35,
+            "component_local_blend": 0.65,
+            "component_match_overlap_weight": 0.5,
+            "component_match_center_weight": 0.3,
+            "component_match_sign_weight": 0.2,
+            "component_min_support_mass": 0.05,
+            "component_min_width": 1
+          }
+        }
+      ]
+    },
+    {
+      "file": "tests/test_component_ops.py",
+      "ops": [
+        {
+          "op": "create_file",
+          "cases": [
+            "extracts one component per contiguous nonzero polarity run",
+            "wraparound same-sign runs merge into one component",
+            "component matching preserves identity under small center drift",
+            "masked operator application changes only the targeted region",
+            "global-only mode remains close to prior behavior when component promotion is disabled"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavioral_intent": {
+    "preserve": [
+      "signed_field as primary state",
+      "amplitude-based compatibility for peaks, bands, and readout",
+      "topology-aware corridor from phase 3",
+      "existing configs remain runnable when component promotion is disabled"
+    ],
+    "change": [
+      "operators can act on explicit lobes/components rather than only the entire field",
+      "component identity can persist across phases",
+      "trace can report structure-level control rather than only array-level effects"
+    ]
+  },
+  "minimal_algorithm": {
+    "extract": "build components from contiguous nonzero polarity regions weighted by signed support",
+    "match": "assign stable IDs using overlap + sign + center proximity",
+    "target": "choose dominant or configured component",
+    "apply": "blend masked local operator projection with global projection",
+    "record": "trace component count, identity persistence, and targeted-control metrics"
+  },
+  "acceptance_checks": [
+    "components are extracted deterministically from the same signed_field state",
+    "same-sign wraparound lobes become one component",
+    "component identities persist under mild drift across phases",
+    "operators can target a selected component without corrupting unrelated regions",
+    "disabling component promotion restores behavior close to phase 3"
+  ],
+  "next_after_this": {
+    "name": "v14_phase5_trace_salience_ethics_v1",
+    "goal": "feed trace salience, caution pressure, and ethical hold into corridor and action admissibility"
+  }
+}

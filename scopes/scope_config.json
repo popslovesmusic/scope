@@ -1,0 +1,10 @@
+{
+  "hex_encoding": {
+    "enabled": true,
+    "trace_path": "sessions/hex_trace.jsonl",
+    "motif_window": 12,
+    "stability_min": 0.72,
+    "store_unqualified": false,
+    "commit_only_if_residue_qualified": true
+  }
+}

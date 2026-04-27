@@ -1,0 +1,333 @@
+# v15 Projection-Admissibility Architecture (Rewritten)
+
+## Status
+
+Proposed (Integrated Extension of v14)
+
+---
+
+## One-Sentence Definition
+
+v15 is a projection-governed reasoning architecture in which full structure remains primary, usable output is an orientation-conditioned extraction, and no readout is allowed unless its projection path is structurally admissible.
+
+---
+
+## Core Correction (v15 Grounding)
+
+* There are **no fields**
+* The system is composed of **layered tensor-like arrays**
+* The visible state is a **3D signature extracted from that structure**
+* Continuation is **re-extraction under constraint**, not evolution through space
+
+---
+
+## Why v15 Exists
+
+### Problem
+
+Systems can produce outputs that are:
+
+* coherent
+* useful
+* persuasive
+
+while being structurally invalid.
+
+### Target Failure
+
+**Misleading positives**
+
+> Outputs that succeed at the practical layer while resting on invalid structural projection.
+
+---
+
+## Architectural Shift
+
+| v14                                  | v15                                              |
+| ------------------------------------ | ------------------------------------------------ |
+| projection ? stabilization ? readout | structure ? admissibility ? projection ? readout |
+
+v15 asks:
+
+> Is the projection itself valid?
+
+Not:
+
+> Can we produce a stable answer?
+
+---
+
+## Ontology (Corrected)
+
+```json
+{
+  "objective_layer": "full tensor-like layered structure",
+  "practical_layer": "extracted signature",
+  "rule": "projection must not violate structural admissibility",
+  "visibility": "orientation-conditioned relative to -(i)"
+}
+```
+
+---
+
+## Primary Model
+
+* Full structure: **N-dimensional layered arrays**
+* Center: **-(i) (orientation reference)**
+* Usable state: **3D signature extraction**
+* Trace: **observable projection over phases (lossy)**
+
+---
+
+## Key Principle
+
+> The signature is not the system.
+> It is the **accessible projection of the system**.
+
+---
+
+## New Addition: Extraction Model
+
+```json
+{
+  "extraction_cycle": [
+    "apply operator (index transform)",
+    "generate candidate projection",
+    "evaluate admissibility",
+    "commit signature (re-extraction)"
+  ]
+}
+```
+
+---
+
+## First-Class Objects (Extended)
+
+### Projection Path (unchanged core, clarified meaning)
+
+```json
+{
+  "projection_path": {
+    "role": "record of extraction from full structure",
+    "status": ["ADMISSIBLE", "MARGINAL", "BLOCKED"]
+  }
+}
+```
+
+---
+
+### Trace (NEW  clarified role)
+
+```json
+{
+  "trace": {
+    "type": "lossy observable",
+    "role": [
+      "analysis",
+      "diagnostics",
+      "ethical trigger input"
+    ],
+    "note": "not sufficient for full reconstruction"
+  }
+}
+```
+
+---
+
+### Ethical Trigger (NEW)
+
+```json
+{
+  "ethical_trigger": {
+    "input": "trace patterns",
+    "detects": [
+      "instability",
+      "high operator switching",
+      "corridor collapse",
+      "polarity conflict"
+    ],
+    "actions": [
+      "increase caution",
+      "enter hold",
+      "block projection"
+    ]
+  }
+}
+```
+
+---
+
+## Layer Stack (Updated)
+
+| Layer | Purpose                       |
+| ----- | ----------------------------- |
+| L0    | Full tensor-like structure    |
+| L1    | Signature + operator dynamics |
+| L2    | Trace + residue               |
+| L3    | Projection admissibility      |
+| L4    | Signature extraction          |
+| L5    | Identity / role               |
+| L6    | Agent runtime                 |
+| L7    | Orchestration                 |
+
+---
+
+## Execution Cycle (Corrected Language)
+
+1. Update latent structure + signature slice
+2. Apply operator competition (index transforms)
+3. Update trace + residue
+4. Generate candidate projections
+5. Validate via admissibility gate
+6. Extract signature from valid path
+7. Produce bounded output
+8. Record projection + residue
+
+---
+
+## Spectral Position (Clarified)
+
+```json
+{
+  "spectral_mode": {
+    "required": false,
+    "role": "analysis and optional execution path",
+    "note": "v14 flattened spectral structure into array operations"
+  }
+}
+```
+
+---
+
+## Reconstruction Reality (NEW)
+
+```json
+{
+  "reconstruction": {
+    "possible_in_theory": true,
+    "practical": "low confidence",
+    "reason": "trace is lossy projection"
+  }
+}
+```
+
+---
+
+## Scale Transport + Meta Lift (NEW CORE ADDITION)
+
+### Purpose
+
+Enable high-level reasoning when direct reconstruction is unstable.
+
+```json
+{
+  "meta_lift": "reformulate question into structural intent",
+  "scale_transport": "evaluate array at appropriate resolution",
+  "result": "stable high-level continuation view"
+}
+```
+
+---
+
+### Two-Stage Processing
+
+```json
+{
+  "stage_1": "meta representation of intent",
+  "stage_2": "scaled array evaluation"
+}
+```
+
+---
+
+## Admissibility Logic (Unchanged Core, Context Updated)
+
+Projection must satisfy:
+
+* structural support
+* corridor validity
+* cross-orientation consistency
+* residue alignment
+* bounded projection loss
+
+---
+
+## Operator Model (Clarified)
+
+Operators define:
+
+* orientation
+* access path
+* candidate projection basis
+
+NOT:
+
+* direct answer selection
+
+---
+
+## Readout Policy (Strict)
+
+Output must include:
+
+* usable answer
+* projection status
+* structural vs practical confidence
+* path summary
+
+No admissible path ? no answer.
+
+---
+
+## Memory Policy (Clarified)
+
+Memory stores:
+
+* projection paths
+* residue adjustments
+* structural outcomes
+
+NOT:
+
+* raw outputs alone
+
+---
+
+## Metrics (Extended Meaning)
+
+Key metrics now include:
+
+* projection validity
+* structural vs practical divergence
+* trace instability patterns
+* misleading positive rate
+
+---
+
+## Implementation Phases (Same, Reinterpreted)
+
+v15-P0 ? introduce projection objects
+v15-P1 ? bind extraction to admissibility
+v15-P2 ? identity
+v15-P3 ? agents
+v15-P4 ? orchestration
+
+---
+
+## Success Criteria (Unchanged, Strengthened)
+
+* invalid outputs reduced
+* blocked projections explainable
+* outputs traceable to structure
+* ethics emerges from system behavior
+
+---
+
+## Final Summary
+
+v14 stabilized responses.
+
+v15 makes structure authoritative.
+
+> Output is no longer the goal.
+> **Valid projection is the goal.**

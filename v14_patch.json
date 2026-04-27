@@ -1,0 +1,237 @@
+{
+  "patch_name": "v14_stage2_add_diffusion",
+  "purpose": "Add native family-space diffusion to v14 so bands emerge from the signature field instead of being inferred only from peak expansion.",
+  "applies_to": {
+    "surface": "v14",
+    "baseline": "v14 Stage 1",
+    "rationale": [
+      "Stage 1 already has signature-native state, peak+band detection, dynamic corridor gating, orientation operators, reasoning loop, and binary readout.",
+      "The current conceptual update uses retention, gated writeback, and boundary penalty, but diffusion is not yet integrated as a first-class term."
+    ],
+    "citations": [
+      ":contentReference[oaicite:0]{index=0}"
+    ]
+  },
+  "core_change": {
+    "old_update_rule": "signature_next = (1 - lambda) * signature_current + kappa * gated_delta - eta * boundary_penalty",
+    "new_update_rule": "signature_next = (1 - lambda) * signature_current + kappa * gated_delta + D_f * Laplacian_family(signature_current) - eta * boundary_penalty",
+    "optional_extended_rule": "signature_next = (1 - lambda) * signature_current + kappa * gated_delta + D_f * Laplacian_family(signature_current) + D_o * Laplacian_orientation(signature_current) - eta * boundary_penalty",
+    "term_meaning": {
+      "lambda": "overwrite permeability / relaxation",
+      "kappa": "write gain",
+      "D_f": "family-space diffusion coefficient",
+      "D_o": "optional orientation-channel diffusion coefficient",
+      "eta": "boundary / corridor penalty"
+    }
+  },
+  "files_to_add": [
+    {
+      "path": "v14/core/diffusion_ops.py",
+      "responsibility": [
+        "implement 1D family-lattice Laplacian",
+        "implement optional orientation diffusion",
+        "support wraparound and non-wrap boundary modes",
+        "return diffusion diagnostics for trace/reporting"
+      ]
+    }
+  ],
+  "files_to_modify": [
+    {
+      "path": "v14/core/signature_state.py",
+      "changes": [
+        "store diffusion coefficients in state/config access",
+        "add helper to apply family diffusion to amplitude",
+        "optionally expose diffusion_mass or spread summary"
+      ]
+    },
+    {
+      "path": "v14/core/reasoning_loop.py",
+      "changes": [
+        "insert diffusion step after gated writeback and before final peak/band extraction for the phase",
+        "record diffusion_energy and spread_measure in phase trace",
+        "use diffused amplitude for subsequent peak/band detection"
+      ]
+    },
+    {
+      "path": "v14/core/peak_detector.py",
+      "changes": [
+        "treat bands as connected support after diffusion, not only simple peak expansion",
+        "optionally allow wraparound bands on the 12-slot lattice"
+      ]
+    },
+    {
+      "path": "v14/core/corridor_gate.py",
+      "changes": [
+        "derive corridor width from diffused band support",
+        "use local diffusion mass as an input to window width or resistance"
+      ]
+    },
+    {
+      "path": "v14/core/trace_schema.py",
+      "changes": [
+        "add diffusion_energy",
+        "add spread_measure",
+        "add band_widths_after"
+      ]
+    },
+    {
+      "path": "v14/config/config_v14_scaffold.json",
+      "changes": [
+        "add family_diffusion",
+        "add orientation_diffusion",
+        "add diffusion_boundary_mode",
+        "add use_wraparound_lattice"
+      ]
+    }
+  ],
+  "new_config_fields": {
+    "family_diffusion": {
+      "type": "float",
+      "default": 0.12,
+      "range_hint": [0.0, 0.5],
+      "meaning": "local redistribution across neighboring family slots"
+    },
+    "orientation_diffusion": {
+      "type": "float",
+      "default": 0.0,
+      "range_hint": [0.0, 0.25],
+      "meaning": "optional redistribution across orientation channels"
+    },
+    "diffusion_boundary_mode": {
+      "type": "string",
+      "default": "wrap",
+      "allowed": ["wrap", "reflect", "clamp"],
+      "meaning": "how diffusion behaves at lattice boundaries"
+    },
+    "use_wraparound_lattice": {
+      "type": "boolean",
+      "default": true,
+      "meaning": "treat family lattice as cyclic"
+    }
+  },
+  "minimal_diffusion_ops_py": {
+    "module_name": "diffusion_ops.py",
+    "code_outline": [
+      "import numpy as np",
+      "",
+      "def laplacian_family_1d(arr, mode='wrap'):",
+      "    arr = np.asarray(arr, dtype=float)",
+      "    if mode == 'wrap':",
+      "        left = np.roll(arr, 1)",
+      "        right = np.roll(arr, -1)",
+      "    elif mode == 'reflect':",
+      "        left = np.empty_like(arr); right = np.empty_like(arr)",
+      "        left[1:] = arr[:-1]; left[0] = arr[1]",
+      "        right[:-1] = arr[1:]; right[-1] = arr[-2]",
+      "    elif mode == 'clamp':",
+      "        left = np.empty_like(arr); right = np.empty_like(arr)",
+      "        left[1:] = arr[:-1]; left[0] = arr[0]",
+      "        right[:-1] = arr[1:]; right[-1] = arr[-1]",
+      "    else:",
+      "        raise ValueError(f'Unknown diffusion boundary mode: {mode}')",
+      "    return left + right - 2.0 * arr",
+      "",
+      "def apply_family_diffusion(arr, coeff, mode='wrap'):",
+      "    lap = laplacian_family_1d(arr, mode=mode)",
+      "    diff = coeff * lap",
+      "    return arr + diff, diff, lap"
+    ]
+  },
+  "reasoning_loop_insertion": {
+    "current_phase_order": [
+      "read",
+      "score",
+      "choose",
+      "gate",
+      "writeback",
+      "stability/phase updates",
+      "trace"
+    ],
+    "new_phase_order": [
+      "read",
+      "score",
+      "choose",
+      "gate",
+      "writeback",
+      "diffuse",
+      "stability/phase updates",
+      "peak_and_band_refresh",
+      "trace"
+    ],
+    "pseudocode": [
+      "gated_delta = ...",
+      "pre_diff_amplitude = state.signature.amplitude.copy()",
+      "written = (1 - lambda) * pre_diff_amplitude + kappa * gated_delta - eta * boundary_penalty",
+      "post_diff_amplitude, diff_term, lap = apply_family_diffusion(written, family_diffusion, mode=diffusion_boundary_mode)",
+      "state.signature.amplitude = clip_or_normalize(post_diff_amplitude)",
+      "peaks, bands = detect_peaks_and_bands(state.signature.amplitude, ...)"
+    ]
+  },
+  "peak_and_band_revision": {
+    "old_behavior": "bands are expanded heuristically from peaks",
+    "new_behavior": "bands are contiguous regions of support in the diffused amplitude field above threshold, optionally anchored to nearby peaks",
+    "implementation_notes": [
+      "detect peaks first",
+      "find contiguous indices above band threshold",
+      "associate each band with its nearest/strongest peak",
+      "support wraparound merging when use_wraparound_lattice is true"
+    ]
+  },
+  "corridor_revision": {
+    "old_behavior": "corridor window derived mainly from peaks and simple band expansion",
+    "new_behavior": "corridor window derived from diffused band width and support mass",
+    "example_rule": {
+      "window_width_i": "base_width + alpha * local_band_width + beta * local_diffusion_mass",
+      "entry_resistance_i": "base_entry / (1 + gamma * local_band_support)",
+      "exit_resistance_i": "base_exit * (1 + delta * local_stability)"
+    }
+  },
+  "trace_additions": {
+    "phase_trace_fields": {
+      "diffusion_energy": "sum(abs(diff_term))",
+      "spread_measure": "sum(abs(laplacian))",
+      "band_widths_after": "list of widths of detected bands after diffusion",
+      "top_peaks_before": "already present / keep",
+      "top_peaks_after": "already present / keep"
+    }
+  },
+  "report_additions": {
+    "fields": [
+      "family_diffusion",
+      "diffusion_energy_mean",
+      "diffusion_energy_max",
+      "spread_measure_mean",
+      "mean_band_width",
+      "max_band_width"
+    ],
+    "goal": "show whether diffusion is actually shaping topology rather than being numerically inert"
+  },
+  "initial_tuning_profiles": {
+    "diffusion_low": {
+      "family_diffusion": 0.05,
+      "expected_behavior": "slight smoothing, minimal band growth"
+    },
+    "diffusion_mid": {
+      "family_diffusion": 0.12,
+      "expected_behavior": "visible band formation, better corridor stability"
+    },
+    "diffusion_high": {
+      "family_diffusion": 0.22,
+      "expected_behavior": "wide bands, risk of oversmoothing and reduced peak distinctness"
+    }
+  },
+  "acceptance_checks": [
+    "same input family produces broader and more stable bands across phases",
+    "corridor widths are now correlated with diffused support rather than only raw peak positions",
+    "top_peaks_after remain identifiable while band_widths_after become nontrivial",
+    "binary readout remains stable or improves",
+    "diffusion does not flatten all peaks into uniform amplitude"
+  ],
+  "non_goals_for_this_patch": [
+    "full orientation-channel diffusion by default",
+    "complex PDE solver",
+    "chat surface changes",
+    "learned diffusion coefficients"
+  ],
+  "one_line_summary": "Add family-space Laplacian diffusion after writeback so signature writes become spatial structure, bands emerge naturally, and corridor derives from topology instead of heuristic expansion."
+}

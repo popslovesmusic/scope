@@ -1,0 +1,30 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Logs and Sessions
+logs/
+sessions/
+*.jsonl
+
+# Build Artifacts
+build/
+dist/
+*.egg-info/
+
+# Large aggregated files
+signal_scope_v14_hex_full.txt
+native_wave_residue_platform_v14.txt
+
+# Temporary/OS files
+.DS_Store
+Thumbs.db
+.gemini/

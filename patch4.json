@@ -1,0 +1,119 @@
+{
+  "patch_name": "delta_based_domain_equalization_v1",
+  "instruction": "Use change-based window motion, not raw window magnitude, as the input to the global shell.",
+  "target_file": "signal_scope_audio_v0.py",
+  "problem": {
+    "name": "magnitude dominance",
+    "symptom": "W3 frequency remains dominant even after equalization.",
+    "cause": "The model is still using raw W1/W2/W3 values instead of their motion/change.",
+    "correction": "DOF should be inferred from how domains change over time, not from which domain has the largest units."
+  },
+  "core_rule": {
+    "windows_are_dynamic": true,
+    "channel_ratios_use": "delta motion",
+    "global_shell_input": ["abs(delta_W1)", "abs(delta_W2)", "abs(delta_W3)"],
+    "not": ["raw_W1", "raw_W2", "raw_W3"]
+  },
+  "code_changes": [
+    {
+      "action": "replace_function",
+      "name": "equalize_domains",
+      "code": "def equalize_domains(w_delta, eps=1e-12):\n    \"\"\"\n    Equalize W1/W2/W3 by their motion/change, not raw magnitude.\n    Input should already be delta values: [dW1, dW2, dW3].\n    Output is dimensionless participation in [0, 1] with sum approximately 1.\n    \"\"\"\n    W = np.abs(np.array(w_delta, dtype=np.float64))\n    total = float(np.sum(W) + eps)\n    return W / total\n"
+    },
+    {
+      "action": "replace_function",
+      "name": "normalize_to_global_shell",
+      "code": "def normalize_to_global_shell(w_delta, eps=1e-12):\n    W_eq = equalize_domains(w_delta, eps=eps)\n    total = float(np.sum(W_eq) + eps)\n    shell = W_eq / total\n    shell_magnitude = float(np.linalg.norm(W_eq))\n    return shell, shell_magnitude, W_eq\n"
+    },
+    {
+      "action": "modify_main_loop",
+      "details": [
+        "Compute current = np.array([W1_amp, W2_phase, W3_freq], dtype=np.float64).",
+        "If prev is None, set w_delta = np.array([0.0, 0.0, 0.0]).",
+        "Else set w_delta = current - prev.",
+        "Use w_delta as the input to compute_channel_ratios(w_delta).",
+        "Do not use raw current values as input to channel ratio computation."
+      ],
+      "code_hint": "current = np.array([W1_amp, W2_phase, W3_freq], dtype=np.float64)\n\nif prev is None:\n    w_delta = np.array([0.0, 0.0, 0.0], dtype=np.float64)\nelse:\n    w_delta = current - prev\n\nratio_data = compute_channel_ratios(w_delta)\nprev = current\n"
+    },
+    {
+      "action": "store_debug_fields",
+      "fields": [
+        "raw_window_values",
+        "window_deltas",
+        "domain_equalized_values",
+        "global_shell",
+        "channel_ratios",
+        "ch7_presence",
+        "ch7_intensity"
+      ]
+    },
+    {
+      "action": "update_result_object",
+      "example": {
+        "t": "float",
+        "raw_window_values": {
+          "W1_amplitude": "float",
+          "W2_phase": "float",
+          "W3_frequency": "float"
+        },
+        "window_deltas": {
+          "dW1": "float",
+          "dW2": "float",
+          "dW3": "float"
+        },
+        "domain_equalized_values": ["float", "float", "float"],
+        "global_shell": ["float", "float", "float"],
+        "whole": "float",
+        "channel_ratios": ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7"],
+        "ch7_presence": "float",
+        "ch7_intensity": "float"
+      }
+    }
+  ],
+  "important_note": {
+    "first_frame": "The first frame has no previous state, so deltas are zero. Ignore it in plots or allow it to appear as initialization.",
+    "phase": "If W2 remains near zero after this patch, the phase metric itself needs improvement, not the shell model."
+  },
+  "plot_updates": [
+    {
+      "title": "Window Delta Motion W1/W2/W3",
+      "data": ["abs(dW1)", "abs(dW2)", "abs(dW3)"],
+      "purpose": "show which dynamic domain is actually moving"
+    },
+    {
+      "title": "Domain Equalized W1/W2/W3 Values",
+      "expected": "values should no longer be permanently dominated by W3 unless W3 truly has most of the motion"
+    },
+    {
+      "title": "Global Shell W1/W2/W3 Participation",
+      "expected": "participation should shift over time based on window motion"
+    },
+    {
+      "title": "ch7 White Coupling Intensity",
+      "expected": "nonzero when all three delta domains participate in the same frame"
+    }
+  ],
+  "interpretation_rules": {
+    "dominant_W1_delta": "amplitude motion controls the current relation",
+    "dominant_W2_delta": "phase motion controls the current relation",
+    "dominant_W3_delta": "frequency motion controls the current relation",
+    "balanced_shell": "all three windows are participating in the whole",
+    "high_ch7_intensity": "strong white coupling / balanced three-domain motion",
+    "low_ch7_intensity": "one or more domains weak relative to whole",
+    "stable_repeating_ratios": "finite/bounded DOF signature",
+    "wandering_ratios": "higher or nonstationary DOF signature"
+  },
+  "success_conditions": [
+    "global shell is based on deltas, not raw values",
+    "W3 no longer dominates only because it is measured in Hz",
+    "channel ratios sum to approximately 1.0",
+    "ch7 intensity represents balanced three-domain motion",
+    "V_DOF / whole activity remains bounded",
+    "plots show dynamic participation instead of fixed unit dominance"
+  ],
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "Add diagonal axis direction measurement once delta-based shell behavior is stable."
+  }
+}

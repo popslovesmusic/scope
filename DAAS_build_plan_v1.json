@@ -1,0 +1,200 @@
+{
+  "project": {
+    "name": "Digital Avatar Agent System",
+    "branch": "v14 -> additive path toward avatar/agent architecture",
+    "mission": "Scale a founder's decision pattern across specialized agents without sacrificing current function."
+  },
+  "governing_rules": {
+    "additive_redesign": [
+      "No redesign may remove an already-working function without a drop-in replacement that preserves current behavior.",
+      "New modules enter behind flags, adapters, or side paths first.",
+      "Current v14 stage remains the executable baseline until the new path matches or exceeds it on agreed checks.",
+      "State shape changes require compatibility loaders or migration scripts.",
+      "Every major redesign must prove non-regression on trace, corridor, readout, and state export."
+    ],
+    "design_bias": [
+      "Prefer more configs before more engine surgery.",
+      "Keep complete-file deliverables.",
+      "Separate execution substrate from reasoning substrate.",
+      "Preserve interpretability and trace visibility."
+    ]
+  },
+  "baseline_now": {
+    "confirmed_from_current_files": [
+      "Current entrypoint seeds a signed field, instantiates SignatureState, runs the reasoning loop, rebuilds the dynamic corridor, applies binary readout, and exports a structured state JSON.",
+      "The uploaded chat file is still a placeholder, so the current build is engine-first rather than interface-first."
+    ],
+    "baseline_assets": [
+      "signed input encoding",
+      "SignatureState state container",
+      "run_reasoning loop",
+      "detect_peaks_and_bands",
+      "build_dynamic_corridor",
+      "binary_readout",
+      "save_state export"
+    ]
+  },
+  "target_architecture": {
+    "layers": [
+      {
+        "name": "L0 core state engine",
+        "purpose": "signed field, amplitude, phase, stability, residue, trace"
+      },
+      {
+        "name": "L1 conditioning engine",
+        "purpose": "scenario loops that write initial residue and corridor tendencies"
+      },
+      {
+        "name": "L2 identity core",
+        "purpose": "frozen founder-aligned continuation profile"
+      },
+      {
+        "name": "L3 role overlays",
+        "purpose": "sales/ops/strategy specializations without breaking core identity"
+      },
+      {
+        "name": "L4 agent runtime",
+        "purpose": "spawn, task, observe, re-align, retire agents"
+      },
+      {
+        "name": "L5 orchestration",
+        "purpose": "task router, arbitration, shared memory exchange, dashboards"
+      }
+    ]
+  },
+  "phases": [
+    {
+      "phase": "Phase 0 - Freeze and instrument v14 baseline",
+      "goal": "Make the present engine the regression anchor.",
+      "deliverables": [
+        "baseline config pack: low/mid/high corridor, stress, signed-init, amplitude-compat",
+        "non-regression harness for output/confidence/trace shape/state schema",
+        "state schema versioning note",
+        "run manifest template"
+      ]
+    },
+    {
+      "phase": "Phase 1 - Add explicit residue and conditioning loop",
+      "goal": "Move from raw response engine to shaped developmental engine.",
+      "deliverables": [
+        "residue tensor or equivalent state channel",
+        "conditioning runner with bounded scenario episodes",
+        "scenario library v1 (risk, ambiguity, conflict, repetition, delay, ethical tension)",
+        "metrics: stability, admissibility retention, write/decay balance, replay sensitivity"
+      ]
+    },
+    {
+      "phase": "Phase 2 - Build identity core",
+      "goal": "Create a founder-aligned snapshot that can be validated.",
+      "deliverables": [
+        "identity profile capture format",
+        "decision alignment test set",
+        "identity freeze/export artifact",
+        "comparison report: founder vs avatar choices on novel prompts"
+      ]
+    },
+    {
+      "phase": "Phase 3 - Spawn specialized agents",
+      "goal": "Fork controlled continuations that keep the core but specialize by role.",
+      "deliverables": [
+        "role overlay schema",
+        "agent spawn loader",
+        "local residue memory per agent",
+        "periodic re-alignment hooks"
+      ]
+    },
+    {
+      "phase": "Phase 4 - Orchestrate business workflows",
+      "goal": "Turn aligned agents into a usable operating system for work.",
+      "deliverables": [
+        "task router",
+        "shared memory summaries",
+        "human arbitration mode",
+        "dashboard/chat shell",
+        "audit log and replay"
+      ]
+    },
+    {
+      "phase": "Phase 5 - Optimize substrate without losing function",
+      "goal": "Port stable abstractions toward AVX2/analog substrate after software behavior is pinned down.",
+      "deliverables": [
+        "engine API boundary",
+        "CPU/AVX2 implementation plan",
+        "compatibility suite between Python reference and accelerated backend"
+      ]
+    }
+  ],
+  "folder_structure": {
+    "root": "digital_avatar_system/",
+    "tree": [
+      "README.md",
+      "pyproject.toml",
+      "configs/baseline/*.json",
+      "configs/conditioning/*.json",
+      "configs/identity/*.json",
+      "configs/agents/*.json",
+      "core/signature_state.py",
+      "core/reasoning_loop.py",
+      "core/residue_state.py",
+      "core/corridor_gate.py",
+      "core/peak_detector.py",
+      "core/readout_heads.py",
+      "core/io_state.py",
+      "conditioning/scenario_runner.py",
+      "conditioning/scenario_library.py",
+      "conditioning/metrics.py",
+      "identity/capture_profile.py",
+      "identity/freeze_identity.py",
+      "identity/validate_alignment.py",
+      "agents/agent_instance.py",
+      "agents/role_overlay.py",
+      "agents/realign.py",
+      "orchestration/task_router.py",
+      "orchestration/shared_memory.py",
+      "orchestration/arbitration.py",
+      "interfaces/chat_shell.py",
+      "interfaces/dashboard_stub.py",
+      "scripts/run_baseline.py",
+      "scripts/run_conditioning.py",
+      "scripts/run_identity_validation.py",
+      "scripts/spawn_agent.py",
+      "tests/test_baseline_regression.py",
+      "tests/test_schema_compat.py",
+      "tests/test_identity_alignment.py",
+      "artifacts/manifests/",
+      "artifacts/reports/",
+      "artifacts/states/"
+    ]
+  },
+  "first_week_plan": [
+    "Freeze current v14 as baseline_ref/ and do not mutate it directly.",
+    "Add a baseline regression script around the current stage1 entrypoint.",
+    "Define v14 state schema in one JSON document.",
+    "Add explicit residue channel in a branch behind config flag use_residue_v1=false by default.",
+    "Create five conditioning scenario templates and one runner that writes reports only.",
+    "Add identity capture JSON format for founder preferences, tradeoffs, and refusal patterns.",
+    "Stub the chat shell around the engine instead of building a full UI."
+  ],
+  "exit_criteria": {
+    "phase_0": [
+      "Current outputs reproducible from fixed seed/config",
+      "State export schema documented",
+      "At least 5 configs passing regression"
+    ],
+    "phase_1": [
+      "Conditioning loop changes residue in measurable and repeatable ways",
+      "No regression in baseline path when conditioning disabled"
+    ],
+    "phase_2": [
+      "Avatar aligns with founder decisions on a held-out scenario pack above chosen threshold"
+    ],
+    "phase_3": [
+      "At least three role agents diverge in specialization while staying within alignment band"
+    ]
+  },
+  "immediate_notes": [
+    "The current uploaded stage1 script already gives a good seam for this work because it centralizes initialization, config loading, reasoning execution, corridor reconstruction, readout, and export.",
+    "The current chat file should stay lightweight until identity validation is real; interface follows engine, not the reverse.",
+    "Additive redesign means the v14 baseline remains runnable throughout."
+  ]
+}

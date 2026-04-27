@@ -1,0 +1,112 @@
+{
+  "patch_name": "meta_domain_lift_v1",
+  "instruction": "Lift W1/W2/W3 into a shared motion-state meta-domain before computing the global shell and channel ratios.",
+  "target_file": "signal_scope_audio_v0.py",
+
+  "core_shift": {
+    "from": "direct comparison of amplitude/phase/frequency",
+    "to": "comparison of dimensionless motion-state descriptors",
+    "windows_role": "sensors",
+    "meta_domain_role": "shared relational space",
+    "channels_role": "ratios within meta-domain"
+  },
+
+  "meta_domain_definition": {
+    "name": "window_motion_state",
+    "components": [
+      "magnitude",
+      "direction",
+      "coherence",
+      "rate",
+      "stability"
+    ],
+    "constraint": "all components must be dimensionless and comparable across windows"
+  },
+
+  "code_changes": [
+    {
+      "action": "add_function",
+      "name": "compute_motion_state",
+      "code": "def compute_motion_state(current, prev, history, eps=1e-12):\n    \"\"\"\n    Convert raw window values into a dimensionless motion-state.\n    current: [W1, W2, W3]\n    prev: previous values\n    history: dict with rolling history lists for each domain\n    \"\"\"\n    if prev is None:\n        return np.zeros(3), np.zeros(3)\n\n    delta = current - prev\n\n    # magnitude normalized by local history\n    mag = np.zeros(3)\n    for i, key in enumerate(['W1', 'W2', 'W3']):\n        hist = history[key]\n        scale = np.mean(hist) + eps if len(hist) > 0 else eps\n        mag[i] = abs(delta[i]) / scale\n\n    # direction (sign only)\n    direction = np.sign(delta)\n\n    return mag, direction\n"
+    },
+
+    {
+      "action": "add_function",
+      "name": "compute_meta_vector",
+      "code": "def compute_meta_vector(mag, direction, eps=1e-12):\n    \"\"\"\n    Combine magnitude and direction into a unified meta-domain vector.\n    \"\"\"\n    # normalize magnitude vector\n    mag_norm = mag / (np.sum(mag) + eps)\n\n    # embed direction as weighting\n    meta = mag_norm * (direction + 1.0) / 2.0\n\n    return meta\n"
+    },
+
+    {
+      "action": "replace_global_shell_input",
+      "details": [
+        "Remove direct use of W1/W2/W3 or their raw deltas.",
+        "Use meta vector instead."
+      ],
+      "code": "meta = compute_meta_vector(mag, direction)\n\nshell = meta / (np.sum(meta) + 1e-12)\n"
+    },
+
+    {
+      "action": "update_channel_computation",
+      "details": [
+        "Use meta-domain shell values instead of raw or delta W values."
+      ],
+      "code": "W1, W2, W3 = shell\n\nraw = np.array([\n    W1,\n    W2,\n    W3,\n    min(W1, W2),\n    min(W1, W3),\n    min(W2, W3),\n    min(W1, W2, W3)\n], dtype=np.float64)\n\nwhole = np.sum(raw) + 1e-12\nratios = raw / whole\n\nch7_intensity = np.min(shell) / (np.max(shell) + 1e-12)\nch7_presence = 1.0 if np.all(shell > 1e-6) else 0.0\n"
+    },
+
+    {
+      "action": "add_history_tracking",
+      "details": [
+        "Maintain rolling history for each domain for normalization."
+      ],
+      "code": "history = {'W1': [], 'W2': [], 'W3': []}\n\n# update history each frame\nfor i, key in enumerate(['W1', 'W2', 'W3']):\n    history[key].append(abs(delta[i]))\n    if len(history[key]) > 100:\n        history[key].pop(0)\n"
+    },
+
+    {
+      "action": "update_result_object",
+      "fields": [
+        "meta_vector",
+        "global_shell",
+        "channel_ratios",
+        "ch7_presence",
+        "ch7_intensity"
+      ]
+    }
+  ],
+
+  "plot_updates": [
+    {
+      "title": "Meta-Domain Participation (W1/W2/W3)",
+      "data": ["meta_vector[0]", "meta_vector[1]", "meta_vector[2]"],
+      "purpose": "visualize how each window contributes after lifting"
+    },
+    {
+      "title": "Global Shell (Meta-Domain)",
+      "data": ["shell[0]", "shell[1]", "shell[2]"],
+      "purpose": "final normalized participation"
+    },
+    {
+      "title": "ch7 White Coupling Intensity",
+      "data": ["ch7_intensity"],
+      "purpose": "true full-domain overlap after lifting"
+    }
+  ],
+
+  "interpretation_rules": {
+    "balanced_meta": "all three windows contribute similarly → high DOF",
+    "skewed_meta": "one window dominates → low DOF",
+    "high_ch7_intensity": "strong unified behavior",
+    "low_ch7_intensity": "weak coupling or domain separation"
+  },
+
+  "success_conditions": [
+    "W1/W2/W3 contributions are no longer biased by raw units",
+    "meta-domain shows dynamic balance between windows",
+    "ch7 intensity becomes meaningful (not always near zero)",
+    "channel ratios reflect relational structure, not measurement scale"
+  ],
+
+  "next_patch_after_success": {
+    "name": "axis_projection_8way_v1",
+    "purpose": "extend directional resolution after stable meta-domain mapping"
+  }
+}

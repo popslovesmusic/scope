@@ -1,0 +1,300 @@
+{
+  "spec_name": "v15_projection_admissibility_architecture",
+  "status": "proposed",
+  "intent": "Fold the v14 engine, the additive DAAS path, the practical-vs-objective distinction, and the new projection-controlled visual model into one forward spec.",
+  "core_claim": "v15 begins when the organizing center shifts from response stabilization to admissible projection.",
+  "one_sentence_definition": "v15 is a projection-governed reasoning architecture in which full structure remains primary, usable output is a conditioned extraction, and no readout is allowed unless its projection path is structurally admissible.",
+  "why_v15_exists": {
+    "problem_statement": [
+      "Current LLM-like systems often produce practical coherence without full structural validation.",
+      "v14 already improves this through corridor gating, caution, hold, recovery, trace, residue, and state export, but its center of gravity is still stabilization plus readout.",
+      "The next step is not a cosmetic redesign, but a structural shift: projection legitimacy must become the first-class object."
+    ],
+    "target_failure_to_eliminate": "misleading positives",
+    "meaning_of_misleading_positive": "An output that is coherent, useful, or persuasive at the practical layer while resting on a weak, incomplete, or invalid projection path at the structural layer."
+  },
+  "continuity_with_v14": {
+    "preserve": [
+      "signed field / signature state",
+      "operator families and orientation handling",
+      "corridor gating",
+      "caution / hold / recovery",
+      "trace salience and residue",
+      "state export and regression discipline",
+      "additive rollout behind flags or side paths"
+    ],
+    "do_not_preserve_as_center": [
+      "readout-first success criteria",
+      "implicit evaluation scattered across subsystems without a formal projection object"
+    ],
+    "non_regression_rule": "v14 remains executable baseline until v15 path matches or exceeds it on agreed checks."
+  },
+  "architectural_shift": {
+    "v14_center": "projection -> stabilization -> readout",
+    "v15_center": "structure -> admissibility -> projection -> readout",
+    "explanation": "The system no longer asks whether an output can be produced; it asks whether a projection from full structure into usable signature is legitimate."
+  },
+  "ontology": {
+    "objective_layer": "full structure, latent relations, complete state, multi-layer tensor-like organization",
+    "practical_layer": "usable extracted signature, role-level output, bounded decision surface",
+    "rule": "Practical outputs may compress objective structure, but may never contradict the admissibility constraints of the objective layer.",
+    "category_error_to_avoid": "Treating practical-role coherence as proof of objective validity."
+  },
+  "primary_visual_model": {
+    "full_structure": "N-dimensional layered tensor-like array",
+    "orientation_center": "-(i) as projection reference / alignment center",
+    "usable_state": "3D signature as observer-conditioned extraction",
+    "key_principle": "The sphere or signature is not the whole system; it is the accessible projection of a fuller structure under orientation and admissibility constraints.",
+    "new_visual_requirements": [
+      "show multiple orientation paths simultaneously",
+      "show admissible vs blocked paths",
+      "show projection filter / admissibility gate as explicit object",
+      "show difference between full structure and practical extraction"
+    ]
+  },
+  "first_class_objects": {
+    "signature_state": {
+      "role": "active local state used for bounded evolution and extraction"
+    },
+    "residue_state": {
+      "role": "stored structural carry-forward of prior evaluation and path history"
+    },
+    "corridor_state": {
+      "role": "dynamic admissibility envelope for continuation and entry/exit control"
+    },
+    "projection_path": {
+      "role": "formal record of how a usable signature was extracted from fuller structure",
+      "required_fields": [
+        "origin_region",
+        "orientation_operator",
+        "supporting_components",
+        "corridor_admissibility",
+        "cross_orientation_consistency",
+        "trace_residue_alignment",
+        "projection_loss",
+        "practical_compression_ratio",
+        "status"
+      ],
+      "status_values": [
+        "ADMISSIBLE",
+        "MARGINAL",
+        "BLOCKED"
+      ]
+    },
+    "admissibility_gate": {
+      "role": "system-level validator that decides whether projection may proceed to readout"
+    },
+    "projection_filter": {
+      "role": "compression boundary translating full structure into usable signature without allowing invalid collapse"
+    },
+    "identity_core": {
+      "role": "stable founder-aligned continuation profile",
+      "note": "Identity is downstream of admissible projection, not a replacement for it."
+    },
+    "role_overlay": {
+      "role": "specialization layer that modifies access tendencies and task framing without breaking core admissibility"
+    }
+  },
+  "layer_stack": [
+    {
+      "name": "L0_full_structure",
+      "purpose": "latent multi-layer tensor-like organization; full semantic / procedural state"
+    },
+    {
+      "name": "L1_state_dynamics",
+      "purpose": "signed field, phase evolution, corridor formation, peak and component structure"
+    },
+    {
+      "name": "L2_trace_residue_memory",
+      "purpose": "carry-forward of structural history, caution shift, local persistence, path memory"
+    },
+    {
+      "name": "L3_projection_admissibility",
+      "purpose": "formal validation of extraction path before usable signature is allowed"
+    },
+    {
+      "name": "L4_signature_extraction",
+      "purpose": "produce bounded 3D usable signature from admissible path only"
+    },
+    {
+      "name": "L5_identity_and_role",
+      "purpose": "founder alignment core plus specialized overlays"
+    },
+    {
+      "name": "L6_agent_runtime",
+      "purpose": "spawn, task, realign, retire bounded continuations"
+    },
+    {
+      "name": "L7_orchestration",
+      "purpose": "task routing, arbitration, shared memory exchange, dashboards, audit"
+    }
+  ],
+  "execution_cycle": [
+    "1. Seed or update full structure and local signature state.",
+    "2. Apply operator competition and corridor-conditioned evolution.",
+    "3. Update trace, salience, residue, caution, hold, and recovery.",
+    "4. Assemble candidate projection paths from current structure.",
+    "5. Run admissibility gate on each candidate path.",
+    "6. Allow only ADMISSIBLE paths to reach signature extraction.",
+    "7. Produce bounded practical signature.",
+    "8. Bind readout strictly to extracted signature plus path report.",
+    "9. Write back residue and projection audit artifact."
+  ],
+  "admissibility_logic": {
+    "minimum_checks": [
+      "origin access is valid",
+      "supporting structure is sufficient",
+      "corridor entry/exit rules are respected",
+      "cross-orientation consistency exceeds threshold",
+      "trace and residue do not materially contradict the path",
+      "projection loss remains inside allowed bound"
+    ],
+    "gate_behavior": {
+      "ADMISSIBLE": "allow extraction and readout",
+      "MARGINAL": "hold, hedge, or request more structure",
+      "BLOCKED": "no readout; emit structural insufficiency report"
+    },
+    "design_rule": "Evaluation is not commentary after the fact. It is the condition of existence for any usable projection."
+  },
+  "operator_model": {
+    "operators": [
+      "++",
+      "--",
+      "+-",
+      "-+"
+    ],
+    "role_in_v15": "operators are not merely scored for best output; they define candidate projection orientations whose legitimacy must be independently checked",
+    "new_requirement": "Every winning operator must survive adversarial challenge from alternate orientations before commitment."
+  },
+  "readout_policy": {
+    "old_mode_to_replace": "free or loosely bound semantic readout after stabilization",
+    "v15_mode": "readout is a derivative artifact of an admissible projection path",
+    "required_outputs": [
+      "usable answer",
+      "projection status",
+      "confidence separated into practical confidence and structural confidence",
+      "compressed path explanation",
+      "blocked-reason report when no admissible path exists"
+    ]
+  },
+  "memory_policy": {
+    "rule": "Memory stores path-relevant residue and validated carry-forward, not just previous outputs.",
+    "stored_items": [
+      "projection digests",
+      "residue adjustments",
+      "caution baseline shifts",
+      "identity alignment outcomes",
+      "role overlay drift reports"
+    ]
+  },
+  "identity_and_agents": {
+    "identity_core_principle": "A founder-aligned profile must be an admissibility-shaped continuation, not a static persona skin.",
+    "role_overlay_principle": "Specialization changes projection preference and action framing, not the objective admissibility rules.",
+    "agent_runtime_principle": "Agents are bounded continuations that inherit projection law before task law."
+  },
+  "metrics": {
+    "primary": [
+      "misleading_positive_rate",
+      "blocked_invalid_projection_rate",
+      "admissible_projection_precision",
+      "cross_orientation_consistency",
+      "projection_loss",
+      "trace_residue_alignment",
+      "practical_vs_structural_confidence_gap"
+    ],
+    "secondary": [
+      "baseline_non_regression",
+      "identity_alignment_band",
+      "role_divergence_without_core_break",
+      "replay_stability"
+    ]
+  },
+  "artifacts": {
+    "required_files": [
+      "projection_path.json",
+      "projection_audit.jsonl",
+      "blocked_projection_report.json",
+      "signature_extract.json",
+      "identity_alignment_report.json",
+      "agent_realign_report.json"
+    ],
+    "visuals": [
+      "full structure vs practical extraction",
+      "multi-orientation admissible / blocked paths",
+      "projection filter and gate",
+      "confidence gap plots"
+    ]
+  },
+  "implementation_phases": [
+    {
+      "phase": "v15-P0",
+      "name": "Projection Path Formalization",
+      "goal": "Introduce projection_path and admissibility_gate as first-class objects inside v14-compatible execution.",
+      "deliverables": [
+        "projection path schema",
+        "gate config",
+        "blocked-path reporting",
+        "path-bound readout mode"
+      ]
+    },
+    {
+      "phase": "v15-P1",
+      "name": "Admissible Extraction",
+      "goal": "Bind usable signature generation to gate-approved paths only.",
+      "deliverables": [
+        "projection filter",
+        "practical vs structural confidence split",
+        "marginal-path hold behavior"
+      ]
+    },
+    {
+      "phase": "v15-P2",
+      "name": "Identity on Top of Projection Law",
+      "goal": "Build founder alignment only after admissible extraction is stable.",
+      "deliverables": [
+        "identity capture format",
+        "identity freeze artifact",
+        "alignment pack on novel scenarios"
+      ]
+    },
+    {
+      "phase": "v15-P3",
+      "name": "Role Overlays and Agent Runtime",
+      "goal": "Allow specialization and spawning without violating projection law.",
+      "deliverables": [
+        "role overlay schema",
+        "agent spawn loader",
+        "realignment hooks",
+        "local residue memory per agent"
+      ]
+    },
+    {
+      "phase": "v15-P4",
+      "name": "Orchestration and Workflows",
+      "goal": "Route tasks across aligned agents with audit and arbitration.",
+      "deliverables": [
+        "task router",
+        "shared memory summaries",
+        "human arbitration mode",
+        "dashboard / shell"
+      ]
+    }
+  ],
+  "switch_condition_from_v14": {
+    "true_switch": "v15 becomes primary when projection admissibility is the organizing center of the runtime, not merely an add-on validator.",
+    "false_switches": [
+      "having a v15 folder",
+      "adding agent stubs",
+      "adding identity language without admissibility-first runtime",
+      "producing new visuals alone"
+    ]
+  },
+  "success_criteria": [
+    "Invalid but coherent outputs are measurably reduced.",
+    "Blocked projections are explainable in structural terms.",
+    "Usable outputs are accompanied by path-bound confidence and audit.",
+    "Identity and specialization sit cleanly on top of the admissibility layer.",
+    "v14 baseline behavior is preserved when v15 path is disabled."
+  ],
+  "blunt_summary": "v14 made response generation more structured. v15 must make structure itself the authority, and practical output only a licensed extraction."
+}

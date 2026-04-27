@@ -1,0 +1,161 @@
+{
+  "task": "implement_hex_structure_for_signal_scope_sbllm_v14",
+  "principle": "Hex is the symbolic/readable face of the wave-residue state. The actual learning remains residue topology.",
+
+  "files_to_add": [
+    "scopes/hex_state.py",
+    "scopes/hex_trace.py",
+    "scopes/hex_residue_codec.py"
+  ],
+
+  "files_to_touch": [
+    "imprint_v14.py",
+    "scopes/scope_config.json"
+  ],
+
+  "hex_state_definition": {
+    "local_hex": "#RRGGBB",
+    "global_hex": "#RRGGBB",
+    "meta_hex": "#RRGGBB",
+    "full_hex_code": "local.global.meta",
+    "example": "#A44F22.#9B5528.#875F31"
+  },
+
+  "mapping_rule": {
+    "input": "W = [w1, w2, w3]",
+    "constraint": "w1 + w2 + w3 = 1",
+    "rgb": {
+      "R": "round(clamp(w1, 0, 1) * 255)",
+      "G": "round(clamp(w2, 0, 1) * 255)",
+      "B": "round(clamp(w3, 0, 1) * 255)"
+    },
+    "hex": "format as #RRGGBB"
+  },
+
+  "hex_frame_schema": {
+    "t": "frame_index_or_timestamp",
+    "local": "#RRGGBB",
+    "global": "#RRGGBB",
+    "meta": "#RRGGBB",
+    "full_code": "#RRGGBB.#RRGGBB.#RRGGBB",
+    "C": "coupling",
+    "E_scope": "imbalance",
+    "speed": "flow_speed",
+    "curvature": "trajectory_curvature",
+    "direction_8way": "N|NE|E|SE|S|SW|W|NW|CENTER",
+    "events": ["string"],
+    "operator": "++|--|+-|-+",
+    "qualified": "bool"
+  },
+
+  "hex_residue_rule": {
+    "do_store": [
+      "compressed repeated hex paths",
+      "stable attractor hex loops",
+      "transition hex sequences",
+      "pre-collapse or pre-lock signatures",
+      "qualified orientation response"
+    ],
+    "do_not_store": [
+      "every raw frame forever",
+      "unqualified noisy flicker as committed memory",
+      "hex code as replacement for residue topology"
+    ]
+  },
+
+  "implementation_steps": [
+    {
+      "step": 1,
+      "file": "scopes/hex_state.py",
+      "create": [
+        "clamp01(x)",
+        "w_to_rgb(W)",
+        "rgb_to_hex(rgb)",
+        "w_to_hex(W)",
+        "make_full_hex(local_W, global_W, meta_W)"
+      ]
+    },
+    {
+      "step": 2,
+      "file": "scopes/hex_trace.py",
+      "create": [
+        "HexTraceFrame dataclass",
+        "append_hex_trace_jsonl(path, frame)",
+        "load_hex_trace_jsonl(path)"
+      ]
+    },
+    {
+      "step": 3,
+      "file": "scopes/hex_residue_codec.py",
+      "create": [
+        "compress_hex_path(frames, window_size)",
+        "detect_repeated_hex_motifs(frames)",
+        "score_hex_stability(frames)",
+        "make_hex_residue_candidate(frames)"
+      ]
+    },
+    {
+      "step": 4,
+      "file": "imprint_v14.py",
+      "modify": [
+        "after SignalScope computes local/global/meta W, generate hex codes",
+        "attach hex codes to trace record",
+        "write hex frame to sessions/hex_trace.jsonl",
+        "only pass stable motifs into residue qualification",
+        "do not let hex bypass v14 admissibility"
+      ]
+    },
+    {
+      "step": 5,
+      "file": "scopes/scope_config.json",
+      "add_config": {
+        "hex_encoding": {
+          "enabled": true,
+          "trace_path": "sessions/hex_trace.jsonl",
+          "motif_window": 12,
+          "stability_min": 0.72,
+          "store_unqualified": false,
+          "commit_only_if_residue_qualified": true
+        }
+      }
+    }
+  ],
+
+  "minimal_code_shape": {
+    "scopes/hex_state.py": "pure functions only; no dependency on v14 internals",
+    "scopes/hex_trace.py": "jsonl logging and loading",
+    "scopes/hex_residue_codec.py": "motif/stability compression layer",
+    "imprint_v14.py": "integration point"
+  },
+
+  "tests": [
+    {
+      "name": "test_w_to_hex_sum_constraint",
+      "expect": "[1,0,0] -> #FF0000, [0,1,0] -> #00FF00, [0,0,1] -> #0000FF"
+    },
+    {
+      "name": "test_center_hex",
+      "expect": "[1/3,1/3,1/3] -> approximately #555555"
+    },
+    {
+      "name": "test_full_hex_code",
+      "expect": "local.global.meta format"
+    },
+    {
+      "name": "test_hex_trace_does_not_commit_unqualified",
+      "expect": "unstable frames may log but cannot become committed residue"
+    },
+    {
+      "name": "test_replay_stabilization",
+      "expect": "same wave replay produces increased motif stability or lower caution"
+    }
+  ],
+
+  "success_condition": {
+    "minimal": "Every frame gets a valid local/global/meta hex code.",
+    "strong": "Repeated wave structures produce recurring hex motifs.",
+    "critical": "Hex motifs can influence residue only through existing v14 qualification."
+  },
+
+  "core_instruction": "Implement hex as a readable residue/motif codec layered over SignalScope W states. Preserve v14 learning as wave-residue imprinting, not weight training."
+}

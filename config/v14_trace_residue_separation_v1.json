@@ -1,0 +1,38 @@
+{
+  "id": "v14_trace_residue_separation_v1",
+  "purpose": "Separate what happened from what mattered from what may persist.",
+  "branch": "v14",
+  "kind": "schema",
+  "records": {
+    "trace_record": {
+      "role": "Full operational history of the turn.",
+      "persist_default": false,
+      "fields": ["turn_id", "phase_records", "operator_path", "caution_series", "hold_events", "recovery_events"]
+    },
+    "highlight_record": {
+      "role": "Compact reviewable subset derived from trace.",
+      "persist_default": false,
+      "fields": ["turn_id", "triggered_properties", "supporting_fields", "review_summary"]
+    },
+    "raw_residue_record": {
+      "role": "Append-only continuation residue for later qualification.",
+      "persist_default": true,
+      "fields": [
+        "turn_id",
+        "intent_class",
+        "reply_mode",
+        "operator_histogram",
+        "switch_fraction",
+        "caution_terminal",
+        "hold_terminal",
+        "recovery_terminal"
+      ]
+    },
+    "committed_residue_record": {
+      "role": "Qualified persistence artifact allowed to shape later continuation.",
+      "persist_default": true,
+      "fields": ["turn_id", "commit_reasons", "operator_bias_delta", "caution_baseline_delta", "persistence_duration"]
+    }
+  }
+}
+
