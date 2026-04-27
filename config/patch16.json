@@ -1,0 +1,197 @@
+{
+  "agent_patch": "phase1_learning_strength_fix_v1",
+  "goal": "Strengthen residue influence, open synthetic training gates, improve phase separation, reduce control damping, and add predictor baseline comparison.",
+
+  "rules": {
+    "do_not_modify": [
+      "core/reasoning_loop.py",
+      "core/corridor_gate.py",
+      "core/signature_state.py"
+    ],
+    "allowed": [
+      "native_platform phase predictor changes",
+      "native_platform config overrides",
+      "logging additions",
+      "training-mode threshold overrides"
+    ],
+    "principle": "No weight training. Improve residue-phase imprinting only."
+  },
+
+  "patches": [
+    {
+      "id": "P1_strengthen_residue_pull",
+      "file": "native_platform/residue_phase_predictor.py",
+      "change": {
+        "add_configurable_params": {
+          "residue_pull_gain": 2.0,
+          "trend_gain": 1.5,
+          "accel_gain": 0.5
+        },
+        "replace_predict_logic": [
+          "trend = phi_current - previous_phi",
+          "accel = trend - previous_trend if available else 0",
+          "residue_pull = derive_residue_phase_bias(residue)",
+          "phi_pred = phi_current + trend_gain * trend + accel_gain * accel + residue_pull_gain * residue_pull",
+          "phi_pred = normalize(phi_pred)"
+        ]
+      }
+    },
+    {
+      "id": "P2_weight_phase_vector",
+      "file": "native_platform/phase_space.py",
+      "goal": "Increase phase sensitivity and signal separation.",
+      "replace_compute_phase_vector": [
+        "def compute_phase_vector(W, C, E, V):",
+        "    W = np.asarray(W, dtype=float)",
+        "    V = np.asarray(V, dtype=float)",
+        "    phase = np.array([",
+        "        2.0 * W[0],",
+        "        2.0 * W[1],",
+        "        2.0 * W[2],",
+        "        1.5 * C,",
+        "        1.5 * E,",
+        "        2.0 * V[0],",
+        "        2.0 * V[1],",
+        "        2.0 * V[2]",
+        "    ], dtype=float)",
+        "    return normalize(phase)"
+      ]
+    },
+    {
+      "id": "P3_clip_phase_mismatch",
+      "file": "native_platform/phase_space.py",
+      "replace_phase_mismatch": [
+        "def phase_mismatch(phi1, phi2):",
+        "    dot = float(np.dot(phi1, phi2))",
+        "    dot = max(-1.0, min(1.0, dot))",
+        "    return 1.0 - dot"
+      ]
+    },
+    {
+      "id": "P4_training_gate_override",
+      "file": "native_platform/feedback_config.json",
+      "goal": "Loosen training qualification during synthetic Phase 1 only.",
+      "add": {
+        "training_overrides": {
+          "enabled": true,
+          "qualify_min_score": 0.2,
+          "qualify_recovery_threshold": 0.0,
+          "qualify_max_switch_freq": 0.95,
+          "caution_threshold": 0.9
+        }
+      }
+    },
+    {
+      "id": "P5_apply_training_overrides",
+      "file": "native_platform/residue_imprinter.py",
+      "goal": "Use synthetic training override thresholds when enabled.",
+      "change": [
+        "training_cfg = config.get('training_overrides', {})",
+        "if training_cfg.get('enabled', False):",
+        "    min_score = float(training_cfg.get('qualify_min_score', mem_cfg.get('qualify_min_score', 0.55)))",
+        "    recovery_threshold = float(training_cfg.get('qualify_recovery_threshold', mem_cfg.get('qualify_recovery_threshold', 0.02)))",
+        "    max_switch_freq = float(training_cfg.get('qualify_max_switch_freq', mem_cfg.get('qualify_max_switch_freq', 0.5)))",
+        "else:",
+        "    min_score = float(mem_cfg.get('qualify_min_score', 0.55))",
+        "    recovery_threshold = float(mem_cfg.get('qualify_recovery_threshold', 0.02))",
+        "    max_switch_freq = float(mem_cfg.get('qualify_max_switch_freq', 0.5))",
+        "",
+        "pass min_score, recovery_threshold, max_switch_freq into qualify_residue"
+      ]
+    },
+    {
+      "id": "P6_reduce_delta_phi_control_damping",
+      "file": "native_platform/run_native_platform.py",
+      "replace": {
+        "old": "control_pattern *= (1.0 - 0.3 * delta_phi)",
+        "new": "control_pattern *= (1.0 - 0.02 * delta_phi)"
+      }
+    },
+    {
+      "id": "P7_add_naive_baseline_comparison",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Prove predictor is better than trivial current-state copy.",
+      "add_after_delta_phi": [
+        "phi_naive = phi_current",
+        "delta_phi_naive = phase_mismatch(phi_naive, phi_current)",
+        "prediction_gain = float(delta_phi_naive - delta_phi)"
+      ],
+      "log_fields": {
+        "delta_phi_naive": "float(delta_phi_naive)",
+        "prediction_gain": "float(prediction_gain)"
+      },
+      "note": "This naive baseline will be zero if compared to current state; better baseline in next patch should compare prediction to next observed frame."
+    },
+    {
+      "id": "P8_add_next_frame_prediction_error",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Compute real forecast error by comparing prior prediction to current observed phase.",
+      "change": [
+        "initialize pending_phi_pred = None before loop",
+        "inside loop after phi_current:",
+        "if pending_phi_pred is not None:",
+        "    forecast_error = phase_mismatch(pending_phi_pred, phi_current)",
+        "else:",
+        "    forecast_error = 0.0",
+        "after phi_pred is computed:",
+        "pending_phi_pred = phi_pred.copy()",
+        "log forecast_error"
+      ]
+    },
+    {
+      "id": "P9_log_reject_reasons",
+      "file": "native_platform/residue_imprinter.py",
+      "goal": "Diagnose why residue is rejected.",
+      "change": [
+        "ensure returned residue exposes reject_reasons or qualification_reasons",
+        "if absent, attach empty lists safely",
+        "return residue with fields available for logging"
+      ]
+    },
+    {
+      "id": "P10_log_residue_diagnostics",
+      "file": "native_platform/run_native_platform.py",
+      "add_to_log_entry": {
+        "residue_reject_reasons": "getattr(residue, 'reject_reasons', [])",
+        "residue_qualification_reasons": "getattr(residue, 'qualification_reasons', [])",
+        "residue_score": "float(getattr(residue, 'score', 0.0))"
+      }
+    }
+  ],
+
+  "rerun_plan": {
+    "do_not_run_full_suite_first": true,
+    "runs": [
+      {
+        "name": "baseline_train_A_pass1",
+        "frames": 500,
+        "reset_memory": true
+      },
+      {
+        "name": "baseline_train_A_pass2",
+        "frames": 500,
+        "reset_memory": false
+      },
+      {
+        "name": "replay_A",
+        "frames": 500,
+        "reset_memory": false
+      }
+    ],
+    "success_checks": [
+      "residue_commit_rate becomes clearly nonzero",
+      "replay_A forecast_error_mean is lower than pass1",
+      "caution_mean begins to fall or recovery_mean rises",
+      "reject reasons are visible if commits remain low"
+    ]
+  },
+
+  "expected_result": {
+    "delta_phi": "larger and more separable",
+    "forecast_error": "more meaningful than current-frame delta_phi",
+    "residue_commit_rate": "should rise above prior 0.002-0.004",
+    "learning_signal": "replay should improve compared with first exposure"
+  },
+
+  "final_instruction": "Apply these patches, rerun only A/A/replay first, and produce a short comparison report with residue commit rate, forecast_error_mean, delta_phi_mean, caution_mean, and recovery_mean."
+}

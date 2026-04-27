@@ -1,9 +1,11 @@
 {
   "name": "baseline_train_A_pass1",
-  "delta_phi_mean": 0.002133243151949902,
-  "delta_phi_max": 0.07262651471814974,
-  "caution_mean": 0.7418069252032896,
-  "recovery_mean": 0.12874854097591396,
-  "residue_commit_rate": 0.0,
+  "delta_phi_mean": 0.0025565810937603385,
+  "delta_phi_max": 0.07032490499228772,
+  "forecast_error_mean": 0.0043702145978066365,
+  "prediction_gain_mean": -0.0025565810937602873,
+  "caution_mean": 0.7434744451240565,
+  "recovery_mean": 0.12544409603960704,
+  "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass1.jsonl"
 }

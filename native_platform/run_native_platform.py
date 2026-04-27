@@ -56,6 +56,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     # Patch 15: Track biases from previous frame for engine injection
     last_flow_bias = 0.0
     last_delta_phi = 0.0
+    
+    # Patch 16: Track prior prediction for forecast error calculation
+    pending_phi_pred = None
 
     if run_id is None:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -87,7 +90,8 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             control_pattern = control_pattern * (1.0 + flow_feedback_gain * last_flow_bias)
             
             # Inject phase mismatch damping from previous turn (P13/P15 integration)
-            control_pattern *= (1.0 - 0.3 * last_delta_phi)
+            # Patch 16: Reduce damping (P6)
+            control_pattern *= (1.0 - 0.02 * last_delta_phi)
 
             # Patch 15: Clamp control pattern (P4)
             min_b = float(fb_config.get('feedback', {}).get('min_bias', 0.5))
@@ -109,8 +113,21 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data['E'],
                 scope_data['V']
             )
+            
+            # Patch 16: Real forecast error (P8)
+            if pending_phi_pred is not None:
+                forecast_error = float(phase_mismatch(pending_phi_pred, phi_current))
+            else:
+                forecast_error = 0.0
+
+            # Patch 14: Use residue-driven predictor
             phi_pred = phase_predictor.predict_next(phi_current, residue=last_residue)
             delta_phi = float(phase_mismatch(phi_pred, phi_current))
+
+            # Patch 16: Naive baseline comparison (P7)
+            phi_naive = phi_current
+            delta_phi_naive = float(phase_mismatch(phi_naive, phi_current))
+            prediction_gain = float(delta_phi_naive - delta_phi)
 
             # Map phase flow to operator pressure
             op_pressure = operator_pressure(delta_phi, last_delta_phi, scope_data['C'], scope_data['E'], scope_data['V'])
@@ -118,6 +135,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # Update biases for NEXT frame (P2)
             last_flow_bias = float(np.tanh(np.mean(scope_data['V'])))
             last_delta_phi = delta_phi
+            
+            # Patch 16: Capture prior prediction for next turn (P8)
+            pending_phi_pred = phi_pred.copy()
 
             # D. Hex Encoding
             full_hex = make_full_hex(scope_data["W_local"], scope_data["W_global"], scope_data["W_meta"])
@@ -137,14 +157,15 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             trace, state = v14.run_turn(signature_12, orientation_bias)
             
             # G. Imprint Residue
-            # Patch 15: Pass metadata to imprinter (P8)
+            # Patch 15/16: Pass metadata to imprinter
             meta_dict = {
                 "phi": phi_current.tolist(),
                 "hex": full_hex,
                 "delta_phi": delta_phi,
                 "op_pressure": op_pressure
             }
-            memory, residue = qualify_and_commit(trace, state, memory, t, v14.config, metadata=meta_dict)
+            # Use fb_config (which contains training_overrides) instead of v14.config
+            memory, residue = qualify_and_commit(trace, state, memory, t, fb_config, metadata=meta_dict)
             
             # Patch 14 legacy: Ensure phi is on residue object for predictor
             residue.phi = phi_current.copy()
@@ -156,6 +177,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 status = "SKIPPED"
                 
             # Logging to feedback_trace.jsonl
+            # Patch 16: Upgraded logging with forecast and diagnostics
             log_entry = {
                 "t": t,
                 "input_signal": float(input_signal),
@@ -163,6 +185,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "caution": float(state.caution_scalar),
                 "recovery": float(state.recovery_scalar),
                 "residue_committed": bool(residue.is_committed),
+                "residue_reject_reasons": getattr(residue, 'reject_reasons', []),
+                "residue_qualification_reasons": getattr(residue, 'qualification_reasons', []),
+                "residue_score": float(getattr(residue, 'stability_score', 0.0)),
                 "bias": float(r_bias),
                 "hex": full_hex,
                 "C": float(scope_data['C']),
@@ -173,12 +198,14 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "phi_current": phi_current.tolist(),
                 "phi_pred": phi_pred.tolist(),
                 "delta_phi": float(delta_phi),
+                "forecast_error": forecast_error,
+                "prediction_gain": prediction_gain,
                 "op_pressure": op_pressure
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} DeltaPhi={delta_phi:.4f} -> {status}")
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} DeltaPhi={delta_phi:.4f} Err={forecast_error:.4f} -> {status}")
 
             # Update last states for next cycle
             last_state = state

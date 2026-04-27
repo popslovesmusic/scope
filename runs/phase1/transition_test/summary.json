@@ -1,9 +1,11 @@
 {
   "name": "transition_test",
-  "delta_phi_mean": 0.003963209840280421,
-  "delta_phi_max": 0.19740627853844284,
-  "caution_mean": 0.7386208408445004,
-  "recovery_mean": 0.12761203144205857,
-  "residue_commit_rate": 0.004,
+  "delta_phi_mean": 0.004053716509512371,
+  "delta_phi_max": 0.081229647110315,
+  "forecast_error_mean": 0.0067794552941485425,
+  "prediction_gain_mean": -0.004053716509512312,
+  "caution_mean": 0.7354165008259617,
+  "recovery_mean": 0.12572078261212982,
+  "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_transition_test.jsonl"
 }

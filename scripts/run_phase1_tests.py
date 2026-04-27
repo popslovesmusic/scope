@@ -78,6 +78,8 @@ def execute_tests(config_path="config/test1.json"):
         
         # Compute summary metrics
         d_phis = [r["delta_phi"] for r in records]
+        f_errors = [r.get("forecast_error", 0.0) for r in records]
+        p_gains = [r.get("prediction_gain", 0.0) for r in records]
         cautions = [r["caution"] for r in records]
         recoveries = [r["recovery"] for r in records]
         commits = [1 if r["residue_committed"] else 0 for r in records]
@@ -86,6 +88,8 @@ def execute_tests(config_path="config/test1.json"):
             "name": run_name,
             "delta_phi_mean": float(np.mean(d_phis)),
             "delta_phi_max": float(np.max(d_phis)),
+            "forecast_error_mean": float(np.mean(f_errors)),
+            "prediction_gain_mean": float(np.mean(p_gains)),
             "caution_mean": float(np.mean(cautions)),
             "recovery_mean": float(np.mean(recoveries)),
             "residue_commit_rate": float(np.sum(commits) / len(commits)),

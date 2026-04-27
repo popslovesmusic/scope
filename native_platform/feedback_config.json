@@ -7,6 +7,13 @@
     "max_bias": 2.0,
     "min_bias": 0.5,
     "engine_steps_per_frame": 20,
-    "flow_feedback_gain": 0.2
+    "flow_feedback_gain": 0.2,
+    "training_overrides": {
+      "enabled": true,
+      "qualify_min_score": 0.2,
+      "qualify_recovery_threshold": 0.0,
+      "qualify_max_switch_freq": 0.95,
+      "caution_threshold": 0.9
+    }
   }
 }

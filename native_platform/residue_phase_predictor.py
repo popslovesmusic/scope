@@ -14,9 +14,12 @@ def derive_residue_phase_bias(residue):
     return np.zeros(8)
 
 class ResiduePhasePredictor:
-    def __init__(self, history_size=32):
+    def __init__(self, history_size=32, residue_pull_gain=2.0, trend_gain=1.5, accel_gain=0.5):
         self.history = []
         self.history_size = history_size
+        self.residue_pull_gain = residue_pull_gain
+        self.trend_gain = trend_gain
+        self.accel_gain = accel_gain
 
     def update_history(self, phi):
         self.history.append(phi)
@@ -32,20 +35,16 @@ class ResiduePhasePredictor:
         phi_prev = self.history[-1]
         phi_prev2 = self.history[-2]
 
-        v1 = phi_current - phi_prev
+        # Patch 16: use configurable gains
+        trend = phi_current - phi_prev
         v2 = phi_prev - phi_prev2
+        accel = trend - v2
 
-        # acceleration term (captures curvature)
-        accel = v1 - v2
-
-        # residue-driven pull (re-integrated from v1)
+        # residue-driven pull
         residue_pull = derive_residue_phase_bias(residue)
 
-        # forward projection (THIS is key)
-        phi_pred = phi_current + v1 + 0.5 * accel + residue_pull
-
-        # push prediction ahead (tunable)
-        phi_pred = phi_current + 1.5 * (phi_pred - phi_current)
+        # forward projection with gains
+        phi_pred = phi_current + self.trend_gain * trend + self.accel_gain * accel + self.residue_pull_gain * residue_pull
 
         # normalize
         phi_pred = phi_pred / (np.linalg.norm(phi_pred) + 1e-9)

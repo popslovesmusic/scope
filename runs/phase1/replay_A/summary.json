@@ -1,9 +1,11 @@
 {
   "name": "replay_A",
-  "delta_phi_mean": 0.003596010697522453,
-  "delta_phi_max": 0.1968196885040372,
-  "caution_mean": 0.7406972141416435,
-  "recovery_mean": 0.1281934961694024,
-  "residue_commit_rate": 0.004,
+  "delta_phi_mean": 0.0028304762906521124,
+  "delta_phi_max": 0.10047842359958581,
+  "forecast_error_mean": 0.004701597828808787,
+  "prediction_gain_mean": -0.002830476290652059,
+  "caution_mean": 0.7423851620683475,
+  "recovery_mean": 0.12744879789618369,
+  "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_replay_A.jsonl"
 }

@@ -1,9 +1,11 @@
 {
   "name": "continuation_test_A_tail_removed",
-  "delta_phi_mean": 0.002923475310281585,
-  "delta_phi_max": 0.07591228945416006,
-  "caution_mean": 0.7399333713658942,
-  "recovery_mean": 0.12965529714682467,
-  "residue_commit_rate": 0.0,
+  "delta_phi_mean": 0.0021476489100947047,
+  "delta_phi_max": 0.07400996345497768,
+  "forecast_error_mean": 0.0036801750919200466,
+  "prediction_gain_mean": -0.0021476489100946514,
+  "caution_mean": 0.7399112073655748,
+  "recovery_mean": 0.13136815225461382,
+  "residue_commit_rate": 0.0033333333333333335,
   "trace_path": "logs/feedback_trace_phase1_continuation_test_A_tail_removed.jsonl"
 }

@@ -1,9 +1,11 @@
 {
   "name": "perturbation_test",
-  "delta_phi_mean": 0.0033776443833799324,
-  "delta_phi_max": 0.11620048833978591,
-  "caution_mean": 0.7393664004440992,
-  "recovery_mean": 0.12909598349041512,
+  "delta_phi_mean": 0.0030633724589758157,
+  "delta_phi_max": 0.08471783728966398,
+  "forecast_error_mean": 0.004995823149664027,
+  "prediction_gain_mean": -0.003063372458975759,
+  "caution_mean": 0.7407762202000366,
+  "recovery_mean": 0.1274742907547965,
   "residue_commit_rate": 0.002,
   "trace_path": "logs/feedback_trace_phase1_perturbation_test.jsonl"
 }
