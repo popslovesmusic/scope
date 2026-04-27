@@ -93,7 +93,27 @@ For archival or system transfer, use the following aggregated files:
 
 ---
 
-## 8. Interface Usage
+## 8. Phase-Residue System
+
+The platform uses a high-fidelity **Phase Space** representation to predict and stabilize analog trajectories:
+*   **Phase Vector:** An 8-dimensional state combining physics (W, C, E) and momentum (V).
+*   **Residue-Driven Prediction:** The system predicts the next expected state based on momentum plus the "pull" of committed stable residues.
+*   **Mismatch (DeltaPhi):** Real-time scoring of how much the engine diverges from expectations.
+*   **Operator Mapping:** Mismatch trends are mapped into pressure for v14 orientation operators (`++`, `--`, `+-`, `-+`), allowing the system to "steer" its reasoning toward stability.
+
+---
+
+## 9. Training (Wave Exposure)
+
+The system learns through exposure to wave patterns defined in `native_platform/training_manifest.json`:
+1.  **Baseline Learning:** Repeated exposure to a stable wave to form an initial attractor.
+2.  **Continuation:** Testing whether the system can "hallucinate" the phase trajectory when the input signal is removed.
+3.  **Perturbation:** Training the system to detect and recover from frequency drift or noise.
+4.  **Contrast:** Establishing distinct residue basins for different wave types.
+
+---
+
+## 10. Interface Usage
 
 ### Command Line Interface (CLI)
 The primary entry point for managing runs and data:
