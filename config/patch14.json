@@ -1,0 +1,148 @@
+{
+  "agent_patch_series": "phase_residue_operator_training_v1",
+
+  "goal": "Upgrade phase continuation so prediction is driven by residue memory and mapped into v14 orientation operators, then train by wave exposure.",
+
+  "core_rule": "Do not train weights. Train residue-phase continuation.",
+
+  "patches": [
+    {
+      "id": "P1_residue_driven_phase_predictor",
+      "create_file": "native_platform/residue_phase_predictor.py",
+      "purpose": "Predict next phase using recent phase history plus committed residue bias.",
+      "code_shape": [
+        "class ResiduePhasePredictor:",
+        "  def __init__(self, history_size=32):",
+        "    self.history = []",
+        "",
+        "  def update_history(self, phi):",
+        "    append phi, trim history",
+        "",
+        "  def predict_next(self, phi_current, residue=None):",
+        "    if insufficient history: return phi_current",
+        "    trend = phi_current - previous_phi",
+        "    residue_pull = derive_residue_phase_bias(residue)",
+        "    phi_pred = phi_current + trend + residue_pull",
+        "    normalize phi_pred",
+        "    update history",
+        "    return phi_pred"
+      ]
+    },
+    {
+      "id": "P2_phase_to_operator_map",
+      "create_file": "native_platform/phase_operator_map.py",
+      "purpose": "Map phase flow into v14 operator pressure without forcing operator selection.",
+      "operator_logic": {
+        "++": "stable alignment / low mismatch / forward continuation",
+        "--": "inversion or return pressure",
+        "+-": "split / divergence / rising mismatch",
+        "-+": "recovery / recoupling / mismatch reduction"
+      },
+      "code_shape": [
+        "def operator_pressure(delta_phi, delta_phi_prev, C, E, V):",
+        "  pressure = {'++':0,'--':0,'+-':0,'-+':0}",
+        "  if delta_phi low and C stable: pressure['++'] += ...",
+        "  if delta_phi rising: pressure['+-'] += ...",
+        "  if delta_phi falling after rise: pressure['-+'] += ...",
+        "  if phase inversion detected: pressure['--'] += ...",
+        "  normalize pressures",
+        "  return pressure"
+      ]
+    },
+    {
+      "id": "P3_safe_operator_bias_into_signature",
+      "modify_file": "native_platform/wheel12_projection.py",
+      "purpose": "Apply operator pressure as signature shaping only, not direct v14 mutation.",
+      "rule": "Operator pressure can rotate, brighten, or damp 12-wheel sectors; it cannot set v14 operator directly.",
+      "add_function": [
+        "def apply_operator_pressure(signature, pressure):",
+        "  sector_map = {'++':[0,1,2], '--':[3,4,5], '+-':[6,7,8], '-+':[9,10,11]}",
+        "  for op, idxs in sector_map.items():",
+        "    signature[idxs] *= (1.0 + pressure[op] * 0.15)",
+        "  normalize_or_clip signature",
+        "  return signature"
+      ]
+    },
+    {
+      "id": "P4_run_loop_integration",
+      "modify_file": "native_platform/run_native_platform.py",
+      "add": [
+        "from native_platform.residue_phase_predictor import ResiduePhasePredictor",
+        "from native_platform.phase_operator_map import operator_pressure",
+        "",
+        "phase_predictor = ResiduePhasePredictor(history_size=32)",
+        "last_delta_phi = 0.0",
+        "",
+        "inside loop after phi_current:",
+        "phi_pred = phase_predictor.predict_next(phi_current, residue=last_residue)",
+        "delta_phi = phase_mismatch(phi_pred, phi_current)",
+        "op_pressure = operator_pressure(delta_phi, last_delta_phi, scope_data['C'], scope_data['E'], scope_data['V'])",
+        "signature_12 = apply_operator_pressure(signature_12, op_pressure)",
+        "last_delta_phi = delta_phi",
+        "",
+        "log delta_phi, phi_pred, op_pressure"
+      ]
+    },
+    {
+      "id": "P5_training_manifest",
+      "create_file": "native_platform/training_manifest.json",
+      "purpose": "Define wave exposure curriculum.",
+      "content": {
+        "training_mode": "residue_phase_imprinting",
+        "phases": [
+          {
+            "name": "baseline_learning",
+            "input": "stable wave A",
+            "passes": 3,
+            "goal": "low delta_phi, stable ++ pressure, residue commits"
+          },
+          {
+            "name": "continuation_test",
+            "input": "wave A with tail removed",
+            "passes": 1,
+            "goal": "model continues phase trajectory internally"
+          },
+          {
+            "name": "perturbation_test",
+            "input": "wave A plus noise or frequency drift",
+            "passes": 2,
+            "goal": "delta_phi rises then recovery/-+ pressure appears"
+          },
+          {
+            "name": "contrast_learning",
+            "input": "different wave B",
+            "passes": 2,
+            "goal": "separate residue basin"
+          },
+          {
+            "name": "transition_learning",
+            "input": "A -> unstable/event-like transition",
+            "passes": 3,
+            "goal": "delta_phi rises before event region"
+          }
+        ]
+      }
+    }
+  ],
+
+  "training_metrics": [
+    "delta_phi_mean",
+    "delta_phi_slope",
+    "operator_pressure_distribution",
+    "residue_commit_rate",
+    "caution_mean",
+    "recovery_mean",
+    "hex_motif_repeat_rate",
+    "prediction_horizon_before_divergence"
+  ],
+
+  "success_conditions": {
+    "baseline": "same wave replay lowers delta_phi",
+    "continuation": "removed tail is internally predicted better than neutral baseline",
+    "perturbation": "delta_phi detects drift before visible collapse",
+    "contrast": "different waves form different residue/operator patterns",
+    "pathology_goal": "undesired-event trajectory produces rising delta_phi before event onset"
+  },
+
+  "final_instruction": "Implement residue-driven phase prediction and phase-to-operator pressure as legal input-space shaping. Then train by repeated wave exposure and evaluate continuation accuracy through delta_phi."
+}

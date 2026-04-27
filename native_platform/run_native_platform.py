@@ -9,11 +9,14 @@ from .signalscope_core import SignalScope
 from .hex_state import make_full_hex
 from .wheel12_projection import project_to_12
 from .v14_bridge import V14Bridge
+from .v14_bridge import V14Bridge
 from .residue_imprinter import qualify_and_commit
 from .feedback_adapter import FeedbackAdapter
 from .residue_feedback import residue_bias
 from .phase_space import compute_phase_vector, phase_mismatch
-from .phase_predictor import PhasePredictor
+from .residue_phase_predictor import ResiduePhasePredictor
+from .phase_operator_map import operator_pressure
+from .wheel12_projection import project_to_12, apply_operator_pressure
 
 from core.memory_layer import load_memory_state, save_memory_state
 
@@ -24,7 +27,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     engine = EngineBridge(num_nodes=num_nodes)
     scope = SignalScope()
     v14 = V14Bridge()
-    phase_predictor = PhasePredictor()
+    phase_predictor = ResiduePhasePredictor(history_size=32)
     memory_path = "sessions/native_memory.json"
     memory = load_memory_state(memory_path)
     
@@ -47,6 +50,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     # Initial states for feedback
     last_state = type('obj', (object,), {'caution_scalar': 0.0, 'recovery_scalar': 0.0, 'hold_state': False, 'components': []})
     last_residue = None
+    last_delta_phi = 0.0
 
     if run_id is None:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -83,8 +87,12 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             scope_data['E'],
             scope_data['V']
         )
-        phi_pred = phase_predictor.predict_next(phi_current)
+        # Patch 14: Use residue-driven predictor
+        phi_pred = phase_predictor.predict_next(phi_current, residue=last_residue)
         delta_phi = float(phase_mismatch(phi_pred, phi_current))
+
+        # Patch 14: Map phase flow to operator pressure
+        op_pressure = operator_pressure(delta_phi, last_delta_phi, scope_data['C'], scope_data['E'], scope_data['V'])
 
         # Patch 11: Directional Feedback (react to trajectory flow)
         flow_feedback_gain = float(fb_config.get('feedback', {}).get('flow_feedback_gain', 0.2))
@@ -106,11 +114,17 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             scope_data["V"]
         )
         
+        # Patch 14: Apply operator pressure to signature
+        signature_12 = apply_operator_pressure(signature_12, op_pressure)
+        
         # F. Run SBLLM v14 Reasoning
         trace, state = v14.run_turn(signature_12, orientation_bias)
         
         # G. Imprint Residue
         memory, residue = qualify_and_commit(trace, state, memory, t, v14.config)
+        
+        # Patch 14: Attach phi to residue for next turn's prediction
+        residue.phi = phi_current.copy()
         
         # H. Log Progress
         if residue.is_committed:
@@ -118,7 +132,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
         else:
             status = "SKIPPED"
             
-        # Logging to feedback_trace.jsonl (Patch 11 upgraded)
+        # Logging to feedback_trace.jsonl (Patch 14 upgraded)
         log_entry = {
             "t": t,
             "input_signal": float(input_signal),
@@ -135,17 +149,19 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             "engine_steps": int(engine_steps),
             "phi_current": phi_current.tolist(),
             "phi_pred": phi_pred.tolist(),
-            "delta_phi": float(delta_phi)
+            "delta_phi": float(delta_phi),
+            "op_pressure": op_pressure
         }
         with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
             f_log.write(json.dumps(log_entry) + "\n")
 
         if t % 10 == 0:
-            print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Control={control_pattern:.2f} -> {status}")
+            print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} DeltaPhi={delta_phi:.4f} -> {status}")
 
         # Update last states for next feedback cycle
         last_state = state
         last_residue = residue
+        last_delta_phi = delta_phi
 
     # 2. Finalize
     save_memory_state(memory_path, memory)

@@ -1,0 +1,35 @@
+{
+  "training_mode": "residue_phase_imprinting",
+  "phases": [
+    {
+      "name": "baseline_learning",
+      "input": "stable wave A",
+      "passes": 3,
+      "goal": "low delta_phi, stable ++ pressure, residue commits"
+    },
+    {
+      "name": "continuation_test",
+      "input": "wave A with tail removed",
+      "passes": 1,
+      "goal": "model continues phase trajectory internally"
+    },
+    {
+      "name": "perturbation_test",
+      "input": "wave A plus noise or frequency drift",
+      "passes": 2,
+      "goal": "delta_phi rises then recovery/-+ pressure appears"
+    },
+    {
+      "name": "contrast_learning",
+      "input": "different wave B",
+      "passes": 2,
+      "goal": "separate residue basin"
+    },
+    {
+      "name": "transition_learning",
+      "input": "A -> unstable/event-like transition",
+      "passes": 3,
+      "goal": "delta_phi rises before event region"
+    }
+  ]
+}
