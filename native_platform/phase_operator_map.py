@@ -26,8 +26,5 @@ def operator_pressure(delta_phi, delta_phi_prev, C, E, V):
     if total > 1e-9:
         for k in pressure:
             pressure[k] /= total
-    else:
-        # Default to neutral/forward
-        pressure['++'] = 1.0
             
     return pressure

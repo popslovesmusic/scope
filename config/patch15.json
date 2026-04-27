@@ -1,0 +1,75 @@
+{
+  "agent_patch": "platform_error_fix_optimization_v1",
+  "rules": {
+    "do_not_modify": ["v14 core internals"],
+    "preserve": ["residue qualification", "SignalScope constraint", "legal feedback"]
+  },
+  "patches": [
+    {
+      "id": "P1_clean_imports",
+      "file": "native_platform/run_native_platform.py",
+      "change": "Remove duplicate V14Bridge import and duplicate project_to_12 import."
+    },
+    {
+      "id": "P2_previous_frame_feedback",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Ensure feedback affects the engine frame it is intended to affect.",
+      "change": [
+        "initialize last_flow_bias = 0.0 and last_delta_phi = 0.0",
+        "before engine.evolve, compute control_pattern using last_flow_bias and last_delta_phi",
+        "after scope/phase calculation, update last_flow_bias and last_delta_phi for next frame"
+      ]
+    },
+    {
+      "id": "P3_clip_phase_mismatch",
+      "file": "native_platform/phase_space.py",
+      "replace": {
+        "old": "dot = np.dot(phi1, phi2)\n    return 1.0 - dot",
+        "new": "dot = float(np.dot(phi1, phi2))\n    dot = max(-1.0, min(1.0, dot))\n    return 1.0 - dot"
+      }
+    },
+    {
+      "id": "P4_clamp_control",
+      "file": "native_platform/run_native_platform.py",
+      "add_after_control_calculation": [
+        "min_b = float(fb_config.get('feedback', {}).get('min_bias', 0.5))",
+        "max_b = float(fb_config.get('feedback', {}).get('max_bias', 2.0))",
+        "control_pattern = float(np.clip(control_pattern, min_b, max_b))"
+      ]
+    },
+    {
+      "id": "P5_neutral_operator_pressure",
+      "file": "native_platform/phase_operator_map.py",
+      "change": "If total pressure is zero, return all zeros instead of {'++': 1.0}."
+    },
+    {
+      "id": "P6_better_regional_W",
+      "file": "native_platform/scope_adapter.py",
+      "goal": "Preserve richer regional dynamics.",
+      "replace_compute_regional_W_strategy": {
+        "old": "vals.append(compute_W(chunk)[0])",
+        "new": "compute energy per region for W, but also expose optional regional_features = [mean_energy, mean_gradient, mean_variance] for future scope versions"
+      }
+    },
+    {
+      "id": "P7_buffer_logging",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Reduce per-frame file I/O overhead.",
+      "change": "Open feedback_trace_path once before loop and write inside loop, closing after loop."
+    },
+    {
+      "id": "P8_persist_phase_metadata",
+      "file": "native_platform/residue_imprinter.py",
+      "goal": "Allow phase residue to survive serialization.",
+      "change": "Add optional metadata dict to residue if supported; include phi_current, hex, delta_phi, op_pressure."
+    }
+  ],
+  "validation": [
+    "run 100 frames without exceptions",
+    "control pattern in log equals value used by engine",
+    "delta_phi remains in [0,2]",
+    "operator pressure can be all-zero neutral",
+    "W sums to 1 for local/global/meta",
+    "same wave replay lowers delta_phi or caution"
+  ]
+}

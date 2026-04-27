@@ -8,7 +8,7 @@ from core.memory_layer import (
     PersistentMemoryState
 )
 
-def qualify_and_commit(trace, state, memory, turn_id, config):
+def qualify_and_commit(trace, state, memory, turn_id, config, metadata=None):
     """
     Qualifies the trace and commits to memory if stable.
     """
@@ -35,6 +35,16 @@ def qualify_and_commit(trace, state, memory, turn_id, config):
         reply_mode="research_shell",
         turn_id=turn_id
     )
+    
+    # Patch 15: Attach optional metadata (phi, hex, op_pressure) to residue
+    if metadata:
+        residue.metadata = metadata
+        if 'phi' in metadata:
+            residue.phi = metadata['phi']
+        if 'hex' in metadata:
+            residue.hex_code = metadata['hex']
+        if 'delta_phi' in metadata:
+            residue.hex_stability = 1.0 - metadata['delta_phi'] # proxy for stability
     
     # 3. Qualify
     # Use thresholds from config

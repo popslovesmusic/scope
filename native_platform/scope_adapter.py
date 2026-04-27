@@ -53,10 +53,16 @@ def compute_regional_W(node_outputs, regions=3):
     
     # Split the field into chunks
     chunks = np.array_split(outputs, regions)
+    
+    # Measure participation primarily by energy in each region
     vals = []
-    for chunk in chunks[:3]: # Ensure we only take first 3 regions for W1, W2, W3
-        # Use mean energy of each region as its participation component
-        vals.append(compute_W(chunk)[0])
+    regional_features = [] # Internal data for future scope refinement
+    
+    for chunk in chunks[:3]:
+        # Compute full W features for this chunk but only use Energy (W[0]) for participation
+        w_chunk = compute_W(chunk)
+        vals.append(w_chunk[0])
+        regional_features.append(w_chunk.tolist())
         
     W_raw = np.array(vals, dtype=float)
     

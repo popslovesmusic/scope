@@ -12,5 +12,6 @@ def compute_phase_vector(W, C, E, V):
 
 def phase_mismatch(phi1, phi2):
     # 1 - cosine similarity
-    dot = np.dot(phi1, phi2)
+    dot = float(np.dot(phi1, phi2))
+    dot = max(-1.0, min(1.0, dot))
     return 1.0 - dot
