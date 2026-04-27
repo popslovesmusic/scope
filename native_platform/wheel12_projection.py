@@ -29,4 +29,8 @@ def project_to_12(W, C, E, V):
     orientation_bias = np.tanh(np.mean(V))
     signature += orientation_bias * 0.1
     
+    # Patch 11: Clamp to valid range
+    signature = np.nan_to_num(signature, nan=0.0, posinf=1.0, neginf=0.0)
+    signature = np.clip(signature, 0.0, 1.0)
+
     return signature, orientation_bias

@@ -1,0 +1,159 @@
+{
+  "agent_patch_series": "native_platform_fix_and_upgrade_v1",
+  "base_rule": "Do not modify v14 internals. All control must happen through input shaping, scope projection, residue qualification, and engine feedback.",
+
+  "patches": [
+    {
+      "id": "P1_engine_multistep_evolution",
+      "file": "native_platform/engine_bridge.py",
+      "goal": "Make each frame evolve the analog field for multiple internal steps.",
+      "change": {
+        "add_to_class": {
+          "method": "evolve",
+          "code": [
+            "def evolve(self, input_signal, control_pattern=1.0, steps=20):",
+            "    last = 0.0",
+            "    for _ in range(int(steps)):",
+            "        last = self.step(input_signal, control_pattern)",
+            "    return last"
+          ]
+        }
+      }
+    },
+    {
+      "id": "P2_scope_regional_measurement",
+      "file": "native_platform/scope_adapter.py",
+      "goal": "Avoid collapsing the whole node field too early.",
+      "change": {
+        "add_function": [
+          "def compute_regional_W(node_outputs, regions=3):",
+          "    outputs = np.asarray(node_outputs, dtype=float)",
+          "    if outputs.size == 0:",
+          "        return np.array([1/3, 1/3, 1/3])",
+          "    chunks = np.array_split(outputs, regions)",
+          "    vals = []",
+          "    for chunk in chunks[:3]:",
+          "        vals.append(compute_W(chunk)[0])",
+          "    W_raw = np.array(vals, dtype=float)",
+          "    S = np.sum(W_raw)",
+          "    if S > 1e-9:",
+          "        return W_raw / S",
+          "    return np.array([1/3, 1/3, 1/3])"
+        ]
+      }
+    },
+    {
+      "id": "P3_scope_uses_regional_W",
+      "file": "native_platform/signalscope_core.py",
+      "goal": "Let SignalScope read spatially distributed field participation.",
+      "change": {
+        "modify_import": "from .scope_adapter import compute_W, compute_metrics, compute_regional_W",
+        "replace_in_update": {
+          "old": "self.local.update(node_outputs)",
+          "new": [
+            "regional_W = compute_regional_W(node_outputs, regions=3)",
+            "self.local.C, self.local.E, self.local.V = compute_metrics(self.local.W, regional_W)",
+            "self.local.W = regional_W"
+          ]
+        }
+      }
+    },
+    {
+      "id": "P4_directional_feedback",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Let feedback react to trajectory flow without touching v14 state.",
+      "change": {
+        "replace_engine_step_block": {
+          "old": [
+            "engine_mean = engine.step(input_signal, control_pattern)",
+            "node_outputs = engine.get_node_outputs()"
+          ],
+          "new": [
+            "engine_steps = int(fb_config.get('feedback', {}).get('engine_steps_per_frame', 20))",
+            "engine_mean = engine.evolve(input_signal, control_pattern, steps=engine_steps)",
+            "node_outputs = engine.get_node_outputs()"
+          ]
+        },
+        "after_scope_update_add": [
+          "flow_bias = float(np.tanh(np.mean(scope_data['V'])))",
+          "control_pattern = control_pattern * (1.0 + 0.2 * flow_bias)"
+        ],
+        "note": "If applying this after the engine step feels temporally awkward, use flow_bias from the previous frame instead."
+      }
+    },
+    {
+      "id": "P5_feedback_config_upgrade",
+      "file": "native_platform/feedback_config.json",
+      "goal": "Expose engine depth and flow gain.",
+      "replace_content": {
+        "feedback": {
+          "enabled": true,
+          "mode": "admissible_bias",
+          "gain": 0.5,
+          "decay": 0.95,
+          "max_bias": 2.0,
+          "min_bias": 0.5,
+          "engine_steps_per_frame": 20,
+          "flow_feedback_gain": 0.2
+        }
+      }
+    },
+    {
+      "id": "P6_logging_upgrade",
+      "file": "native_platform/run_native_platform.py",
+      "goal": "Log enough to prove learning/separation.",
+      "add_to_log_entry": {
+        "hex": "full_hex",
+        "C": "scope_data['C']",
+        "E": "scope_data['E']",
+        "V": "scope_data['V'].tolist()",
+        "engine_mean": "engine_mean",
+        "engine_steps": "engine_steps"
+      }
+    },
+    {
+      "id": "P7_signature_clamp",
+      "file": "native_platform/wheel12_projection.py",
+      "goal": "Prevent invalid signature values after orientation bias.",
+      "change": {
+        "add_before_return": [
+          "signature = np.nan_to_num(signature, nan=0.0, posinf=1.0, neginf=0.0)",
+          "signature = np.clip(signature, 0.0, 1.0)"
+        ]
+      }
+    }
+  ],
+
+  "validation_tests": [
+    {
+      "name": "scope_sum_constraint",
+      "expect": "W_local, W_global, W_meta always sum to 1"
+    },
+    {
+      "name": "field_evolution_depth",
+      "expect": "Changing engine_steps_per_frame changes scope trajectory"
+    },
+    {
+      "name": "regional_scope_effect",
+      "expect": "Regional W differs from global compute_W on nonuniform node fields"
+    },
+    {
+      "name": "legal_feedback",
+      "expect": "No v14 internal state is directly mutated"
+    },
+    {
+      "name": "replay_learning",
+      "expect": "Second pass of same wave shows lower caution, lower switch rate, or higher commit rate"
+    }
+  ],
+
+  "priority_order": [
+    "P1_engine_multistep_evolution",
+    "P2_scope_regional_measurement",
+    "P3_scope_uses_regional_W",
+    "P7_signature_clamp",
+    "P5_feedback_config_upgrade",
+    "P4_directional_feedback",
+    "P6_logging_upgrade"
+  ]
+}

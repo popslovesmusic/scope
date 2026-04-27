@@ -55,12 +55,19 @@ def run_platform(num_frames=100, num_nodes=100):
         control_pattern = base_bias * r_bias
 
         # B. Step Engine with dynamic control pattern
-        engine_mean = engine.step(input_signal, control_pattern)
+        # Patch 11: Multi-step evolution
+        engine_steps = int(fb_config.get('feedback', {}).get('engine_steps_per_frame', 20))
+        engine_mean = engine.evolve(input_signal, control_pattern, steps=engine_steps)
         node_outputs = engine.get_node_outputs()
         
         # C. Update SignalScope
         scope_data = scope.update(node_outputs)
         
+        # Patch 11: Directional Feedback (react to trajectory flow)
+        flow_feedback_gain = float(fb_config.get('feedback', {}).get('flow_feedback_gain', 0.2))
+        flow_bias = float(np.tanh(np.mean(scope_data['V'])))
+        control_pattern = control_pattern * (1.0 + flow_feedback_gain * flow_bias)
+
         # D. Hex Encoding
         full_hex = make_full_hex(scope_data["W_local"], scope_data["W_global"], scope_data["W_meta"])
         
@@ -84,7 +91,7 @@ def run_platform(num_frames=100, num_nodes=100):
         else:
             status = "SKIPPED"
             
-        # Logging to feedback_trace.jsonl
+        # Logging to feedback_trace.jsonl (Patch 11 upgraded)
         log_entry = {
             "t": t,
             "input_signal": float(input_signal),
@@ -92,7 +99,13 @@ def run_platform(num_frames=100, num_nodes=100):
             "caution": float(state.caution_scalar),
             "recovery": float(state.recovery_scalar),
             "residue_committed": bool(residue.is_committed),
-            "bias": float(r_bias)
+            "bias": float(r_bias),
+            "hex": full_hex,
+            "C": float(scope_data['C']),
+            "E": float(scope_data['E']),
+            "V": scope_data['V'].tolist(),
+            "engine_mean": float(engine_mean),
+            "engine_steps": int(engine_steps)
         }
         with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
             f_log.write(json.dumps(log_entry) + "\n")

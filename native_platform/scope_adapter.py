@@ -42,3 +42,26 @@ def compute_metrics(W_prev, W):
     V = W - W_prev
     
     return float(C), float(E), V
+
+def compute_regional_W(node_outputs, regions=3):
+    """
+    Computes participation weights across spatial regions to avoid premature collapse.
+    """
+    outputs = np.asarray(node_outputs, dtype=float)
+    if outputs.size == 0:
+        return np.array([1/3, 1/3, 1/3])
+    
+    # Split the field into chunks
+    chunks = np.array_split(outputs, regions)
+    vals = []
+    for chunk in chunks[:3]: # Ensure we only take first 3 regions for W1, W2, W3
+        # Use mean energy of each region as its participation component
+        vals.append(compute_W(chunk)[0])
+        
+    W_raw = np.array(vals, dtype=float)
+    
+    # Normalize to sum=1
+    S = np.sum(W_raw)
+    if S > 1e-9:
+        return W_raw / S
+    return np.array([1/3, 1/3, 1/3])

@@ -27,6 +27,15 @@ class EngineBridge:
             self.dummy_outputs = 0.9 * self.dummy_outputs + 0.1 * input_signal + np.random.normal(0, 0.01, self.num_nodes)
             return np.mean(self.dummy_outputs)
 
+    def evolve(self, input_signal, control_pattern=1.0, steps=20):
+        """
+        Evolves the field for multiple internal steps.
+        """
+        last = 0.0
+        for _ in range(int(steps)):
+            last = self.step(input_signal, control_pattern)
+        return last
+
     def get_node_outputs(self):
         if self.engine:
             return np.array(self.engine.getNodeOutputs())

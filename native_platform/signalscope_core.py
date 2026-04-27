@@ -1,6 +1,6 @@
 
 import numpy as np
-from .scope_adapter import compute_W, compute_metrics
+from .scope_adapter import compute_W, compute_metrics, compute_regional_W
 
 class ScopeWindow:
     def __init__(self, window_id):
@@ -26,7 +26,10 @@ class SignalScope:
 
     def update(self, node_outputs):
         # 1. Local update
-        self.local.update(node_outputs)
+        regional_W = compute_regional_W(node_outputs, regions=3)
+        self.local.C, self.local.E, self.local.V = compute_metrics(self.local.W, regional_W)
+        self.local.W = regional_W
+        
         self.local_history.append(self.local.W.copy())
         if len(self.local_history) > 10:
             self.local_history.pop(0)
