@@ -109,11 +109,22 @@ The system learns through exposure to wave patterns defined in `native_platform/
 1.  **Baseline Learning:** Repeated exposure to a stable wave to form an initial attractor.
 2.  **Continuation:** Testing whether the system can "hallucinate" the phase trajectory when the input signal is removed.
 3.  **Perturbation:** Training the system to detect and recover from frequency drift or noise.
-4.  **Contrast:** Establishing distinct residue basins for different wave types.
+*   **Contrast:** Establishing distinct residue basins for different wave types.
 
 ---
 
-## 10. Interface Usage
+## 10. Stability & Performance (Patch 15)
+
+The platform includes several critical optimizations for long-duration analog runs:
+*   **Temporal Alignment:** Feedback (Flow Bias and Phase Mismatch) is now aligned with the previous frame to ensure physical modulation affects the correct engine state.
+*   **Safety Clamping:** The engine's `control_pattern` is strictly clamped (default `[0.5, 2.0]`) to prevent runaway divergence.
+*   **Buffered Logging:** High-fidelity traces are written through a single persistent file handle per run, significantly reducing I/O overhead.
+*   **Metadata Persistence:** Committed residues now store complete state snapshots (`phi` vectors, `hex` codes, and `op_pressure`), allowing the system to re-anchor to learned attractors after serialization.
+
+---
+
+## 11. Interface Usage
+
 
 ### Command Line Interface (CLI)
 The primary entry point for managing runs and data:
