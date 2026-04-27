@@ -90,3 +90,50 @@ The system generates three primary output streams for every run:
 For archival or system transfer, use the following aggregated files:
 *   **`signal_scope_v14_hex_full.txt`**: The core symbolic v14 system.
 *   **`native_wave_residue_platform_v14.txt`**: The full physical-to-symbolic bridge and feedback logic.
+
+---
+
+## 8. Interface Usage
+
+### Command Line Interface (CLI)
+The primary entry point for managing runs and data:
+```powershell
+# Start a new run
+python -m native_platform.cli run --frames 500 --nodes 1024 --engine-steps 20
+
+# View latest trajectory metrics
+python -m native_platform.cli scope --tail 20
+
+# Check residue memory status
+python -m native_platform.cli memory
+
+# Reset and backup memory
+python -m native_platform.cli reset-memory
+
+# Export complete run data
+python -m native_platform.cli export-run --out run_bundle.zip
+```
+
+### Visual Dashboard
+Read-only monitoring of the analog field and reasoning metrics:
+```powershell
+# Requires streamlit and pandas
+streamlit run native_platform/dashboard.py
+```
+**Panels:**
+*   Live W-state and Hex status.
+*   Coupling (C) and Imbalance (E) time series.
+*   Reasoning Caution vs. Recovery trends.
+*   Learning/Imprint success rate.
+
+### FastAPI Bridge
+External control and state access:
+```powershell
+# Start the API server
+uvicorn native_platform.api:app --reload
+```
+**Key Endpoints:**
+*   `GET /status`: Current system state.
+*   `GET /memory`: Full residue memory summary.
+*   `POST /run`: Programmatic trigger for new imprinting runs.
+*   `POST /memory/reset`: Remote memory clearing with automatic backup.

@@ -1,0 +1,131 @@
+{
+  "agent_patch": "phase_mismatch_continuation_v1",
+
+  "rules": {
+    "do_not_modify": [
+      "v14 reasoning loop",
+      "residue qualification",
+      "core signature structures"
+    ],
+    "do": [
+      "add phase representation layer",
+      "compute phase mismatch",
+      "use phase mismatch for prediction + scoring",
+      "keep everything as input/measurement layer"
+    ]
+  },
+
+  "files_to_create": {
+    "native_platform/phase_space.py": {
+      "purpose": "Define phase representation and mismatch",
+      "content": [
+        "import numpy as np",
+        "",
+        "def normalize(v):",
+        "    n = np.linalg.norm(v)",
+        "    return v / n if n > 1e-9 else v",
+        "",
+        "def compute_phase_vector(W, C, E, V):",
+        "    # W: 3-vector, V: 3-vector",
+        "    phase = np.concatenate([W, [C, E], V])",
+        "    return normalize(phase)",
+        "",
+        "def phase_mismatch(phi1, phi2):",
+        "    # 1 - cosine similarity",
+        "    dot = np.dot(phi1, phi2)",
+        "    return 1.0 - dot"
+      ]
+    },
+
+    "native_platform/phase_predictor.py": {
+      "purpose": "Generate phase-aligned continuation",
+      "content": [
+        "import numpy as np",
+        "",
+        "class PhasePredictor:",
+        "    def __init__(self):",
+        "        self.last_phi = None",
+        "",
+        "    def predict_next(self, phi_current):",
+        "        if self.last_phi is None:",
+        "            self.last_phi = phi_current",
+        "            return phi_current",
+        "",
+        "        # simple continuation: project forward along last direction",
+        "        delta = phi_current - self.last_phi",
+        "        phi_pred = phi_current + delta",
+        "",
+        "        # normalize to keep bounded",
+        "        phi_pred = phi_pred / (np.linalg.norm(phi_pred) + 1e-9)",
+        "",
+        "        self.last_phi = phi_current",
+        "        return phi_pred"
+      ]
+    }
+  },
+
+  "files_to_modify": {
+    "native_platform/run_native_platform.py": {
+      "changes": [
+        "from native_platform.phase_space import compute_phase_vector, phase_mismatch",
+        "from native_platform.phase_predictor import PhasePredictor",
+        "",
+        "# initialize once",
+        "phase_predictor = PhasePredictor()",
+        "",
+        "# inside main loop AFTER scope_data is computed:",
+        "phi_current = compute_phase_vector(",
+        "    scope_data['W_local'],",
+        "    scope_data['C'],",
+        "    scope_data['E'],",
+        "    scope_data['V']",
+        ")",
+        "",
+        "phi_pred = phase_predictor.predict_next(phi_current)",
+        "",
+        "delta_phi = phase_mismatch(phi_pred, phi_current)",
+        "",
+        "# add to log",
+        "log_entry['delta_phi'] = float(delta_phi)",
+        "",
+        "# optional: influence control pattern (legal)",
+        "control_pattern *= (1.0 - 0.3 * delta_phi)"
+      ]
+    }
+  },
+
+  "logging_upgrade": {
+    "add_fields": [
+      "phi_current",
+      "phi_pred",
+      "delta_phi"
+    ]
+  },
+
+  "tests": [
+    {
+      "name": "phase_vector_norm",
+      "expect": "||phi|| ≈ 1"
+    },
+    {
+      "name": "phase_mismatch_range",
+      "expect": "0 <= delta_phi <= 2"
+    },
+    {
+      "name": "stable_signal",
+      "expect": "delta_phi decreases over time"
+    },
+    {
+      "name": "perturbed_signal",
+      "expect": "delta_phi spikes then settles"
+    }
+  ],
+
+  "success_criteria": {
+    "minimal": "delta_phi is computed and logged",
+    "good": "repeated signals reduce delta_phi",
+    "strong": "divergence in delta_phi precedes visible instability in signal"
+  },
+
+  "final_instruction": "Add phase-space continuation and mismatch scoring as an observation and control layer. Do not replace existing residue learning; augment it."
+}

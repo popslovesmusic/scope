@@ -15,14 +15,15 @@ from .residue_feedback import residue_bias
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None):
     print("🚀 Initializing Native Wave-Residue Platform...")
     
     # 1. Initialize Components
     engine = EngineBridge(num_nodes=num_nodes)
     scope = SignalScope()
     v14 = V14Bridge()
-    memory = load_memory_state("sessions/native_memory.json")
+    memory_path = "sessions/native_memory.json"
+    memory = load_memory_state(memory_path)
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -32,17 +33,26 @@ def run_platform(num_frames=100, num_nodes=100):
     else:
         fb_config = {"feedback": {"enabled": False}}
     
+    # Apply CLI/Interface Overrides
+    if engine_steps_per_frame is not None:
+        fb_config.setdefault("feedback", {})["engine_steps_per_frame"] = engine_steps_per_frame
+    if feedback_enabled is not None:
+        fb_config.setdefault("feedback", {})["enabled"] = feedback_enabled
+
     feedback = FeedbackAdapter(fb_config)
     
     # Initial states for feedback
     last_state = type('obj', (object,), {'caution_scalar': 0.0, 'recovery_scalar': 0.0, 'hold_state': False, 'components': []})
     last_residue = None
 
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if run_id is None:
+        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
     os.makedirs('logs', exist_ok=True)
+    os.makedirs('sessions', exist_ok=True)
     feedback_trace_path = f"logs/feedback_trace_{run_id}.jsonl"
     
-    print(f"Starting loop for {num_frames} frames...")
+    print(f"Starting loop for {num_frames} frames (Run ID: {run_id})...")
     
     for t in range(num_frames):
         # A. Signal Generation (Example: sine wave)
@@ -118,8 +128,15 @@ def run_platform(num_frames=100, num_nodes=100):
         last_residue = residue
 
     # 2. Finalize
-    save_memory_state("sessions/native_memory.json", memory)
-    print("✅ Run Complete. Native memory updated.")
+    save_memory_state(memory_path, memory)
+    print(f"✅ Run Complete. Native memory updated. Summary: logs/feedback_trace_{run_id}.jsonl")
+    
+    return {
+        "run_id": run_id,
+        "frames": num_frames,
+        "memory_path": memory_path,
+        "feedback_trace_path": feedback_trace_path
+    }
 
 if __name__ == "__main__":
     run_platform()

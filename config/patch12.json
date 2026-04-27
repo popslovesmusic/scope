@@ -1,0 +1,161 @@
+{
+  "agent_task": "implement_native_platform_interface_v1",
+  "goal": "Add CLI, read-only dashboard, and optional FastAPI interface for the Native Wave-Residue Platform without modifying v14 internals.",
+
+  "base_rules": {
+    "do_not_modify": [
+      "core/reasoning_loop.py",
+      "core/memory_layer.py",
+      "core/corridor_gate.py",
+      "core/signature_state.py"
+    ],
+    "allowed": [
+      "wrap run_native_platform.py",
+      "read JSONL logs",
+      "add CLI commands",
+      "add dashboard visualizations",
+      "add API routes that call existing platform functions"
+    ],
+    "safety": "No interface may bypass residue qualification or directly mutate v14 internal state."
+  },
+
+  "files_to_create": {
+    "native_platform/cli.py": {
+      "purpose": "Primary command-line interface",
+      "commands": {
+        "run": {
+          "args": ["--frames", "--nodes", "--engine-steps", "--feedback-on"],
+          "action": "call run_platform with supplied parameters"
+        },
+        "scope": {
+          "args": ["--tail", "--path"],
+          "action": "tail feedback_trace jsonl and print hex, C, E, V, caution, recovery"
+        },
+        "memory": {
+          "args": ["--path"],
+          "action": "print residue memory summary"
+        },
+        "reset-memory": {
+          "args": ["--path"],
+          "action": "backup then clear session memory"
+        },
+        "export-run": {
+          "args": ["--logs-dir", "--out"],
+          "action": "zip logs, sessions, config, README"
+        }
+      }
+    },
+
+    "native_platform/run_state.py": {
+      "purpose": "Shared helpers for reading logs and run state",
+      "functions": [
+        "latest_jsonl(path)",
+        "tail_jsonl(path, n)",
+        "find_latest_feedback_trace(logs_dir='logs')",
+        "find_latest_hex_trace(sessions_dir='sessions')",
+        "load_memory_summary(path='sessions/native_memory.json')",
+        "backup_file(path)",
+        "clear_memory(path)"
+      ]
+    },
+
+    "native_platform/dashboard.py": {
+      "purpose": "Read-only Streamlit dashboard",
+      "requirements": ["streamlit", "pandas", "numpy"],
+      "panels": [
+        "latest full hex",
+        "coupling C over time",
+        "imbalance E over time",
+        "control pattern over time",
+        "caution vs recovery",
+        "residue commit rate",
+        "V vector table",
+        "latest W/hex/status summary"
+      ],
+      "rules": [
+        "read logs only",
+        "do not run engine from dashboard in v1",
+        "do not mutate memory"
+      ]
+    },
+
+    "native_platform/api.py": {
+      "purpose": "Optional FastAPI control/read API",
+      "requirements": ["fastapi", "uvicorn"],
+      "routes": {
+        "GET /status": "return latest feedback trace frame",
+        "GET /trace/feedback": "return last N feedback frames",
+        "GET /memory": "return memory summary",
+        "POST /run": "run platform synchronously with frames/nodes params",
+        "POST /memory/reset": "backup and clear native memory"
+      },
+      "rules": [
+        "POST /run must call run_platform only",
+        "API must not directly access v14 internals",
+        "memory reset must create backup first"
+      ]
+    }
+  },
+
+  "files_to_modify": {
+    "native_platform/run_native_platform.py": {
+      "changes": [
+        "update run_platform signature to accept num_frames, num_nodes, engine_steps_per_frame=None, feedback_enabled=None, run_id=None",
+        "if engine_steps_per_frame provided, override fb_config['feedback']['engine_steps_per_frame']",
+        "if feedback_enabled provided, override fb_config['feedback']['enabled']",
+        "return a summary dict at end with run_id, frames, memory_path, feedback_trace_path"
+      ]
+    },
+
+    "README_v14_PLATFORM.md": {
+      "changes": [
+        "add CLI usage section",
+        "add dashboard usage section",
+        "add API usage section"
+      ]
+    }
+  },
+
+  "implementation_details": {
+    "cli_entrypoint": {
+      "command": "python -m native_platform.cli",
+      "examples": [
+        "python -m native_platform.cli run --frames 500 --nodes 1024 --engine-steps 20",
+        "python -m native_platform.cli scope --tail 20",
+        "python -m native_platform.cli memory",
+        "python -m native_platform.cli export-run --out run_bundle.zip"
+      ]
+    },
+
+    "dashboard_entrypoint": {
+      "command": "streamlit run native_platform/dashboard.py"
+    },
+
+    "api_entrypoint": {
+      "command": "uvicorn native_platform.api:app --reload"
+    }
+  },
+
+  "tests_to_add": {
+    "tests/test_native_interface.py": [
+      "test_latest_jsonl_returns_last_record",
+      "test_tail_jsonl_returns_n_records",
+      "test_find_latest_feedback_trace",
+      "test_clear_memory_creates_backup",
+      "test_cli_run_imports",
+      "test_dashboard_imports_without_running_engine",
+      "test_api_status_route_imports"
+    ]
+  },
+
+  "success_conditions": [
+    "CLI can start a run.",
+    "CLI can read latest feedback trace.",
+    "Dashboard displays logs without mutating platform state.",
+    "API /status returns latest frame.",
+    "run_platform remains usable directly.",
+    "v14 internals remain untouched."
+  ],
+
+  "final_instruction": "Implement interface as wrappers and readers around the existing Native Wave-Residue Platform. Preserve v14 and residue qualification rules."
+}
