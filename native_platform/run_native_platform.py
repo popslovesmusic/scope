@@ -12,6 +12,8 @@ from .v14_bridge import V14Bridge
 from .residue_imprinter import qualify_and_commit
 from .feedback_adapter import FeedbackAdapter
 from .residue_feedback import residue_bias
+from .phase_space import compute_phase_vector, phase_mismatch
+from .phase_predictor import PhasePredictor
 
 from core.memory_layer import load_memory_state, save_memory_state
 
@@ -22,6 +24,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     engine = EngineBridge(num_nodes=num_nodes)
     scope = SignalScope()
     v14 = V14Bridge()
+    phase_predictor = PhasePredictor()
     memory_path = "sessions/native_memory.json"
     memory = load_memory_state(memory_path)
     
@@ -73,10 +76,24 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
         # C. Update SignalScope
         scope_data = scope.update(node_outputs)
         
+        # Patch 13: Phase Space & Prediction
+        phi_current = compute_phase_vector(
+            scope_data['W_local'],
+            scope_data['C'],
+            scope_data['E'],
+            scope_data['V']
+        )
+        phi_pred = phase_predictor.predict_next(phi_current)
+        delta_phi = float(phase_mismatch(phi_pred, phi_current))
+
         # Patch 11: Directional Feedback (react to trajectory flow)
         flow_feedback_gain = float(fb_config.get('feedback', {}).get('flow_feedback_gain', 0.2))
         flow_bias = float(np.tanh(np.mean(scope_data['V'])))
         control_pattern = control_pattern * (1.0 + flow_feedback_gain * flow_bias)
+        
+        # Patch 13: Phase Mismatch Influence (optional but in spec)
+        # Higher mismatch (unpredicted movement) dampens the control pattern
+        control_pattern *= (1.0 - 0.3 * delta_phi)
 
         # D. Hex Encoding
         full_hex = make_full_hex(scope_data["W_local"], scope_data["W_global"], scope_data["W_meta"])
@@ -115,7 +132,10 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             "E": float(scope_data['E']),
             "V": scope_data['V'].tolist(),
             "engine_mean": float(engine_mean),
-            "engine_steps": int(engine_steps)
+            "engine_steps": int(engine_steps),
+            "phi_current": phi_current.tolist(),
+            "phi_pred": phi_pred.tolist(),
+            "delta_phi": float(delta_phi)
         }
         with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
             f_log.write(json.dumps(log_entry) + "\n")
