@@ -319,6 +319,9 @@ class PersistentMemoryState:
     
     # Patch 20: Persistent traversal success
     successful_traversals: int = 0
+    
+    # Patch 22: Multi-groove routing data
+    groove_data: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -337,6 +340,7 @@ class PersistentMemoryState:
             "last_state_summary": str(self.last_state_summary),
             "last_active_component_id": self.last_active_component_id,
             "successful_traversals": int(self.successful_traversals),
+            "groove_data": dict(self.groove_data),
             "saved_at": datetime.utcnow().isoformat() + "Z",
         }
 
@@ -367,6 +371,7 @@ class PersistentMemoryState:
         s.last_state_summary = str(d.get("last_state_summary", ""))
         s.last_active_component_id = d.get("last_active_component_id", None)
         s.successful_traversals = int(d.get("successful_traversals", 0))
+        s.groove_data = dict(d.get("groove_data", {}))
         return s
 
 

@@ -15,10 +15,11 @@ from .phase_space import compute_phase_vector, phase_mismatch
 from .residue_phase_continuation import ResiduePhaseContinuation
 from .phase_operator_map import operator_pressure
 from .operator_selection import select_operator, apply_operator
+from .groove_router import GrooveRouter
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json"):
     print("🚀 Initializing Native Wave-Residue Platform (Continuation Mode)...")
     
     # Check input signal length
@@ -30,7 +31,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     scope = SignalScope()
     v14 = V14Bridge()
     
-    memory_path = "sessions/native_memory.json"
     memory = load_memory_state(memory_path)
     
     # Patch 17: Phase Continuation with deeper history
@@ -40,6 +40,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
         trace_size=128, 
         successful_traversals=memory.successful_traversals
     )
+    
+    # Patch 22: Initialize GrooveRouter from memory
+    router = GrooveRouter.from_dict(memory.groove_data)
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -136,6 +139,11 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # Use this as the oriented state for continuation
             phi_oriented = i_local
 
+            # Patch 22: Groove Routing
+            # Select active identity groove based on current oriented phase velocity and operator
+            active_groove, route_score = router.route(prev_phi_oriented, phi_oriented, op_star)
+            groove_feedback_vec = router.active_feedback_vector()
+
             # Patch 17/20: Real continuation alignment error
             # Compare prediction from PREVIOUS frame with current ORIENTED phase
             if pending_phi_continued is not None:
@@ -143,16 +151,24 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 continuation_mismatch = 0.0
 
-            # Generate internal continuation in the operator-selected frame for NEXT frame
-            phi_continued = phase_continuation.continue_next(phi_oriented, last_mismatch=last_continuation_mismatch)
+            # Patch 22: Generate internal continuation with external groove feedback
+            phi_continued = phase_continuation.continue_next(
+                phi_oriented, 
+                last_mismatch=last_continuation_mismatch,
+                external_feedback_vec=groove_feedback_vec
+            )
             
             mismatch_series.append(continuation_mismatch)
 
-            # Patch 20: Store trace segment feedback
+            # Patch 20: Store trace segment feedback (short-term)
             phase_continuation.store_trace_segment(prev_phi_oriented, phi_oriented, continuation_mismatch, threshold=0.020)
+            
+            # Patch 22: Reinforce active groove (long-term identity)
+            router.reinforce_active(prev_phi_oriented, phi_oriented, op_star, continuation_mismatch, threshold=0.020)
+            
             prev_phi_oriented = phi_oriented.copy()
 
-            # Reinforce trace groove if mismatch is low
+            # Reinforce trace groove if mismatch is low (legacy buffer)
             phase_continuation.reinforce_trace(phi_oriented, continuation_mismatch, threshold=0.02)
 
             # Map phase flow to operator pressure
@@ -221,12 +237,18 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "trace_feedback_gain": float(phase_continuation.groove_gain()),
                 "successful_traversals": int(phase_continuation.successful_traversals),
                 "traversal_count": phase_continuation.traversal_count,
-                "op_pressure": op_pressure
+                "op_pressure": op_pressure,
+                # Patch 22 Logging
+                "active_groove_id": router.active_groove_id,
+                "groove_count": len(router.grooves),
+                "groove_score": float(route_score),
+                "operator_star": op_star
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={len(phase_continuation.trace_buffer)} Segs={len(phase_continuation.trace_segments)} -> {status}")
+                gid = router.active_groove_id or "none"
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={gid} ({len(router.grooves)}) -> {status}")
 
             last_state = state
             last_residue = residue
@@ -248,6 +270,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
 
     phase_continuation.mark_traversal_complete()
     memory.successful_traversals = int(phase_continuation.successful_traversals)
+    # Patch 22: Persist GrooveRouter state
+    memory.groove_data = router.to_dict()
+    
     save_memory_state(memory_path, memory)
     print(f"✅ Run Complete. Trace: logs/feedback_trace_{run_id}.jsonl")
     
@@ -255,7 +280,8 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
         "run_id": run_id,
         "frames": num_frames,
         "memory_path": memory_path,
-        "feedback_trace_path": feedback_trace_path
+        "feedback_trace_path": feedback_trace_path,
+        "groove_summary": router.summary()
     }
 
 if __name__ == "__main__":
