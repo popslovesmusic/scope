@@ -108,7 +108,7 @@ class ResiduePhaseContinuation:
         buffer_fill = min(1.0, len(self.trace_segments) / 32.0)
         return potential_gain * buffer_fill
 
-    def continue_next(self, phi_current, decision, external_feedback_vec=None):
+    def continue_next(self, phi_current, decision, external_feedback_vec=None, inductive_feedback_vec=None):
         phi_current = normalize(np.asarray(phi_current, dtype=float))
 
         if len(self.history) < 2:
@@ -124,17 +124,20 @@ class ResiduePhaseContinuation:
 
         trace_vec = self.trace_feedback_vector()
         
-        # Patch 23: Selection-based continuation (no weights when reinforced)
+        # Patch 23/24: Selection-based continuation (no weights when reinforced)
+        # Adding inductive motion term (Patch 24)
         if decision == "reinforce":
             # High confidence: additive integration of all available signals
             combined = local_continuation.copy()
             if trace_vec is not None: combined += trace_vec
             if external_feedback_vec is not None: combined += external_feedback_vec
+            if inductive_feedback_vec is not None: combined += inductive_feedback_vec
             phi_continued = normalize(combined)
         elif decision == "hold":
-            # Moderate confidence: local momentum + small bias from trace
+            # Moderate confidence: local momentum + small bias from trace/inductive
             combined = local_continuation.copy()
             if trace_vec is not None: combined += 0.1 * trace_vec
+            if inductive_feedback_vec is not None: combined += 0.1 * inductive_feedback_vec
             phi_continued = normalize(combined)
         else:
             # Low confidence/Reject: pure local momentum

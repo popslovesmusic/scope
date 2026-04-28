@@ -1,0 +1,173 @@
+{
+  "agent_task": {
+    "title": "Inductive Transformer Continuation Layer v2 (Corrected Direction)",
+    "intent": "Preserve stabilized signal-state learning while adding trajectory (motion) continuity through inductive phase memory and transformer-style coupling.",
+    "design_principle": {
+      "core_statement": "Do not simplify further. Constrain motion, not state.",
+      "goal": "Stable continuation after disconnect without losing expressive signal structure.",
+      "metaphor": {
+        "primary": "external EEG-like signal",
+        "secondary": "internal continuation model",
+        "field": "shared phase manifold",
+        "inductance": "memory of motion",
+        "coupling_k": "admissibility strength (dynamic)"
+      },
+      "framework_mapping": {
+        "epsilon": "drives change",
+        "rho": "limits change",
+        "R": "state memory (trace/residue)",
+        "L": "motion memory (inductive persistence)",
+        "k": "coupling/admissibility"
+      }
+    },
+
+    "non_negotiables": [
+      "DO NOT remove feature reduction",
+      "DO NOT remove temporal smoothing",
+      "DO NOT modify Signal X logic",
+      "DO NOT weaken survivability gating",
+      "ADD motion constraints only"
+    ],
+
+    "architecture": {
+      "layers": [
+        "input_processing (existing)",
+        "signal_scope (existing)",
+        "survivability_gate (existing)",
+        "inductive_transformer_layer (NEW)",
+        "continuation_engine (modified)",
+        "metrics_and_reporting (extended)"
+      ]
+    },
+
+    "inductive_transformer_layer": {
+      "file": "native_platform/inductive_transformer.py",
+      "per_channel_state": {
+        "theta": "phase",
+        "A": "amplitude",
+        "omega": "phase velocity",
+        "L": "inductive motion memory",
+        "k_input": "coupling to external signal",
+        "k_neighbor": "coupling to other channels"
+      },
+      "state_update": {
+        "phase_velocity": "omega_t = wrap(theta_t - theta_prev)",
+        "inductive_memory": "L_t = decay_L * L_prev + gain_L * omega_t",
+        "connected_phase": "theta_next = theta + omega + k_input * wrap(theta_input - theta) + k_L * L_t",
+        "disconnected_phase": "theta_next = theta + omega + k_L * L_t",
+        "recouple_phase": "theta_next = theta + omega + k_input * soft_wrap(theta_input - theta) + k_L * L_t",
+        "amplitude": {
+          "connected": "A_next = decay_A * A + k_A * A_input",
+          "disconnected": "A_next = decay_A * A"
+        }
+      },
+      "dynamic_coupling": {
+        "rule": "k_input scales with Signal X consistency",
+        "effect": [
+          "high consistency → strong coupling",
+          "low consistency → decoupling",
+          "no input → k_input = 0"
+        ]
+      }
+    },
+
+    "continuation_engine_update": {
+      "change": "augment existing continuation with inductive motion term",
+      "old": "state continuation from trace + groove",
+      "new": "state continuation + motion continuation (L)",
+      "result": "trajectory persistence instead of static replay"
+    },
+
+    "experiment_protocol": {
+      "phases": [
+        {
+          "name": "train",
+          "duration_seconds": 60,
+          "input": "connected",
+          "purpose": "learn grooves + initialize inductive memory"
+        },
+        {
+          "name": "disconnect",
+          "duration_seconds": 30,
+          "input": "off",
+          "purpose": "test internal continuation"
+        },
+        {
+          "name": "recouple",
+          "duration_seconds": 20,
+          "input": "on",
+          "purpose": "measure correction behavior"
+        }
+      ]
+    },
+
+    "metrics": {
+      "existing": [
+        "continuation_mismatch",
+        "reinforce_rate",
+        "reject_rate",
+        "groove_switch_count",
+        "Signal X"
+      ],
+      "new": [
+        "phase_error",
+        "frequency_drift",
+        "trajectory_alignment_score",
+        "pattern_survival_time",
+        "recoupling_shock",
+        "recoupling_recovery_time",
+        "inductive_stability_score"
+      ]
+    },
+
+    "defaults": {
+      "channels": 12,
+      "sample_rate": 128,
+      "decay_L": 0.96,
+      "gain_L": 0.08,
+      "k_input_base": 0.18,
+      "k_L": 0.22,
+      "k_neighbor": 0.04,
+      "decay_A": 0.97,
+      "k_A": 0.1,
+      "max_phase_correction": 0.12
+    },
+
+    "success_criteria": {
+      "required": [
+        "disconnect mismatch decreases vs baseline",
+        "frequency drift decreases",
+        "pattern survival time increases",
+        "recoupling shock decreases"
+      ],
+      "critical": [
+        "trained model outperforms untrained on T3 withheld",
+        "groove diversity maintained (no single groove lock)",
+        "Signal X remains stable or improves"
+      ]
+    },
+
+    "failure_modes": {
+      "over_inductance": "model becomes rigid, poor recoupling",
+      "under_inductance": "no improvement over baseline",
+      "false_corridor": "stable but incorrect continuation",
+      "groove_lock": "single groove dominates all states",
+      "phase_lag": "persistent delay after recoupling"
+    },
+
+    "output": {
+      "report_file": "INDUCTIVE_TRANSFORMER_V2_REPORT.md",
+      "compare": [
+        "baseline (pre-patch)",
+        "post-patch",
+        "delta metrics",
+        "visual traces if available"
+      ],
+      "interpretation": [
+        "signal_scope perspective",
+        "continuation behavior",
+        "framework mapping (ε, ρ, R, L)"
+      ]
+    }
+  }
+}

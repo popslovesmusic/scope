@@ -17,10 +17,11 @@ from .phase_operator_map import operator_pressure
 from .operator_selection import select_operator, apply_operator
 from .groove_router import GrooveRouter
 from .signal_layer import compute_x_channel, get_consistency_level
+from .inductive_transformer import InductiveTransformerLayer
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json"):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True):
     print("🚀 Initializing Native Wave-Residue Platform (Continuation Mode)...")
     
     # Check input signal length
@@ -43,6 +44,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     
     # Patch 22: Initialize GrooveRouter from memory
     router = GrooveRouter.from_dict(memory.groove_data)
+    
+    # Patch 24: Inductive Transformer Layer
+    transformer = InductiveTransformerLayer(channels=8)
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -73,6 +77,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     pending_phi_continued = None
     prev_phi_oriented = None
     mismatch_series = []
+    
+    # Patch 24: Track frequency drift
+    last_omega = np.zeros(8)
 
     if run_id is None:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -126,13 +133,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             node_outputs = engine.get_node_outputs()
             
             # C. Update SignalScope
-            # Inject scope_input instead of node_outputs for EEG feature direct mapping if needed,
-            # but for now we follow standard flow: Engine -> Scope.
-            # However, EEG features represent the "driver" more accurately.
-            # We will BLEND the engine outputs with the scope_input.
             if isinstance(scope_input, np.ndarray):
-                # Map EEG features into a subset of nodes or blend them
-                # Simplest: use scope_input directly if it matches expected SignalScope input format
                 scope_data = scope.update(scope_input)
             else:
                 scope_data = scope.update(node_outputs)
@@ -154,7 +155,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             phi_oriented = i_local
 
             # Patch 17/20: Real continuation alignment error
-            # This mismatch is used for DECISION making
             if pending_phi_continued is not None:
                 raw_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
             else:
@@ -171,15 +171,28 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # The EFFECTIVE mismatch used for reinforcement trend is filtered
             continuation_mismatch = raw_mismatch if decision != "reject" else last_continuation_mismatch
 
+            # Patch 24: Inductive Transformer Layer Update
+            # Connected state can be overridden per run
+            phi_inductive = transformer.update(phi_oriented, scope_data['C'], signal_x, connected=connected)
+            
+            # New Metric: phase_error (between oriented input and inductive prediction)
+            # Actually phi_inductive is the state after update, so we check alignment
+            phase_error = float(phase_mismatch(phi_oriented, phi_inductive))
+            
+            # New Metric: frequency_drift
+            freq_drift = float(np.linalg.norm(transformer.omega - last_omega))
+            last_omega = transformer.omega.copy()
+
             # Patch 22: Groove Routing
             active_groove, route_score = router.route(prev_phi_oriented, phi_oriented, op_star)
             groove_feedback_vec = router.active_feedback_vector()
 
-            # Patch 22/23: Generate internal continuation with external groove feedback gated by decision
+            # Patch 22/23/24: Generate internal continuation with external groove + inductive feedback
             phi_continued = phase_continuation.continue_next(
                 phi_oriented, 
                 decision,
-                external_feedback_vec=groove_feedback_vec
+                external_feedback_vec=groove_feedback_vec,
+                inductive_feedback_vec=phi_inductive
             )
             
             mismatch_series.append(continuation_mismatch)
@@ -263,17 +276,22 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "groove_count": len(router.grooves),
                 "groove_score": float(route_score),
                 "operator_star": op_star,
-                # Patch 23 Logging
                 "survivability_decision": decision,
                 "failed_tests": failed_tests,
                 "signal_x": signal_x,
-                "consistency_level": get_consistency_level(signal_x)
+                "consistency_level": get_consistency_level(signal_x),
+                # Patch 24 Logging
+                "phase_error": phase_error,
+                "frequency_drift": freq_drift,
+                "inductive_L": transformer.L.tolist(),
+                "inductive_omega": transformer.omega.tolist(),
+                "connected": connected
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
                 gid = router.active_groove_id or "none"
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} X={signal_x:.2f} Mismatch={continuation_mismatch:.4f} G={gid} ({decision}) -> {status}")
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} X={signal_x:.2f} Err={phase_error:.4f} G={gid} ({decision}) -> {status}")
 
             last_state = state
             last_residue = residue
