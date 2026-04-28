@@ -1,0 +1,232 @@
+{
+  "agent_task": "setup_in_house_eeg_like_continuation_pipeline_v1",
+  "goal": "Build a local synthetic EEG-like signal pipeline to test continuation learning before using public medical datasets.",
+
+  "base_rules": {
+    "do_not_use_public_eeg_yet": true,
+    "do_not_modify_v14_core": true,
+    "preserve_existing_native_platform": true,
+    "use_survivability_gated_reinforcement": true,
+    "medical_claims": "none"
+  },
+
+  "files_to_create": {
+    "native_platform/eeg_synthetic_signals.py": {
+      "purpose": "Generate controlled EEG-like waveforms.",
+      "functions": [
+        "generate_alpha(sample_rate, duration, freq=10.0, noise=0.02)",
+        "generate_theta(sample_rate, duration, freq=6.0, noise=0.02)",
+        "generate_beta(sample_rate, duration, freq=20.0, noise=0.02)",
+        "generate_mixed_alpha_theta(sample_rate, duration)",
+        "generate_alpha_with_noise(sample_rate, duration, noise=0.15)",
+        "generate_alpha_tail_removed(sample_rate, duration, keep_ratio=0.6)",
+        "generate_alpha_to_spike_burst(sample_rate, duration, transition_ratio=0.7)",
+        "generate_dropout(signal, dropout_ratio=0.1)",
+        "normalize_signal(signal)"
+      ]
+    },
+
+    "native_platform/eeg_feature_adapter.py": {
+      "purpose": "Convert EEG-like windows into platform input frames.",
+      "functions": [
+        "window_signal(signal, sample_rate, window_sec=1.0, overlap=0.5)",
+        "extract_window_features(window, sample_rate)",
+        "features_to_scope_input(features)",
+        "signal_to_input_frames(signal, sample_rate)"
+      ],
+      "features": [
+        "rms_energy",
+        "spectral_centroid",
+        "band_power_delta",
+        "band_power_theta",
+        "band_power_alpha",
+        "band_power_beta",
+        "phase_proxy",
+        "entropy_proxy"
+      ]
+    },
+
+    "scripts/run_in_house_eeg_tests.py": {
+      "purpose": "Run local EEG-like validation battery.",
+      "tests": [
+        "T1_alpha_learning_curve",
+        "T2_theta_contrast",
+        "T3_alpha_tail_removed",
+        "T4_alpha_noise_robustness",
+        "T5_alpha_to_spike_burst_transition",
+        "T6_artifact_rejection"
+      ]
+    },
+
+    "configs/in_house_eeg_test_config.json": {
+      "purpose": "Config for synthetic EEG testing.",
+      "content": {
+        "sample_rate": 256,
+        "duration_sec": 30,
+        "window_sec": 1.0,
+        "overlap": 0.5,
+        "num_nodes": 256,
+        "engine_steps_per_frame": 20,
+        "repeat_count": 5,
+        "fixed_seeds": [101, 202, 303, 404, 505],
+        "clear_memory_before_suite": true
+      }
+    }
+  },
+
+  "signal_definitions": {
+    "alpha_A": {
+      "description": "Stable 10 Hz alpha-like rhythm",
+      "use": "primary training groove"
+    },
+    "theta_B": {
+      "description": "Stable 6 Hz theta-like rhythm",
+      "use": "contrast groove"
+    },
+    "alpha_noise": {
+      "description": "Alpha rhythm with increased noise",
+      "use": "robustness challenge"
+    },
+    "alpha_tail_removed": {
+      "description": "Alpha rhythm with final portion masked or zeroed",
+      "use": "internal continuation challenge"
+    },
+    "alpha_to_spike_burst": {
+      "description": "Alpha rhythm transitioning into spike/burst event-like pattern",
+      "use": "undesired-event simulation"
+    },
+    "dropout_artifact": {
+      "description": "Temporary signal loss",
+      "use": "artifact rejection"
+    }
+  },
+
+  "test_battery": [
+    {
+      "id": "T1_alpha_learning_curve",
+      "sequence": [
+        "clear_memory",
+        "alpha_A_pass1",
+        "alpha_A_pass2",
+        "alpha_A_pass3",
+        "alpha_A_pass4",
+        "alpha_A_pass5",
+        "replay_alpha_A"
+      ],
+      "success": [
+        "replay_alpha_A continuation_mismatch_mean < alpha_A_pass1 by at least 10%",
+        "dominant_groove_fraction improves",
+        "groove_switch_count remains below 30"
+      ]
+    },
+    {
+      "id": "T2_theta_contrast",
+      "sequence": [
+        "train_alpha_A_5_passes",
+        "run_theta_B",
+        "run_alpha_A_again"
+      ],
+      "success": [
+        "theta_B mismatch > trained alpha_A mismatch by at least 10%",
+        "theta_B routes to different groove",
+        "alpha_A_again returns to alpha groove"
+      ]
+    },
+    {
+      "id": "T3_alpha_tail_removed",
+      "sequence": [
+        "train_alpha_A_5_passes",
+        "run_alpha_tail_removed_trained",
+        "clear_memory",
+        "run_alpha_tail_removed_untrained"
+      ],
+      "success": [
+        "trained tail_removed mismatch < untrained by at least 10%",
+        "trained groove remains stable during masked portion"
+      ]
+    },
+    {
+      "id": "T4_alpha_noise_robustness",
+      "sequence": [
+        "train_alpha_A_5_passes",
+        "run_alpha_noise"
+      ],
+      "success": [
+        "alpha_noise remains closer to alpha groove than theta_B",
+        "survivability rejects high-noise frames instead of reinforcing them"
+      ]
+    },
+    {
+      "id": "T5_alpha_to_spike_burst_transition",
+      "sequence": [
+        "train_alpha_A_5_passes",
+        "run_alpha_to_spike_burst"
+      ],
+      "success": [
+        "continuation_mismatch rises near transition",
+        "survivability rejection rate increases near spike/burst",
+        "identity lock breaks only after transition evidence"
+      ]
+    },
+    {
+      "id": "T6_artifact_rejection",
+      "sequence": [
+        "train_alpha_A_5_passes",
+        "run_dropout_artifact",
+        "run_alpha_A_again"
+      ],
+      "success": [
+        "dropout is not reinforced as a stable groove",
+        "alpha_A_again returns to original groove",
+        "artifact frames marked hold or reject"
+      ]
+    }
+  ],
+
+  "metrics_to_log": [
+    "continuation_mismatch_mean",
+    "continuation_mismatch_std",
+    "continuation_mismatch_max",
+    "continuation_mismatch_next_mean",
+    "dominant_groove",
+    "dominant_groove_fraction",
+    "groove_switch_count",
+    "lock_break_count",
+    "survivability_decision_counts",
+    "reinforcement_applied_rate",
+    "projection_loss_level_counts",
+    "cross_view_consistency_level_counts",
+    "residue_commit_rate",
+    "trace_segment_count",
+    "successful_traversals",
+    "operator_distribution",
+    "X_channel_mean",
+    "X_channel_std"
+  ],
+
+  "outputs": [
+    "runs/in_house_eeg/comparison_report.json",
+    "runs/in_house_eeg/aggregate_stats.json",
+    "runs/in_house_eeg/alpha_learning_curve.csv",
+    "runs/in_house_eeg/transition_report.json",
+    "runs/in_house_eeg/artifact_report.json",
+    "runs/in_house_eeg/full_metrics.csv"
+  ],
+
+  "implementation_notes": {
+    "input_to_platform": "Use signal_to_input_frames() to convert EEG-like waveforms into input_signals for run_platform().",
+    "windowing": "Use 1-second windows with 50% overlap at 256 Hz.",
+    "first_pass": "Run one seed first before full 5-seed battery.",
+    "no_medical_claim": "Label spike/burst as simulated undesired event, not seizure."
+  },
+
+  "acceptance_thresholds": {
+    "learning": "replay_alpha_A at least 10% lower mismatch than alpha_A_pass1",
+    "contrast": "theta_B at least 10% higher mismatch than trained alpha_A",
+    "withheld": "trained alpha_tail_removed at least 10% better than untrained",
+    "transition": "mismatch or rejection rate rises around spike/burst boundary",
+    "artifact": "dropout does not create persistent dominant groove"
+  },
+
+  "final_instruction": "Build the in-house EEG-like synthetic pipeline and run the first validation battery locally. Treat this as mechanism testing only, not medical validation."
+}

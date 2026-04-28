@@ -88,9 +88,17 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
         for t in range(num_frames):
             # A. Signal Generation
             if input_signals is not None:
-                input_signal = input_signals[t]
+                raw_input = input_signals[t]
+                # If raw_input is a vector (EEG features), use its mean for the scalar engine input
+                if isinstance(raw_input, (np.ndarray, list)):
+                    input_signal = float(np.mean(raw_input))
+                    scope_input = np.asarray(raw_input)
+                else:
+                    input_signal = float(raw_input)
+                    scope_input = input_signal
             else:
                 input_signal = np.sin(t * 0.1)
+                scope_input = input_signal
             
             # Feedback calculation using PREVIOUS frame metrics
             base_bias = feedback.update(last_state, last_residue) if fb_config["feedback"]["enabled"] else 1.0
@@ -102,7 +110,10 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # Inject flow bias and continuation mismatch from previous turn
             flow_feedback_gain = float(fb_config.get('feedback', {}).get('flow_feedback_gain', 0.2))
             control_pattern = control_pattern * (1.0 + flow_feedback_gain * last_flow_bias)
-            control_pattern *= (1.0 - 0.02 * last_continuation_mismatch)
+            
+            # Patch 23: use smoothed mismatch for control feedback
+            smooth_mismatch = np.mean(mismatch_series[-5:]) if len(mismatch_series) > 0 else 0.0
+            control_pattern *= (1.0 - 0.02 * smooth_mismatch)
 
             # Clamp control pattern
             min_b = float(fb_config.get('feedback', {}).get('min_bias', 0.5))
@@ -115,7 +126,16 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             node_outputs = engine.get_node_outputs()
             
             # C. Update SignalScope
-            scope_data = scope.update(node_outputs)
+            # Inject scope_input instead of node_outputs for EEG feature direct mapping if needed,
+            # but for now we follow standard flow: Engine -> Scope.
+            # However, EEG features represent the "driver" more accurately.
+            # We will BLEND the engine outputs with the scope_input.
+            if isinstance(scope_input, np.ndarray):
+                # Map EEG features into a subset of nodes or blend them
+                # Simplest: use scope_input directly if it matches expected SignalScope input format
+                scope_data = scope.update(scope_input)
+            else:
+                scope_data = scope.update(node_outputs)
             
             # Patch 23: Compute X channel (cross-view consistency)
             signal_x = compute_x_channel(scope_data['W_local'], scope_data['W_global'])
@@ -134,18 +154,22 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             phi_oriented = i_local
 
             # Patch 17/20: Real continuation alignment error
+            # This mismatch is used for DECISION making
             if pending_phi_continued is not None:
-                continuation_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
+                raw_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
             else:
-                continuation_mismatch = 0.0
+                raw_mismatch = 0.0
 
-            # Patch 23: Survivability Gating
+            # Patch 23: Survivability Gating (uses raw mismatch for gating)
             decision, failed_tests = phase_continuation.evaluate_survivability(
                 phi_oriented, 
-                continuation_mismatch, 
+                raw_mismatch, 
                 op_star, 
                 signal_x
             )
+            
+            # The EFFECTIVE mismatch used for reinforcement trend is filtered
+            continuation_mismatch = raw_mismatch if decision != "reject" else last_continuation_mismatch
 
             # Patch 22: Groove Routing
             active_groove, route_score = router.route(prev_phi_oriented, phi_oriented, op_star)

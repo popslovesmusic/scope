@@ -44,7 +44,7 @@ class Groove:
         
         if decision == "reinforce":
             # Update identity features with momentum
-            alpha = 0.05 
+            alpha = 0.01 
             if segment is not None:
                 self.centroid_segment = normalize((1.0 - alpha) * self.centroid_segment + alpha * segment)
                 

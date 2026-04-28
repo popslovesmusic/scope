@@ -1,0 +1,18 @@
+{
+  "T1_learning": {
+    "P1_mismatch_mean": 0.2343397499732282,
+    "Replay_mismatch_mean": 0.2785393988608102,
+    "Delta": -0.04419964888758199
+  },
+  "T2_directionality": {
+    "Theta_B_mismatch": 0.2636430384660846,
+    "Alpha_Return_mismatch": 0.28075522517996776
+  },
+  "T3_withheld": {
+    "Trained_mismatch": 0.169843394598026,
+    "Untrained_mismatch": 0.13850109681300465
+  },
+  "T6_survivability": {
+    "Dropout_reject_rate": 0.03375527426160337
+  }
+}

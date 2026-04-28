@@ -17,6 +17,7 @@ class ResiduePhaseContinuation:
         self.trace_segments = []
         self.traversal_count = 0
         self.running_mismatch_mean = 0.015
+        self.mismatch_history = []
 
     def update_history(self, phi):
         phi = np.asarray(phi, dtype=float)
@@ -30,7 +31,12 @@ class ResiduePhaseContinuation:
         Returns: 'reinforce', 'hold', or 'reject'
         """
         # 1. Update mismatch trend
-        self.running_mismatch_mean = 0.95 * self.running_mismatch_mean + 0.05 * mismatch
+        self.mismatch_history.append(mismatch)
+        if len(self.mismatch_history) > 8:
+            self.mismatch_history.pop(0)
+            
+        mismatch_smooth = np.mean(self.mismatch_history)
+        self.running_mismatch_mean = 0.95 * self.running_mismatch_mean + 0.05 * mismatch_smooth
         
         failed_tests = []
         
@@ -38,9 +44,10 @@ class ResiduePhaseContinuation:
         if op_star is None: failed_tests.append("admissibility")
         
         # Test B: Persistence
-        if mismatch > 2.5 * self.running_mismatch_mean:
+        # Using smoothed mismatch for gating to avoid noise spikes
+        if mismatch_smooth > 3.5 * self.running_mismatch_mean:
             failed_tests.append("persistence_hard")
-        elif mismatch > self.running_mismatch_mean:
+        elif mismatch_smooth > 1.2 * self.running_mismatch_mean:
             failed_tests.append("persistence_soft")
             
         # Test C: Cross-view consistency (Signal X)
@@ -48,16 +55,18 @@ class ResiduePhaseContinuation:
         if x_level == "low":
             failed_tests.append("consistency_hard")
         elif x_level == "moderate":
-            failed_tests.append("consistency_soft")
+            # Consistency is soft if below a higher bar
+            if signal_x < 0.6:
+                failed_tests.append("consistency_soft")
             
         # Test D: Trace coherence
         trace_vec = self.trace_feedback_vector()
         if trace_vec is not None:
-            # candidate segment is current - prev
             if len(self.history) > 0:
                 seg = normalize(phi_candidate - self.history[-1])
                 dist = np.linalg.norm(seg - trace_vec)
-                if dist > 0.5: # arbitrary threshold for now
+                # Permissive coherence for EEG features
+                if dist > 0.7: 
                     failed_tests.append("coherence")
 
         # Decision Logic
@@ -88,9 +97,9 @@ class ResiduePhaseContinuation:
                 self.trace_segments = self.trace_segments[-10:]
 
     def trace_feedback_vector(self):
-        if len(self.trace_segments) < 8:
+        if len(self.trace_segments) < 16:
             return None
-        recent = self.trace_segments[-min(len(self.trace_segments), 16):]
+        recent = self.trace_segments[-min(len(self.trace_segments), 32):]
         return normalize(np.mean(np.stack(recent, axis=0), axis=0))
 
     def groove_gain(self):

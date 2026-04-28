@@ -1,0 +1,822 @@
+[
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.2080161625184889,
+        "continuation_mismatch_std": 0.1769861334985338,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.2911392405063291,
+        "groove_switch_count": 15,
+        "reinforce_rate": 0.5738396624472574,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8803351334100603
+      },
+      {
+        "continuation_mismatch_mean": 0.2730490994015443,
+        "continuation_mismatch_std": 0.18530964276747308,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.3670886075949367,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6371308016877637,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "signal_x_mean": 0.8803351334100603
+      },
+      {
+        "continuation_mismatch_mean": 0.2775784028548407,
+        "continuation_mismatch_std": 0.19114647891422906,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.2911392405063291,
+        "groove_switch_count": 15,
+        "reinforce_rate": 0.6286919831223629,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "signal_x_mean": 0.8803351334100603
+      },
+      {
+        "continuation_mismatch_mean": 0.267556415330623,
+        "continuation_mismatch_std": 0.18033174693682977,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.3670886075949367,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6160337552742616,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "signal_x_mean": 0.8803351334100603
+      },
+      {
+        "continuation_mismatch_mean": 0.2612947523773675,
+        "continuation_mismatch_std": 0.1906295709989854,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.35864978902953587,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.5991561181434599,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 15,
+        "signal_x_mean": 0.8803351334100603
+      },
+      {
+        "continuation_mismatch_mean": 0.2646813167784142,
+        "continuation_mismatch_std": 0.18118686964581068,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.3628691983122363,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.6329113924050633,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8803351334100603
+      }
+    ],
+    "T2": {
+      "theta": {
+        "continuation_mismatch_mean": 0.26844330174836856,
+        "continuation_mismatch_std": 0.1791776604934703,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.48945147679324896,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.6624472573839663,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 13,
+        "signal_x_mean": 0.9004563835469376
+      },
+      "alpha_return": {
+        "continuation_mismatch_mean": 0.2714991220177879,
+        "continuation_mismatch_std": 0.1738479083857887,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.3628691983122363,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.6371308016877637,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8803351334100603
+      }
+    },
+    "T3": {
+      "trained": {
+        "continuation_mismatch_mean": 0.15453691181806226,
+        "continuation_mismatch_std": 0.1778222003142245,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.6244725738396625,
+        "groove_switch_count": 7,
+        "reinforce_rate": 0.6877637130801688,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 87,
+        "signal_x_mean": 0.861053476621286
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.13381648362287743,
+        "continuation_mismatch_std": 0.16797135357884035,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.5358649789029536,
+        "groove_switch_count": 10,
+        "reinforce_rate": 0.6666666666666666,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 82,
+        "signal_x_mean": 0.861053476621286
+      }
+    },
+    "T4": {
+      "continuation_mismatch_mean": 0.270300160291639,
+      "continuation_mismatch_std": 0.20822529287652272,
+      "dominant_groove": "groove_4",
+      "dominant_groove_fraction": 0.2616033755274262,
+      "groove_switch_count": 13,
+      "reinforce_rate": 0.5991561181434599,
+      "reject_rate": 0.03375527426160337,
+      "successful_traversals": 1,
+      "trace_segment_count": 10,
+      "signal_x_mean": 0.8679796243922475
+    },
+    "T5": {
+      "continuation_mismatch_mean": 0.2760003351099177,
+      "continuation_mismatch_std": 0.20180075420118998,
+      "dominant_groove": "groove_3",
+      "dominant_groove_fraction": 0.27848101265822783,
+      "groove_switch_count": 10,
+      "reinforce_rate": 0.6244725738396625,
+      "reject_rate": 0.03375527426160337,
+      "successful_traversals": 0,
+      "trace_segment_count": 15,
+      "signal_x_mean": 0.8800764982533957
+    },
+    "T6": {
+      "continuation_mismatch_mean": 0.26510385486525906,
+      "continuation_mismatch_std": 0.18231132329837804,
+      "dominant_groove": "groove_7",
+      "dominant_groove_fraction": 0.35864978902953587,
+      "groove_switch_count": 14,
+      "reinforce_rate": 0.6582278481012658,
+      "reject_rate": 0.02531645569620253,
+      "successful_traversals": 0,
+      "trace_segment_count": 15,
+      "signal_x_mean": 0.8788519469948574
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.23428401640270002,
+        "continuation_mismatch_std": 0.19308106346435122,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.3333333333333333,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.620253164556962,
+        "reject_rate": 0.02109704641350211,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8807622419768183
+      },
+      {
+        "continuation_mismatch_mean": 0.2660645995932882,
+        "continuation_mismatch_std": 0.19027748386801224,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.2742616033755274,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6244725738396625,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8807622419768183
+      },
+      {
+        "continuation_mismatch_mean": 0.27947140572837126,
+        "continuation_mismatch_std": 0.1843782920075998,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.2489451476793249,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6329113924050633,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8807622419768183
+      },
+      {
+        "continuation_mismatch_mean": 0.27975875706680886,
+        "continuation_mismatch_std": 0.19470251951820478,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.35864978902953587,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6455696202531646,
+        "reject_rate": 0.02109704641350211,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8807622419768183
+      },
+      {
+        "continuation_mismatch_mean": 0.27516096019497666,
+        "continuation_mismatch_std": 0.18782134042067034,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.2742616033755274,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.6244725738396625,
+        "reject_rate": 0.012658227848101266,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "signal_x_mean": 0.8807622419768183
+      },
+      {
+        "continuation_mismatch_mean": 0.2781915945421761,
+        "continuation_mismatch_std": 0.18269970311318726,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.4092827004219409,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.6455696202531646,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8807622419768183
+      }
+    ],
+    "T2": {
+      "theta": {
+        "continuation_mismatch_mean": 0.28761292004865846,
+        "continuation_mismatch_std": 0.19038109890231047,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.4345991561181435,
+        "groove_switch_count": 10,
+        "reinforce_rate": 0.6877637130801688,
+        "reject_rate": 0.029535864978902954,
+        "successful_traversals": 0,
+        "trace_segment_count": 16,
+        "signal_x_mean": 0.9107039426104152
+      },
+      "alpha_return": {
+        "continuation_mismatch_mean": 0.2783967694377884,
+        "continuation_mismatch_std": 0.18417046746088447,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.3924050632911392,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.6371308016877637,
+        "reject_rate": 0.016877637130801686,
+        "successful_traversals": 0,
+        "trace_segment_count": 13,
+        "signal_x_mean": 0.8807622419768183
+      }
+    },
+    "T3": {
+      "trained": {
+        "continuation_mismatch_mean": 0.16576112522498518,
+        "continuation_mismatch_std": 0.18473005247988522,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.7172995780590717,
+        "groove_switch_count": 6,
+        "reinforce_rate": 0.6877637130801688,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 83,
+        "signal_x_mean": 0.8517418036050542
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.1277384800253396,
+        "continuation_mismatch_std": 0.15804500158903637,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.5063291139240507,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.7046413502109705,
+        "reject_rate": 0.02531645569620253,
+        "successful_traversals": 0,
+        "trace_segment_count": 88,
+        "signal_x_mean": 0.8517418036050542
+      }
+    },
+    "T4": {
+      "continuation_mismatch_mean": 0.2947959410839796,
+      "continuation_mismatch_std": 0.21573789122967982,
+      "dominant_groove": "groove_5",
+      "dominant_groove_fraction": 0.3333333333333333,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.5949367088607594,
+      "reject_rate": 0.02531645569620253,
+      "successful_traversals": 1,
+      "trace_segment_count": 12,
+      "signal_x_mean": 0.8742315134908628
+    },
+    "T5": {
+      "continuation_mismatch_mean": 0.24829787898823197,
+      "continuation_mismatch_std": 0.2042844776370303,
+      "dominant_groove": "groove_1",
+      "dominant_groove_fraction": 0.5147679324894515,
+      "groove_switch_count": 10,
+      "reinforce_rate": 0.5358649789029536,
+      "reject_rate": 0.02109704641350211,
+      "successful_traversals": 0,
+      "trace_segment_count": 10,
+      "signal_x_mean": 0.8815584346245557
+    },
+    "T6": {
+      "continuation_mismatch_mean": 0.29464838576490193,
+      "continuation_mismatch_std": 0.1866741693501868,
+      "dominant_groove": "groove_1",
+      "dominant_groove_fraction": 0.28270042194092826,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.6751054852320675,
+      "reject_rate": 0.04219409282700422,
+      "successful_traversals": 0,
+      "trace_segment_count": 13,
+      "signal_x_mean": 0.8799987542016738
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.26491061967507434,
+        "continuation_mismatch_std": 0.19002974294299738,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.34177215189873417,
+        "groove_switch_count": 16,
+        "reinforce_rate": 0.620253164556962,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8840786749942277
+      },
+      {
+        "continuation_mismatch_mean": 0.3114435996864752,
+        "continuation_mismatch_std": 0.1921988384971723,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.3924050632911392,
+        "groove_switch_count": 16,
+        "reinforce_rate": 0.6835443037974683,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8840786749942277
+      },
+      {
+        "continuation_mismatch_mean": 0.2997029360232899,
+        "continuation_mismatch_std": 0.19836158123889958,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.350210970464135,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.679324894514768,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 13,
+        "signal_x_mean": 0.8840786749942277
+      },
+      {
+        "continuation_mismatch_mean": 0.2954208557826815,
+        "continuation_mismatch_std": 0.18943544941631366,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.5021097046413502,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.6708860759493671,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8840786749942277
+      },
+      {
+        "continuation_mismatch_mean": 0.319895294869213,
+        "continuation_mismatch_std": 0.21874893737175377,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.3924050632911392,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.7046413502109705,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 15,
+        "signal_x_mean": 0.8840786749942277
+      },
+      {
+        "continuation_mismatch_mean": 0.3140918553711452,
+        "continuation_mismatch_std": 0.1967490768328884,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.3080168776371308,
+        "groove_switch_count": 16,
+        "reinforce_rate": 0.679324894514768,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 13,
+        "signal_x_mean": 0.8840786749942277
+      }
+    ],
+    "T2": {
+      "theta": {
+        "continuation_mismatch_mean": 0.24523291464703276,
+        "continuation_mismatch_std": 0.15306457394174855,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.5021097046413502,
+        "groove_switch_count": 10,
+        "reinforce_rate": 0.6455696202531646,
+        "reject_rate": 0.012658227848101266,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "signal_x_mean": 0.9008657732257538
+      },
+      "alpha_return": {
+        "continuation_mismatch_mean": 0.29743670152651186,
+        "continuation_mismatch_std": 0.19274628026314672,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.28270042194092826,
+        "groove_switch_count": 16,
+        "reinforce_rate": 0.679324894514768,
+        "reject_rate": 0.0379746835443038,
+        "successful_traversals": 0,
+        "trace_segment_count": 16,
+        "signal_x_mean": 0.8840786749942277
+      }
+    },
+    "T3": {
+      "trained": {
+        "continuation_mismatch_mean": 0.17305400561219875,
+        "continuation_mismatch_std": 0.1905439084911328,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.5949367088607594,
+        "groove_switch_count": 7,
+        "reinforce_rate": 0.7088607594936709,
+        "reject_rate": 0.0379746835443038,
+        "successful_traversals": 0,
+        "trace_segment_count": 85,
+        "signal_x_mean": 0.860020267887731
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.15944126574007214,
+        "continuation_mismatch_std": 0.17248571502696633,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.5949367088607594,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.7215189873417721,
+        "reject_rate": 0.029535864978902954,
+        "successful_traversals": 0,
+        "trace_segment_count": 84,
+        "signal_x_mean": 0.860020267887731
+      }
+    },
+    "T4": {
+      "continuation_mismatch_mean": 0.328904314890203,
+      "continuation_mismatch_std": 0.24391664418191344,
+      "dominant_groove": "groove_5",
+      "dominant_groove_fraction": 0.350210970464135,
+      "groove_switch_count": 12,
+      "reinforce_rate": 0.5611814345991561,
+      "reject_rate": 0.016877637130801686,
+      "successful_traversals": 1,
+      "trace_segment_count": 16,
+      "signal_x_mean": 0.8811265937848008
+    },
+    "T5": {
+      "continuation_mismatch_mean": 0.27400286906702315,
+      "continuation_mismatch_std": 0.1902803333616549,
+      "dominant_groove": "groove_4",
+      "dominant_groove_fraction": 0.4472573839662447,
+      "groove_switch_count": 10,
+      "reinforce_rate": 0.5907172995780591,
+      "reject_rate": 0.012658227848101266,
+      "successful_traversals": 0,
+      "trace_segment_count": 15,
+      "signal_x_mean": 0.8850341592506169
+    },
+    "T6": {
+      "continuation_mismatch_mean": 0.28611166667372623,
+      "continuation_mismatch_std": 0.193318867909025,
+      "dominant_groove": "groove_6",
+      "dominant_groove_fraction": 0.37130801687763715,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.6962025316455697,
+      "reject_rate": 0.029535864978902954,
+      "successful_traversals": 0,
+      "trace_segment_count": 12,
+      "signal_x_mean": 0.8754880197871123
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.26361291261680675,
+        "continuation_mismatch_std": 0.19473742708263647,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.5738396624472574,
+        "groove_switch_count": 14,
+        "reinforce_rate": 0.6497890295358649,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      },
+      {
+        "continuation_mismatch_mean": 0.2794744171029365,
+        "continuation_mismatch_std": 0.18380269218535536,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.4219409282700422,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.679324894514768,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      },
+      {
+        "continuation_mismatch_mean": 0.299342895822482,
+        "continuation_mismatch_std": 0.18941127938726413,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.4219409282700422,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6708860759493671,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      },
+      {
+        "continuation_mismatch_mean": 0.2986324305935147,
+        "continuation_mismatch_std": 0.19420460581697643,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.4008438818565401,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.6582278481012658,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      },
+      {
+        "continuation_mismatch_mean": 0.291304325440159,
+        "continuation_mismatch_std": 0.18843906310194797,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.3291139240506329,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6666666666666666,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      },
+      {
+        "continuation_mismatch_mean": 0.2746231110873442,
+        "continuation_mismatch_std": 0.182205232413506,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.4050632911392405,
+        "groove_switch_count": 13,
+        "reinforce_rate": 0.6455696202531646,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "signal_x_mean": 0.8861090917658058
+      }
+    ],
+    "T2": {
+      "theta": {
+        "continuation_mismatch_mean": 0.26103265756110083,
+        "continuation_mismatch_std": 0.18029475234993667,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.9746835443037974,
+        "groove_switch_count": 2,
+        "reinforce_rate": 0.6497890295358649,
+        "reject_rate": 0.02109704641350211,
+        "successful_traversals": 0,
+        "trace_segment_count": 16,
+        "signal_x_mean": 0.9174190115957233
+      },
+      "alpha_return": {
+        "continuation_mismatch_mean": 0.2846161303967264,
+        "continuation_mismatch_std": 0.17776286871708225,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.24472573839662448,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.6582278481012658,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 16,
+        "signal_x_mean": 0.8861090917658058
+      }
+    },
+    "T3": {
+      "trained": {
+        "continuation_mismatch_mean": 0.17699116658796551,
+        "continuation_mismatch_std": 0.18772973978142427,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.5189873417721519,
+        "groove_switch_count": 3,
+        "reinforce_rate": 0.7848101265822784,
+        "reject_rate": 0.029535864978902954,
+        "successful_traversals": 0,
+        "trace_segment_count": 84,
+        "signal_x_mean": 0.855935691878863
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.15202535266335412,
+        "continuation_mismatch_std": 0.17847403562534997,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.510548523206751,
+        "groove_switch_count": 10,
+        "reinforce_rate": 0.7974683544303798,
+        "reject_rate": 0.029535864978902954,
+        "successful_traversals": 0,
+        "trace_segment_count": 88,
+        "signal_x_mean": 0.855935691878863
+      }
+    },
+    "T4": {
+      "continuation_mismatch_mean": 0.3123051286444349,
+      "continuation_mismatch_std": 0.22480494764992334,
+      "dominant_groove": "groove_4",
+      "dominant_groove_fraction": 0.2616033755274262,
+      "groove_switch_count": 9,
+      "reinforce_rate": 0.6624472573839663,
+      "reject_rate": 0.046413502109704644,
+      "successful_traversals": 1,
+      "trace_segment_count": 16,
+      "signal_x_mean": 0.8736711129732844
+    },
+    "T5": {
+      "continuation_mismatch_mean": 0.2817964696204268,
+      "continuation_mismatch_std": 0.21996449729533574,
+      "dominant_groove": "groove_0",
+      "dominant_groove_fraction": 0.9957805907172996,
+      "groove_switch_count": 1,
+      "reinforce_rate": 0.5864978902953587,
+      "reject_rate": 0.02109704641350211,
+      "successful_traversals": 0,
+      "trace_segment_count": 14,
+      "signal_x_mean": 0.883143237956017
+    },
+    "T6": {
+      "continuation_mismatch_mean": 0.3041307005139983,
+      "continuation_mismatch_std": 0.17829149088255006,
+      "dominant_groove": "groove_5",
+      "dominant_groove_fraction": 0.46835443037974683,
+      "groove_switch_count": 6,
+      "reinforce_rate": 0.7088607594936709,
+      "reject_rate": 0.0379746835443038,
+      "successful_traversals": 0,
+      "trace_segment_count": 13,
+      "signal_x_mean": 0.8785399064335714
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.20087503865307108,
+        "continuation_mismatch_std": 0.18251645705506325,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.2742616033755274,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.4936708860759494,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      },
+      {
+        "continuation_mismatch_mean": 0.27310348364603115,
+        "continuation_mismatch_std": 0.20262314622666872,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.29957805907172996,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5864978902953587,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      },
+      {
+        "continuation_mismatch_mean": 0.26881005166169,
+        "continuation_mismatch_std": 0.20220892525597076,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.3333333333333333,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5527426160337553,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      },
+      {
+        "continuation_mismatch_mean": 0.26955728903035375,
+        "continuation_mismatch_std": 0.20458300415725925,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.3333333333333333,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5654008438818565,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      },
+      {
+        "continuation_mismatch_mean": 0.2720767382692891,
+        "continuation_mismatch_std": 0.1993170847920161,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.3333333333333333,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5780590717299579,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      },
+      {
+        "continuation_mismatch_mean": 0.2611091165249712,
+        "continuation_mismatch_std": 0.1995088489040947,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.3333333333333333,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5654008438818565,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      }
+    ],
+    "T2": {
+      "theta": {
+        "continuation_mismatch_mean": 0.25589339832526253,
+        "continuation_mismatch_std": 0.16848544495099493,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.4092827004219409,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.6413502109704642,
+        "reject_rate": 0.02109704641350211,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.9022638032493167
+      },
+      "alpha_return": {
+        "continuation_mismatch_mean": 0.27182740252102433,
+        "continuation_mismatch_std": 0.20246991556114494,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.29957805907172996,
+        "groove_switch_count": 11,
+        "reinforce_rate": 0.5654008438818565,
+        "reject_rate": 0.008438818565400843,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "signal_x_mean": 0.8744703359254102
+      }
+    },
+    "T3": {
+      "trained": {
+        "continuation_mismatch_mean": 0.17887376374691827,
+        "continuation_mismatch_std": 0.20290032734799784,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.4978902953586498,
+        "groove_switch_count": 7,
+        "reinforce_rate": 0.6751054852320675,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 84,
+        "signal_x_mean": 0.8584288802393228
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.11948390201337997,
+        "continuation_mismatch_std": 0.15501466425913826,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.5189873417721519,
+        "groove_switch_count": 12,
+        "reinforce_rate": 0.6751054852320675,
+        "reject_rate": 0.03375527426160337,
+        "successful_traversals": 0,
+        "trace_segment_count": 87,
+        "signal_x_mean": 0.8584288802393228
+      }
+    },
+    "T4": {
+      "continuation_mismatch_mean": 0.3376193041143234,
+      "continuation_mismatch_std": 0.2197019175559722,
+      "dominant_groove": "groove_3",
+      "dominant_groove_fraction": 0.3755274261603376,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.6371308016877637,
+      "reject_rate": 0.029535864978902954,
+      "successful_traversals": 1,
+      "trace_segment_count": 10,
+      "signal_x_mean": 0.8768409558772051
+    },
+    "T5": {
+      "continuation_mismatch_mean": 0.27809258954274313,
+      "continuation_mismatch_std": 0.21509499513845134,
+      "dominant_groove": "groove_4",
+      "dominant_groove_fraction": 0.34177215189873417,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.5907172995780591,
+      "reject_rate": 0.02531645569620253,
+      "successful_traversals": 0,
+      "trace_segment_count": 11,
+      "signal_x_mean": 0.881046317118013
+    },
+    "T6": {
+      "continuation_mismatch_mean": 0.25950668343129485,
+      "continuation_mismatch_std": 0.18374997734190635,
+      "dominant_groove": "groove_6",
+      "dominant_groove_fraction": 0.21940928270042195,
+      "groove_switch_count": 11,
+      "reinforce_rate": 0.6455696202531646,
+      "reject_rate": 0.03375527426160337,
+      "successful_traversals": 0,
+      "trace_segment_count": 10,
+      "signal_x_mean": 0.872310120740306
+    }
+  }
+]
