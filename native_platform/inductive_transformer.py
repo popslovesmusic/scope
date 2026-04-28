@@ -10,13 +10,18 @@ class InductiveTransformerLayer:
         self.channels = channels
         self.sample_rate = sample_rate
         
-        # State
+        # Internal State (Student)
         self.theta = np.zeros(channels) # 'Phase' of each channel
         self.A = np.zeros(channels)     # Amplitude
         self.omega = np.zeros(channels) # Phase velocity
         self.L = np.zeros(channels)     # Inductive motion memory
         
-        # Parameters (Defaults from Patch 24)
+        # Teacher Tracking (Last Input)
+        self.teacher_theta = np.zeros(channels)
+        self.teacher_omega = np.zeros(channels)
+        self.teacher_amp = np.zeros(channels)
+        
+        # Parameters (Defaults from Patch 24/25)
         self.decay_L = 0.96
         self.gain_L = 0.08
         self.k_input_base = 0.18
@@ -36,36 +41,30 @@ class InductiveTransformerLayer:
         signal_x: Consistency proxy [0, 1]
         connected: Boolean, if False, runs in internal-only mode (disconnect)
         """
+        # Teacher Update (for metric tracking)
+        if theta_input is not None:
+            if self.prev_theta_input is not None:
+                self.teacher_omega = wrap(theta_input - self.prev_theta_input)
+            self.teacher_theta = theta_input
+            self.teacher_amp = np.full(self.channels, A_input) if np.isscalar(A_input) else A_input
+
         # 1. Dynamic Coupling k_input scales with Signal X
         k_input = self.k_input_base * signal_x if connected else 0.0
         
-        # 2. Phase Velocity (Omega)
-        # If we have a new input, we can derive velocity from it
-        if self.prev_theta_input is not None:
-            # We don't use theta_input directly to drive omega, 
-            # we use the internal theta's progress to maintain continuity.
-            pass 
-
-        # 3. Inductive Memory Update (L_t = decay_L * L_prev + gain_L * omega_t)
-        # Omega is our internal tracking of velocity
+        # 2. Inductive Memory Update (L_t = decay_L * L_prev + gain_L * omega_t)
         self.L = self.decay_L * self.L + self.gain_L * self.omega
         
-        # 4. Phase Update (Theta)
-        # theta_next = theta + omega + k_input * wrap(theta_input - theta) + k_L * L_t
-        
+        # 3. Phase Update (Theta)
         if connected:
             # External driving + Inductive Bias
             correction = wrap(theta_input - self.theta)
-            # Clip correction to max_phase_correction to prevent shock
             correction = np.clip(correction, -self.max_phase_correction, self.max_phase_correction)
-            
             delta_theta = self.omega + k_input * correction + self.k_L * self.L
         else:
             # Internal purely: Momentum + Inductive Bias
             delta_theta = self.omega + self.k_L * self.L
             
         # Neighbor coupling (Transformer-style coupling)
-        # Simple all-to-all mean coupling for now
         if self.channels > 1:
             mean_theta = np.mean(self.theta)
             neighbor_pull = self.k_neighbor * wrap(mean_theta - self.theta)
@@ -74,16 +73,16 @@ class InductiveTransformerLayer:
         # Apply update
         new_theta = self.theta + delta_theta
         
-        # Update velocity (Internal)
+        # Update velocity (Internal / Student)
         self.omega = wrap(new_theta - self.theta)
         
         # Update state
-        self.theta = new_theta # Note: for hypersphere we might normalize, 
-                               # but the spec treats these as wrapping phases.
+        self.theta = new_theta 
         
-        # 5. Amplitude Update
+        # 4. Amplitude Update
         if connected:
-            self.A = self.decay_A * self.A + self.k_A * A_input
+            target_A = np.full(self.channels, A_input) if np.isscalar(A_input) else A_input
+            self.A = self.decay_A * self.A + self.k_A * target_A
         else:
             self.A = self.decay_A * self.A
 
@@ -93,7 +92,15 @@ class InductiveTransformerLayer:
 
     def get_state_vector(self):
         """Returns the current state as a normalized vector for integration."""
-        # For our 8-element phase space, we can map theta back to a normalized vector
-        # Since theta can grow, we use sin(theta) or similar if they are true phases,
-        # but here they are likely offsets. Let's just normalize the result.
         return normalize(self.theta)
+
+    def get_raw_geometry(self):
+        """Exposes raw geometry for Patch 25 logging."""
+        return {
+            "teacher_theta": self.teacher_theta.tolist(),
+            "student_theta": self.theta.tolist(),
+            "teacher_amp": self.teacher_amp.tolist(),
+            "student_amp": self.A.tolist(),
+            "teacher_omega": self.teacher_omega.tolist(),
+            "student_omega": self.omega.tolist()
+        }

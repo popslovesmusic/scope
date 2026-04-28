@@ -21,7 +21,7 @@ from .inductive_transformer import InductiveTransformerLayer
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True, connected_state="train"):
     print("🚀 Initializing Native Wave-Residue Platform (Continuation Mode)...")
     
     # Check input signal length
@@ -155,6 +155,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             phi_oriented = i_local
 
             # Patch 17/20: Real continuation alignment error
+            # This mismatch is used for DECISION making
             if pending_phi_continued is not None:
                 raw_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
             else:
@@ -176,7 +177,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             phi_inductive = transformer.update(phi_oriented, scope_data['C'], signal_x, connected=connected)
             
             # New Metric: phase_error (between oriented input and inductive prediction)
-            # Actually phi_inductive is the state after update, so we check alignment
             phase_error = float(phase_mismatch(phi_oriented, phi_inductive))
             
             # New Metric: frequency_drift
@@ -248,6 +248,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 status = "SKIPPED"
                 
+            # Patch 25: Enhanced Geometry Logging
+            geom = transformer.get_raw_geometry()
+            
             log_entry = {
                 "t": t,
                 "input_signal": float(input_signal),
@@ -280,12 +283,18 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "failed_tests": failed_tests,
                 "signal_x": signal_x,
                 "consistency_level": get_consistency_level(signal_x),
-                # Patch 24 Logging
+                # Patch 24/25 Geometry
                 "phase_error": phase_error,
                 "frequency_drift": freq_drift,
                 "inductive_L": transformer.L.tolist(),
-                "inductive_omega": transformer.omega.tolist(),
-                "connected": connected
+                "teacher_theta": geom["teacher_theta"],
+                "student_theta": geom["student_theta"],
+                "teacher_amp": geom["teacher_amp"],
+                "student_amp": geom["student_amp"],
+                "teacher_omega": geom["teacher_omega"],
+                "student_omega": geom["student_omega"],
+                "connected": connected,
+                "connected_state": connected_state
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
