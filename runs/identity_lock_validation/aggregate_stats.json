@@ -1,15 +1,11 @@
 {
   "T1_learning": {
-    "A_pass1_mean": 0.010978887296413088,
-    "replay_A_mean": 0.011969445804492228,
-    "switch_count_mean": 10.2
-  },
-  "T2_directionality": {
-    "B_mean": 0.012531040627402632,
-    "A_after_B_mean": 0.011845690915564606
+    "A_pass1_mean": 0.013807351683054758,
+    "replay_A_mean": 0.03757938639744683,
+    "reinforce_rate_mean": 0.0708
   },
   "T4_withheld": {
-    "trained_mean": 0.018942983622018704,
-    "untrained_mean": 0.017922428706447453
+    "trained_mean": 0.04379754669648943,
+    "untrained_mean": 0.024885338506427174
   }
 }

@@ -32,24 +32,31 @@ class Groove:
         
         return 0.85 * flow_similarity + 0.15 * operator_match
 
-    def reinforce(self, segment, phi_oriented, op_star, mismatch, threshold=0.015):
+    def reinforce(self, segment, phi_oriented, op_star, decision, threshold=0.015):
+        """
+        Update identity only if survivability decision allows.
+        """
+        if decision == "reject":
+            return
+            
         self.use_count += 1
         self.last_seen = 0
         
-        # Update identity features with momentum
-        alpha = 0.05 
-        if segment is not None:
-            self.centroid_segment = normalize((1.0 - alpha) * self.centroid_segment + alpha * segment)
+        if decision == "reinforce":
+            # Update identity features with momentum
+            alpha = 0.05 
+            if segment is not None:
+                self.centroid_segment = normalize((1.0 - alpha) * self.centroid_segment + alpha * segment)
+                
+            self.op_histogram[op_star] = self.op_histogram.get(op_star, 0.0) + 1.0
             
-        self.op_histogram[op_star] = self.op_histogram.get(op_star, 0.0) + 1.0
-        
-        # Reinforce directional segments if mismatch is low
-        if mismatch < threshold and segment is not None:
+            # Store directional segment
             self.success_count += 1
             self.trace_segments.append(np.asarray(segment, dtype=float).copy())
             if len(self.trace_segments) > self.trace_size:
                 self.trace_segments.pop(0)
-        else:
+        elif decision == "hold":
+            # Just keep recent context on hold
             if len(self.trace_segments) > 10:
                 self.trace_segments = self.trace_segments[-10:]
 
@@ -155,21 +162,18 @@ class GrooveRouter:
         self.grooves[gid] = g
         return g
 
-    def reinforce_active(self, phi_prev, phi_current, op_star, mismatch, threshold=0.015):
+    def reinforce_active(self, phi_prev, phi_current, op_star, decision, threshold=0.015):
         if self.active_groove_id is None or phi_prev is None:
             return
         
-        # identity_lock_v1: update running mismatch mean
-        self.running_mismatch_mean = 0.95 * self.running_mismatch_mean + 0.05 * mismatch
-        
-        # if mismatch rises sharply, break lock
-        if mismatch > 2.5 * self.running_mismatch_mean:
+        # Break lock on reject (sharp divergence)
+        if decision == "reject":
             self.locked_groove_id = None
             self.lock_duration = 0
         
         g = self.grooves[self.active_groove_id]
         segment = normalize(np.asarray(phi_current) - np.asarray(phi_prev))
-        g.reinforce(segment, phi_current, op_star, mismatch, threshold=threshold)
+        g.reinforce(segment, phi_current, op_star, decision, threshold=threshold)
 
     def active_feedback_vector(self):
         if self.active_groove_id is None:

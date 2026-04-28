@@ -16,6 +16,7 @@ from .residue_phase_continuation import ResiduePhaseContinuation
 from .phase_operator_map import operator_pressure
 from .operator_selection import select_operator, apply_operator
 from .groove_router import GrooveRouter
+from .signal_layer import compute_x_channel, get_consistency_level
 
 from core.memory_layer import load_memory_state, save_memory_state
 
@@ -33,8 +34,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     
     memory = load_memory_state(memory_path)
     
-    # Patch 17: Phase Continuation with deeper history
-    # Patch 20: Pass successful_traversals from memory
+    # Patch 17/20/23: Phase Continuation with survivability gating
     phase_continuation = ResiduePhaseContinuation(
         history_size=64, 
         trace_size=128, 
@@ -68,13 +68,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     last_flow_bias = 0.0
     last_continuation_mismatch = 0.0
     
-    # Patch 18: Prior phi for operator selection
+    # Prior states for selections
     prev_phi = None
-    
-    # Patch 17: Prior continuation for next-frame accuracy
     pending_phi_continued = None
-
-    # Patch 20: Track orientation and mismatch for trace feedback
     prev_phi_oriented = None
     mismatch_series = []
 
@@ -121,6 +117,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # C. Update SignalScope
             scope_data = scope.update(node_outputs)
             
+            # Patch 23: Compute X channel (cross-view consistency)
+            signal_x = compute_x_channel(scope_data['W_local'], scope_data['W_global'])
+            
             # Phase Space & Continuation
             phi_current = compute_phase_vector(
                 scope_data['W_local'],
@@ -130,41 +129,42 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             )
             
             # Patch 18: Operator Selection for Local Reference -(i)
-            # Find the operator that minimizes mismatch with the prior state
             op_star, op_cost = select_operator(phi_current, prev_phi)
-            
-            # Derive local reference -(i)
             i_local = apply_operator(phi_current, op_star)
-            
-            # Use this as the oriented state for continuation
             phi_oriented = i_local
 
-            # Patch 22: Groove Routing
-            # Select active identity groove based on current oriented phase velocity and operator
-            active_groove, route_score = router.route(prev_phi_oriented, phi_oriented, op_star)
-            groove_feedback_vec = router.active_feedback_vector()
-
             # Patch 17/20: Real continuation alignment error
-            # Compare prediction from PREVIOUS frame with current ORIENTED phase
             if pending_phi_continued is not None:
                 continuation_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
             else:
                 continuation_mismatch = 0.0
 
-            # Patch 22: Generate internal continuation with external groove feedback
+            # Patch 23: Survivability Gating
+            decision, failed_tests = phase_continuation.evaluate_survivability(
+                phi_oriented, 
+                continuation_mismatch, 
+                op_star, 
+                signal_x
+            )
+
+            # Patch 22: Groove Routing
+            active_groove, route_score = router.route(prev_phi_oriented, phi_oriented, op_star)
+            groove_feedback_vec = router.active_feedback_vector()
+
+            # Patch 22/23: Generate internal continuation with external groove feedback gated by decision
             phi_continued = phase_continuation.continue_next(
                 phi_oriented, 
-                last_mismatch=last_continuation_mismatch,
+                decision,
                 external_feedback_vec=groove_feedback_vec
             )
             
             mismatch_series.append(continuation_mismatch)
 
-            # Patch 20: Store trace segment feedback (short-term)
-            phase_continuation.store_trace_segment(prev_phi_oriented, phi_oriented, continuation_mismatch, threshold=0.020)
+            # Patch 20/23: Store trace segment feedback (short-term) gated by decision
+            phase_continuation.store_trace_segment(prev_phi_oriented, phi_oriented, continuation_mismatch, decision)
             
-            # Patch 22: Reinforce active groove (long-term identity)
-            router.reinforce_active(prev_phi_oriented, phi_oriented, op_star, continuation_mismatch, threshold=0.020)
+            # Patch 22/23: Reinforce active groove (long-term identity) gated by decision
+            router.reinforce_active(prev_phi_oriented, phi_oriented, op_star, decision, threshold=0.020)
             
             prev_phi_oriented = phi_oriented.copy()
 
@@ -179,7 +179,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             last_continuation_mismatch = continuation_mismatch
             pending_phi_continued = phi_continued.copy()
             
-            # For logging/legacy
             continuation_mismatch_next = continuation_mismatch
 
             # D. Hex Encoding
@@ -192,8 +191,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data["E"], 
                 scope_data["V"]
             )
-            
-            # Apply operator pressure to signature (legal input-space shaping)
             signature_12 = apply_operator_pressure(signature_12, op_pressure)
             
             # F. Run SBLLM v14 Reasoning
@@ -238,24 +235,27 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "successful_traversals": int(phase_continuation.successful_traversals),
                 "traversal_count": phase_continuation.traversal_count,
                 "op_pressure": op_pressure,
-                # Patch 22 Logging
                 "active_groove_id": router.active_groove_id,
                 "groove_count": len(router.grooves),
                 "groove_score": float(route_score),
-                "operator_star": op_star
+                "operator_star": op_star,
+                # Patch 23 Logging
+                "survivability_decision": decision,
+                "failed_tests": failed_tests,
+                "signal_x": signal_x,
+                "consistency_level": get_consistency_level(signal_x)
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
                 gid = router.active_groove_id or "none"
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={gid} ({len(router.grooves)}) -> {status}")
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} X={signal_x:.2f} Mismatch={continuation_mismatch:.4f} G={gid} ({decision}) -> {status}")
 
             last_state = state
             last_residue = residue
             prev_phi = phi_current.copy()
 
     # 2. Finalize
-    # Patch 20: Evaluate traversal success based on mismatch trend
     if len(mismatch_series) > 0:
         q = len(mismatch_series) // 4
         if q > 0:
@@ -270,7 +270,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
 
     phase_continuation.mark_traversal_complete()
     memory.successful_traversals = int(phase_continuation.successful_traversals)
-    # Patch 22: Persist GrooveRouter state
     memory.groove_data = router.to_dict()
     
     save_memory_state(memory_path, memory)
