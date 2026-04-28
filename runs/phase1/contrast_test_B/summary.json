@@ -1,11 +1,11 @@
 {
   "name": "contrast_test_B",
-  "continuation_mismatch_mean": 0.001366047380002385,
-  "continuation_mismatch_max": 0.03354541794503141,
-  "continuation_mismatch_next_mean": 0.0030348806536117695,
-  "caution_mean": 0.7373124887120523,
-  "recovery_mean": 0.12940163698034612,
-  "residue_commit_rate": 0.004,
-  "final_groove_size": 128,
+  "continuation_mismatch_mean": 0.006302862581815886,
+  "continuation_mismatch_max": 0.11464961479096714,
+  "continuation_mismatch_next_mean": 0.006302862581815886,
+  "caution_mean": 0.7217691717596499,
+  "recovery_mean": 0.1278669333254011,
+  "residue_commit_rate": 0.0,
+  "final_groove_size": 69,
   "trace_path": "logs/feedback_trace_phase1_contrast_test_B.jsonl"
 }

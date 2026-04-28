@@ -1,0 +1,122 @@
+{
+  "agent_patch": "code_correction_alignment_v1",
+  "goal": "Fix training override scope, enforce selective groove (not averaging), stabilize operator selection cost, and enable actual groove formation.",
+
+  "priority_order": [
+    "fix_training_override_path",
+    "apply_selective_groove_behavior",
+    "reduce_groove_gain",
+    "stabilize_operator_cost"
+  ],
+
+  "patches": [
+    {
+      "id": "P1_fix_training_override_path",
+      "file": "native_platform/residue_imprinter.py",
+      "description": "Ensure training overrides are actually read from config.",
+      "replace": {
+        "old": "training_cfg = config.get(\"training_overrides\", {})",
+        "new": "training_cfg = config.get(\"training_overrides\", config.get(\"feedback\", {}).get(\"training_overrides\", {}))"
+      }
+    },
+    {
+      "id": "P2_reduce_groove_gain",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Prevent phase collapse by limiting groove dominance.",
+      "replace": {
+        "old": "max_groove_gain=0.75",
+        "new": "max_groove_gain=0.25"
+      }
+    },
+    {
+      "id": "P3_selective_trace_storage",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Only reinforce aligned trajectories and decay on divergence.",
+      "replace_function": {
+        "name": "reinforce_trace",
+        "new_body": [
+          "def reinforce_trace(self, phi, mismatch, threshold=0.01):",
+          "    phi = np.asarray(phi, dtype=float)",
+          "    if mismatch < threshold:",
+          "        self.trace_buffer.append(phi.copy())",
+          "        if len(self.trace_buffer) > self.trace_size:",
+          "            self.trace_buffer.pop(0)",
+          "    else:",
+          "        # decay groove on divergence",
+          "        self.trace_buffer = self.trace_buffer[-10:]"
+        ]
+      }
+    },
+    {
+      "id": "P4_replace_mean_groove_with_direction",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Use recent aligned direction instead of global mean (prevents phase collapse).",
+      "replace_function": {
+        "name": "trace_groove_vector",
+        "new_body": [
+          "def trace_groove_vector(self):",
+          "    if len(self.trace_buffer) < 3:",
+          "        return None",
+          "    direction = self.trace_buffer[-1] - self.trace_buffer[-2]",
+          "    return normalize(direction)"
+        ]
+      }
+    },
+    {
+      "id": "P5_apply_groove_as_direction",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Apply groove as directional bias, not attractor target.",
+      "replace_snippet": {
+        "old": "phi_continued = normalize((1.0 - beta) * local_continuation + beta * groove)",
+        "new": "phi_continued = normalize(local_continuation + beta * groove)"
+      }
+    },
+    {
+      "id": "P6_operator_cost_clipping",
+      "file": "native_platform/operator_selection.py",
+      "description": "Ensure stable cosine similarity computation.",
+      "replace_snippet": {
+        "old": "cost = 1.0 - float(np.dot(candidate, phi_prev))",
+        "new": [
+          "dot = float(np.dot(candidate, phi_prev))",
+          "dot = max(-1.0, min(1.0, dot))",
+          "cost = 1.0 - dot"
+        ]
+      }
+    }
+  ],
+
+  "validation_run": {
+    "sequence": [
+      "clear_memory",
+      "A_pass1",
+      "A_pass2",
+      "A_pass3",
+      "replay_A",
+      "contrast_B"
+    ],
+    "metrics": [
+      "continuation_mismatch_mean",
+      "continuation_mismatch_next_mean",
+      "trace_groove_size",
+      "residue_commit_rate",
+      "operator_distribution"
+    ],
+    "expected": [
+      "trace_groove_size is selective (not always maxed)",
+      "continuation_mismatch decreases across A passes",
+      "replay_A mismatch lower than pass1",
+      "contrast_B mismatch higher than replay_A",
+      "residue_commit_rate increases from near-zero"
+    ]
+  },
+
+  "failure_signals": [
+    "trace_groove_size saturates at max immediately",
+    "continuation_mismatch flat across all runs",
+    "replay does not improve",
+    "no separation between A and B"
+  ],
+
+  "principle": "Groove must be a narrow reinforced path, not a global average basin."
+}

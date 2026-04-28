@@ -316,6 +316,9 @@ class PersistentMemoryState:
     last_reject_reason: str = ""
     last_state_summary: str = ""
     last_active_component_id: Any = None
+    
+    # Patch 20: Persistent traversal success
+    successful_traversals: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -333,6 +336,7 @@ class PersistentMemoryState:
             "last_reject_reason": str(self.last_reject_reason),
             "last_state_summary": str(self.last_state_summary),
             "last_active_component_id": self.last_active_component_id,
+            "successful_traversals": int(self.successful_traversals),
             "saved_at": datetime.utcnow().isoformat() + "Z",
         }
 
@@ -362,6 +366,7 @@ class PersistentMemoryState:
         s.last_reject_reason = str(d.get("last_reject_reason", ""))
         s.last_state_summary = str(d.get("last_state_summary", ""))
         s.last_active_component_id = d.get("last_active_component_id", None)
+        s.successful_traversals = int(d.get("successful_traversals", 0))
         return s
 
 

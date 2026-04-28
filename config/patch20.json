@@ -1,0 +1,152 @@
+{
+  "agent_patch": "active_trace_feedback_groove_v1",
+  "goal": "Use trace feedback as the active reinforcement mechanism that deepens continuation grooves across repeated traversals.",
+
+  "core_principle": {
+    "trace": "not passive log",
+    "trace_feedback": "active continuation bias",
+    "groove": "repeatedly reinforced phase path",
+    "learning": "same traversal becomes easier to continue over repetitions"
+  },
+
+  "patches": [
+    {
+      "id": "P1_add_trace_feedback_state",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Add explicit trace-feedback memory separate from residue commits.",
+      "add_to_init": [
+        "self.trace_segments = []",
+        "self.trace_feedback_gain = 0.10",
+        "self.max_trace_feedback_gain = 0.65",
+        "self.successful_traversals = 0"
+      ]
+    },
+    {
+      "id": "P2_store_trace_segment",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Store aligned phase movement, not just isolated phase points.",
+      "add_function": [
+        "def store_trace_segment(self, phi_prev, phi_current, mismatch, threshold=0.015):",
+        "    if phi_prev is None:",
+        "        return",
+        "    if mismatch < threshold:",
+        "        segment = normalize(np.asarray(phi_current) - np.asarray(phi_prev))",
+        "        self.trace_segments.append(segment)",
+        "        if len(self.trace_segments) > self.trace_size:",
+        "            self.trace_segments.pop(0)",
+        "    else:",
+        "        # on divergence, preserve only recent trace context",
+        "        self.trace_segments = self.trace_segments[-10:]"
+      ]
+    },
+    {
+      "id": "P3_trace_feedback_vector",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Compute active feedback from recent aligned trace segments.",
+      "add_function": [
+        "def trace_feedback_vector(self):",
+        "    if len(self.trace_segments) < 2:",
+        "        return None",
+        "    recent = self.trace_segments[-min(len(self.trace_segments), 16):]",
+        "    return normalize(np.mean(np.stack(recent, axis=0), axis=0))"
+      ]
+    },
+    {
+      "id": "P4_gain_deepens_with_repeated_traversal",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Repeated successful traversal increases trace feedback strength.",
+      "replace_function": {
+        "name": "groove_gain",
+        "new_body": [
+          "def groove_gain(self):",
+          "    growth = 1.0 - np.exp(-0.20 * float(self.successful_traversals))",
+          "    return self.trace_feedback_gain + (self.max_trace_feedback_gain - self.trace_feedback_gain) * growth"
+        ]
+      }
+    },
+    {
+      "id": "P5_continue_with_trace_feedback",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Apply trace feedback as directional bias in continuation.",
+      "modify_continue_next": [
+        "after local_continuation is computed:",
+        "feedback_vec = self.trace_feedback_vector()",
+        "if feedback_vec is not None:",
+        "    beta = self.groove_gain()",
+        "    phi_continued = normalize(local_continuation + beta * feedback_vec)",
+        "else:",
+        "    phi_continued = local_continuation"
+      ]
+    },
+    {
+      "id": "P6_mark_successful_traversal",
+      "file": "native_platform/residue_phase_continuation.py",
+      "description": "Call this at end of each pass if average mismatch improved.",
+      "add_function": [
+        "def mark_successful_traversal(self):",
+        "    self.successful_traversals += 1",
+        "",
+        "def mark_failed_traversal(self):",
+        "    self.successful_traversals = max(0, self.successful_traversals - 1)",
+        "    self.trace_segments = self.trace_segments[-10:]"
+      ]
+    },
+    {
+      "id": "P7_run_loop_store_trace_feedback",
+      "file": "native_platform/run_native_platform.py",
+      "description": "Feed trace segment back into continuation engine each frame.",
+      "changes": [
+        "initialize prev_phi_oriented = None before loop",
+        "after continuation_mismatch is computed:",
+        "phase_continuation.store_trace_segment(prev_phi_oriented, phi_oriented, continuation_mismatch, threshold=0.015)",
+        "prev_phi_oriented = phi_oriented.copy()"
+      ]
+    },
+    {
+      "id": "P8_log_trace_feedback",
+      "file": "native_platform/run_native_platform.py",
+      "add_to_log_entry": {
+        "trace_segment_count": "len(phase_continuation.trace_segments)",
+        "trace_feedback_gain": "float(phase_continuation.groove_gain())",
+        "successful_traversals": "int(phase_continuation.successful_traversals)"
+      }
+    },
+    {
+      "id": "P9_pass_level_groove_reinforcement",
+      "file": "native_platform/run_native_platform.py",
+      "description": "Mark traversal success based on pass-level mismatch trend.",
+      "changes": [
+        "collect continuation_mismatch values in mismatch_series during run",
+        "at end of run:",
+        "if mean(last 25% mismatches) <= mean(first 25% mismatches):",
+        "    phase_continuation.mark_successful_traversal()",
+        "else:",
+        "    phase_continuation.mark_failed_traversal()"
+      ]
+    }
+  ],
+
+  "important_distinction": {
+    "trace_buffer": "stores aligned phase positions if still needed",
+    "trace_segments": "stores aligned phase movements and should drive groove reinforcement",
+    "residue_memory": "longer-term committed persistence after qualification",
+    "active_learning": "trace_segments first, residue commits later"
+  },
+
+  "expected_behavior": [
+    "trace_segment_count grows only during aligned traversal",
+    "trace_feedback_gain increases across successful repeated passes",
+    "continuation_mismatch decreases across A passes",
+    "replay_A continues more easily than pass1",
+    "contrast_B disrupts or uses a different groove"
+  ],
+
+  "failure_signals": [
+    "trace_segment_count maxes immediately for all signals",
+    "trace_feedback_gain rises even when mismatch worsens",
+    "contrast_B gets same low mismatch as A",
+    "continuation_mismatch remains flat"
+  ],
+
+  "final_instruction": "Implement trace feedback as the active groove-reinforcement loop. The trace should bias future continuation direction across repeated traversals, while residue remains the longer-term qualified memory layer."
+}

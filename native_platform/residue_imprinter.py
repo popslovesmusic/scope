@@ -13,7 +13,7 @@ def qualify_and_commit(trace, state, memory, turn_id, config, metadata=None):
     Qualifies the trace and commits to memory if stable.
     """
     mem_cfg = config.get("memory_layer", {})
-    training_cfg = config.get("training_overrides", {})
+    training_cfg = config.get("training_overrides", config.get("feedback", {}).get("training_overrides", {}))
     
     # 1. Build runtime output for building residue
     runtime_output = {

@@ -19,7 +19,9 @@ def select_operator(phi, phi_prev):
     for op in OPERATORS:
         candidate = apply_operator(phi, op)
         # Cost is 1.0 - cosine similarity (dot product of normalized vectors)
-        cost = 1.0 - float(np.dot(candidate, phi_prev))
+        dot = float(np.dot(candidate, phi_prev))
+        dot = max(-1.0, min(1.0, dot))
+        cost = 1.0 - dot
 
         if cost < best_cost:
             best_cost = cost

@@ -1,11 +1,11 @@
 {
   "name": "perturbation_test",
-  "continuation_mismatch_mean": 0.0012639486161185314,
-  "continuation_mismatch_max": 0.054238863454911024,
-  "continuation_mismatch_next_mean": 0.002878592971060106,
-  "caution_mean": 0.7409401440879563,
-  "recovery_mean": 0.1288917512632424,
-  "residue_commit_rate": 0.0,
-  "final_groove_size": 128,
+  "continuation_mismatch_mean": 0.011331421605786573,
+  "continuation_mismatch_max": 0.14219503437036318,
+  "continuation_mismatch_next_mean": 0.011331421605786573,
+  "caution_mean": 0.7333733028535103,
+  "recovery_mean": 0.12777988339827742,
+  "residue_commit_rate": 0.002,
+  "final_groove_size": 15,
   "trace_path": "logs/feedback_trace_phase1_perturbation_test.jsonl"
 }

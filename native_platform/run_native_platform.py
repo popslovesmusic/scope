@@ -30,11 +30,16 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     scope = SignalScope()
     v14 = V14Bridge()
     
-    # Patch 17: Phase Continuation with deeper history
-    phase_continuation = ResiduePhaseContinuation(history_size=64, trace_size=128)
-    
     memory_path = "sessions/native_memory.json"
     memory = load_memory_state(memory_path)
+    
+    # Patch 17: Phase Continuation with deeper history
+    # Patch 20: Pass successful_traversals from memory
+    phase_continuation = ResiduePhaseContinuation(
+        history_size=64, 
+        trace_size=128, 
+        successful_traversals=memory.successful_traversals
+    )
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -65,6 +70,10 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     
     # Patch 17: Prior continuation for next-frame accuracy
     pending_phi_continued = None
+
+    # Patch 20: Track orientation and mismatch for trace feedback
+    prev_phi_oriented = None
+    mismatch_series = []
 
     if run_id is None:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -117,12 +126,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data['V']
             )
             
-            # Patch 17: Real continuation alignment error
-            if pending_phi_continued is not None:
-                continuation_mismatch_next = float(phase_mismatch(pending_phi_continued, phi_current))
-            else:
-                continuation_mismatch_next = 0.0
-
             # Patch 18: Operator Selection for Local Reference -(i)
             # Find the operator that minimizes mismatch with the prior state
             op_star, op_cost = select_operator(phi_current, prev_phi)
@@ -133,11 +136,21 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             # Use this as the oriented state for continuation
             phi_oriented = i_local
 
-            # Generate internal continuation in the operator-selected frame
+            # Patch 17/20: Real continuation alignment error
+            # Compare prediction from PREVIOUS frame with current ORIENTED phase
+            if pending_phi_continued is not None:
+                continuation_mismatch = float(phase_mismatch(pending_phi_continued, phi_oriented))
+            else:
+                continuation_mismatch = 0.0
+
+            # Generate internal continuation in the operator-selected frame for NEXT frame
             phi_continued = phase_continuation.continue_next(phi_oriented, last_mismatch=last_continuation_mismatch)
             
-            # Mismatch is now relative to the operator-selected reference
-            continuation_mismatch = float(phase_mismatch(phi_continued, phi_oriented))
+            mismatch_series.append(continuation_mismatch)
+
+            # Patch 20: Store trace segment feedback
+            phase_continuation.store_trace_segment(prev_phi_oriented, phi_oriented, continuation_mismatch, threshold=0.020)
+            prev_phi_oriented = phi_oriented.copy()
 
             # Reinforce trace groove if mismatch is low
             phase_continuation.reinforce_trace(phi_oriented, continuation_mismatch, threshold=0.02)
@@ -149,6 +162,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             last_flow_bias = float(np.tanh(np.mean(scope_data['V'])))
             last_continuation_mismatch = continuation_mismatch
             pending_phi_continued = phi_continued.copy()
+            
+            # For logging/legacy
+            continuation_mismatch_next = continuation_mismatch
 
             # D. Hex Encoding
             full_hex = make_full_hex(scope_data["W_local"], scope_data["W_global"], scope_data["W_meta"])
@@ -201,20 +217,37 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "continuation_mismatch": continuation_mismatch,
                 "continuation_mismatch_next": continuation_mismatch_next,
                 "trace_groove_size": len(phase_continuation.trace_buffer),
+                "trace_segment_count": len(phase_continuation.trace_segments),
+                "trace_feedback_gain": float(phase_continuation.groove_gain()),
+                "successful_traversals": int(phase_continuation.successful_traversals),
                 "traversal_count": phase_continuation.traversal_count,
                 "op_pressure": op_pressure
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
             if t % 10 == 0:
-                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={len(phase_continuation.trace_buffer)} -> {status}")
+                print(f"Frame {t}: [{full_hex}] C={scope_data['C']:.2f} Mismatch={continuation_mismatch:.4f} Groove={len(phase_continuation.trace_buffer)} Segs={len(phase_continuation.trace_segments)} -> {status}")
 
             last_state = state
             last_residue = residue
             prev_phi = phi_current.copy()
 
     # 2. Finalize
+    # Patch 20: Evaluate traversal success based on mismatch trend
+    if len(mismatch_series) > 0:
+        q = len(mismatch_series) // 4
+        if q > 0:
+            first_mean = np.mean(mismatch_series[:q])
+            last_mean = np.mean(mismatch_series[-q:])
+            if last_mean <= first_mean:
+                phase_continuation.mark_successful_traversal()
+            else:
+                phase_continuation.mark_failed_traversal()
+        else:
+            phase_continuation.mark_successful_traversal()
+
     phase_continuation.mark_traversal_complete()
+    memory.successful_traversals = int(phase_continuation.successful_traversals)
     save_memory_state(memory_path, memory)
     print(f"✅ Run Complete. Trace: logs/feedback_trace_{run_id}.jsonl")
     

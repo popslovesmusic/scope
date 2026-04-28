@@ -1,11 +1,11 @@
 {
   "name": "transition_test",
-  "continuation_mismatch_mean": 0.0018772507507041577,
-  "continuation_mismatch_max": 0.059334336196775084,
-  "continuation_mismatch_next_mean": 0.0043708085168740266,
-  "caution_mean": 0.743107849544373,
-  "recovery_mean": 0.12715917366795673,
-  "residue_commit_rate": 0.0,
-  "final_groove_size": 128,
+  "continuation_mismatch_mean": 0.006722011293392315,
+  "continuation_mismatch_max": 0.10078954250395156,
+  "continuation_mismatch_next_mean": 0.006722011293392315,
+  "caution_mean": 0.7342264053246988,
+  "recovery_mean": 0.1302220363108809,
+  "residue_commit_rate": 0.004,
+  "final_groove_size": 14,
   "trace_path": "logs/feedback_trace_phase1_transition_test.jsonl"
 }
