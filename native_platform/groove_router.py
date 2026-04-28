@@ -92,6 +92,12 @@ class GrooveRouter:
         self.create_threshold = create_threshold
         self.switch_margin = switch_margin
         self.next_id = 0
+        
+        # identity_lock_v1
+        self.locked_groove_id = None
+        self.lock_duration = 0
+        self.min_lock_frames = 25
+        self.running_mismatch_mean = 0.015 # seed with safe default
 
     def route(self, phi_prev, phi_oriented, op_star):
         best_id = None
@@ -101,6 +107,13 @@ class GrooveRouter:
         
         if current_segment is None:
             return self.grooves.get(self.active_groove_id), 0.0
+
+        # if currently locked, stay locked unless strong evidence
+        if self.locked_groove_id is not None:
+            if self.lock_duration < self.min_lock_frames:
+                self.lock_duration += 1
+                self.active_groove_id = self.locked_groove_id
+                return self.grooves.get(self.active_groove_id), 1.0 # assume perfect lock score
 
         # 1. Score all existing grooves
         scores = {gid: g.score(current_segment, op_star) for gid, g in self.grooves.items()}
@@ -114,14 +127,24 @@ class GrooveRouter:
             # Create new groove
             new_groove = self.create_groove(current_segment, op_star)
             self.active_groove_id = new_groove.groove_id
+            self.locked_groove_id = self.active_groove_id
+            self.lock_duration = 0
         elif best_id is not None:
             # Check if we should switch to best_id
             if self.active_groove_id is None:
                 self.active_groove_id = best_id
+                self.locked_groove_id = best_id
+                self.lock_duration = 0
             else:
                 current_score = scores.get(self.active_groove_id, 0.0)
-                if best_score > current_score + self.switch_margin:
+                # stronger margin for identity_lock_v1
+                if best_score > current_score + 0.15:
                     self.active_groove_id = best_id
+                    self.locked_groove_id = best_id
+                    self.lock_duration = 0
+                else:
+                    # stay with current active/locked
+                    pass
         
         return self.grooves.get(self.active_groove_id), (best_score if best_id else 0.0)
 
@@ -135,6 +158,14 @@ class GrooveRouter:
     def reinforce_active(self, phi_prev, phi_current, op_star, mismatch, threshold=0.015):
         if self.active_groove_id is None or phi_prev is None:
             return
+        
+        # identity_lock_v1: update running mismatch mean
+        self.running_mismatch_mean = 0.95 * self.running_mismatch_mean + 0.05 * mismatch
+        
+        # if mismatch rises sharply, break lock
+        if mismatch > 2.5 * self.running_mismatch_mean:
+            self.locked_groove_id = None
+            self.lock_duration = 0
         
         g = self.grooves[self.active_groove_id]
         segment = normalize(np.asarray(phi_current) - np.asarray(phi_prev))
@@ -151,7 +182,10 @@ class GrooveRouter:
             "next_id": self.next_id,
             "max_grooves": self.max_grooves,
             "create_threshold": self.create_threshold,
-            "switch_margin": self.switch_margin
+            "switch_margin": self.switch_margin,
+            "locked_groove_id": self.locked_groove_id,
+            "lock_duration": self.lock_duration,
+            "running_mismatch_mean": self.running_mismatch_mean
         }
 
     @staticmethod
@@ -166,12 +200,17 @@ class GrooveRouter:
         )
         gr.next_id = d.get("next_id", 0)
         gr.grooves = {gid: Groove.from_dict(gd) for gid, gd in d.get("grooves", {}).items()}
+        gr.locked_groove_id = d.get("locked_groove_id")
+        gr.lock_duration = d.get("lock_duration", 0)
+        gr.running_mismatch_mean = d.get("running_mismatch_mean", 0.015)
         return gr
 
     def summary(self):
         return {
             "gro_count": len(self.grooves),
             "act_gid": self.active_groove_id,
+            "locked": self.locked_groove_id,
+            "lock_dur": self.lock_duration,
             "gro_metrics": {
                 gid: {
                     "use": g.use_count,
