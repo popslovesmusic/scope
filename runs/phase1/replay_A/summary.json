@@ -1,11 +1,11 @@
 {
   "name": "replay_A",
-  "continuation_mismatch_mean": 0.011809009726648879,
-  "continuation_mismatch_max": 0.10796793452328945,
-  "continuation_mismatch_next_mean": 0.011809009726648879,
-  "caution_mean": 0.736687668442634,
-  "recovery_mean": 0.12815244799015268,
-  "residue_commit_rate": 0.002,
+  "continuation_mismatch_mean": 0.011818916326603066,
+  "continuation_mismatch_max": 0.11432970256437325,
+  "continuation_mismatch_next_mean": 0.011818916326603066,
+  "caution_mean": 0.7339975203531396,
+  "recovery_mean": 0.12746739145699262,
+  "residue_commit_rate": 0.006,
   "final_groove_size": 11,
   "trace_path": "logs/feedback_trace_phase1_replay_A.jsonl"
 }

@@ -1,0 +1,248 @@
+{
+  "agent_task": {
+    "title": "Phase Geometry Metrics and Rigor Upgrade",
+    "purpose": "Make continuation validation geometrically interpretable, reproducible, and resistant to misleading aggregate scores.",
+    "core_directive": "Do not claim true continuation from mismatch alone. Continuation claims require explicit phase geometry, trajectory alignment, and recoupling behavior.",
+    "problem_being_fixed": {
+      "current_issue": "Low mismatch can coexist with wrong phase because mismatch may measure reduced value-space while phase_error measures angular alignment.",
+      "status": "Existing metrics are behaviorally useful but not rigorous enough for geometry claims.",
+      "required_fix": "Log teacher/student state per timestep and compute direct geometric relations."
+    },
+    "non_negotiables": [
+      "Preserve existing metrics.",
+      "Do not remove Signal X.",
+      "Do not remove survivability gating.",
+      "Do not weaken current tests.",
+      "Add explicit metric definitions to the report.",
+      "Block or downgrade any continuation claim if phase geometry is missing."
+    ],
+    "required_raw_logs": {
+      "per_timestep": [
+        "t",
+        "phase",
+        "channel_id",
+        "teacher_theta",
+        "student_theta",
+        "teacher_amp",
+        "student_amp",
+        "teacher_omega",
+        "student_omega",
+        "signal_x",
+        "groove_id",
+        "decision",
+        "connected_state"
+      ],
+      "connected_state_values": [
+        "train",
+        "disconnect",
+        "recouple"
+      ]
+    },
+    "geometry_metrics": {
+      "phase_delta": {
+        "definition": "wrap_to_pi(student_theta - teacher_theta)",
+        "range": "[-pi, pi]",
+        "purpose": "Direct geometric phase relation."
+      },
+      "phase_cosine": {
+        "definition": "cos(phase_delta)",
+        "range": [-1.0, 1.0],
+        "interpretation": {
+          "near_1": "in-phase",
+          "near_0": "orthogonal / quadrature",
+          "near_-1": "anti-phase"
+        }
+      },
+      "phase_sine": {
+        "definition": "sin(phase_delta)",
+        "range": [-1.0, 1.0],
+        "purpose": "Determines direction of phase lead/lag."
+      },
+      "mean_phase_delta": {
+        "definition": "circular_mean(phase_delta)",
+        "purpose": "Average phase offset without linear wrap artifacts."
+      },
+      "phase_locking_value": {
+        "definition": "abs(mean(exp(i * phase_delta)))",
+        "range": [0.0, 1.0],
+        "interpretation": {
+          "near_1": "stable phase relation",
+          "near_0": "unstable or decorrelated phase relation"
+        }
+      },
+      "phase_delta_variance": {
+        "definition": "circular_variance(phase_delta)",
+        "purpose": "Measures whether phase relation is stable or wandering."
+      },
+      "anti_phase_score": {
+        "definition": "mean(max(0, -phase_cosine))",
+        "purpose": "Detects systematic 180-degree-like inversion."
+      },
+      "orthogonal_score": {
+        "definition": "mean(1 - abs(phase_cosine))",
+        "purpose": "Detects quadrature or weak angular alignment."
+      }
+    },
+    "trajectory_metrics": {
+      "frequency_error": {
+        "definition": "student_omega - teacher_omega",
+        "purpose": "Checks whether the model is moving at the correct rate."
+      },
+      "frequency_mae": {
+        "definition": "mean(abs(student_omega - teacher_omega))",
+        "purpose": "Mean velocity mismatch."
+      },
+      "frequency_bias": {
+        "definition": "mean(student_omega - teacher_omega)",
+        "purpose": "Detects systematic speed-up or slow-down."
+      },
+      "phase_slip_count": {
+        "definition": "count(abs(diff(phase_delta)) > slip_threshold)",
+        "default_slip_threshold": 1.57079632679,
+        "purpose": "Counts large angular jumps."
+      },
+      "trajectory_alignment_score": {
+        "definition": "phase_locking_value * (1 - normalized_frequency_mae)",
+        "range": [0.0, 1.0],
+        "purpose": "Single summary score for same-path continuation."
+      },
+      "motion_floor_violation_rate": {
+        "definition": "mean(abs(student_omega) < omega_floor AND abs(teacher_omega) >= omega_floor)",
+        "purpose": "Detects freeze disguised as stability."
+      }
+    },
+    "signal_shape_metrics": {
+      "value_mismatch_mean": {
+        "definition": "existing mismatch mean",
+        "role": "secondary metric only"
+      },
+      "amplitude_error": {
+        "definition": "mean(abs(student_amp - teacher_amp))",
+        "purpose": "Separates energy tracking from phase tracking."
+      },
+      "lagged_cross_correlation": {
+        "definition": "max correlation over allowed lag window",
+        "default_lag_window_samples": 32,
+        "purpose": "Distinguishes true phase error from simple timing lag."
+      },
+      "best_lag_samples": {
+        "definition": "argmax lagged_cross_correlation",
+        "purpose": "Reports whether the student leads or trails teacher."
+      }
+    },
+    "phase_classification": {
+      "classes": {
+        "in_phase": "phase_cosine_mean >= 0.75 AND phase_locking_value >= 0.70",
+        "anti_phase": "phase_cosine_mean <= -0.75 AND phase_locking_value >= 0.70",
+        "quadrature": "abs(phase_cosine_mean) < 0.25 AND phase_locking_value >= 0.70",
+        "drifting": "phase_locking_value < 0.50 AND phase_slip_count > 0",
+        "frozen_false_stability": "motion_floor_violation_rate > 0.25",
+        "decorrelated": "phase_locking_value < 0.30 AND lagged_cross_correlation < 0.30"
+      },
+      "report_required": true
+    },
+    "phase_by_phase_reporting": {
+      "required_sections": [
+        "train",
+        "disconnect",
+        "recouple"
+      ],
+      "each_section_must_include": [
+        "value_mismatch_mean",
+        "phase_cosine_mean",
+        "mean_phase_delta_degrees",
+        "phase_locking_value",
+        "frequency_mae",
+        "phase_slip_count",
+        "motion_floor_violation_rate",
+        "lagged_cross_correlation",
+        "best_lag_samples",
+        "phase_classification"
+      ]
+    },
+    "claim_rules": {
+      "true_continuation": {
+        "required": [
+          "disconnect phase_locking_value >= 0.70",
+          "disconnect abs(mean_phase_delta_degrees) <= 45",
+          "disconnect frequency_mae <= configured_frequency_error_limit",
+          "disconnect motion_floor_violation_rate <= 0.10",
+          "disconnect trajectory_alignment_score >= 0.65"
+        ]
+      },
+      "stable_but_wrong": {
+        "conditions": [
+          "value_mismatch_mean is low",
+          "phase_locking_value is high",
+          "abs(mean_phase_delta_degrees) > 45"
+        ]
+      },
+      "frozen_false_stability": {
+        "conditions": [
+          "drift approximately 0",
+          "motion_floor_violation_rate > 0.25"
+        ]
+      },
+      "ambiguous_result": {
+        "conditions": [
+          "raw phase logs missing",
+          "phase_locking_value missing",
+          "teacher/student theta unavailable"
+        ],
+        "required_report_language": "Geometry cannot be determined from current metrics."
+      }
+    },
+    "report_output": {
+      "filename": "PHASE_GEOMETRY_VALIDATION_REPORT.md",
+      "must_include": [
+        "metric definitions",
+        "phase-by-phase table",
+        "geometry classification",
+        "claim status",
+        "failure mode diagnosis",
+        "before/after comparison against baseline",
+        "raw-log file path"
+      ]
+    },
+    "test_requirements": {
+      "unit_tests": [
+        {
+          "name": "test_in_phase_detection",
+          "input": "student_theta == teacher_theta",
+          "expect": "phase_cosine near 1 and class in_phase"
+        },
+        {
+          "name": "test_antiphase_detection",
+          "input": "student_theta == teacher_theta + pi",
+          "expect": "phase_cosine near -1 and class anti_phase"
+        },
+        {
+          "name": "test_quadrature_detection",
+          "input": "student_theta == teacher_theta + pi/2",
+          "expect": "phase_cosine near 0 and class quadrature"
+        },
+        {
+          "name": "test_phase_wrap",
+          "input": "angles crossing -pi/pi boundary",
+          "expect": "no false large phase jumps"
+        },
+        {
+          "name": "test_freeze_detection",
+          "input": "teacher moving, student omega near zero",
+          "expect": "motion_floor_violation detected"
+        }
+      ]
+    },
+    "default_thresholds": {
+      "omega_floor": 0.001,
+      "slip_threshold_radians": 1.57079632679,
+      "in_phase_cosine_min": 0.75,
+      "anti_phase_cosine_max": -0.75,
+      "phase_locking_min": 0.70,
+      "decorrelated_plv_max": 0.30,
+      "max_true_continuation_phase_offset_degrees": 45,
+      "max_motion_floor_violation_rate": 0.10
+    },
+    "final_instruction": "After implementation, rerun the same inductive transformer protocol and explicitly state whether the result is true continuation, stable-but-wrong, frozen false stability, drifting, or ambiguous."
+  }
+}

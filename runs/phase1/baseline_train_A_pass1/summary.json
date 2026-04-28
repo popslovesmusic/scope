@@ -1,11 +1,11 @@
 {
   "name": "baseline_train_A_pass1",
-  "continuation_mismatch_mean": 0.006898570088630292,
-  "continuation_mismatch_max": 0.1456090042186542,
-  "continuation_mismatch_next_mean": 0.006898570088630292,
-  "caution_mean": 0.7407446874891392,
-  "recovery_mean": 0.12953173094340403,
-  "residue_commit_rate": 0.002,
+  "continuation_mismatch_mean": 0.011573630690887852,
+  "continuation_mismatch_max": 0.14816421090213117,
+  "continuation_mismatch_next_mean": 0.011573630690887852,
+  "caution_mean": 0.7287002995547212,
+  "recovery_mean": 0.12859661312283138,
+  "residue_commit_rate": 0.006,
   "final_groove_size": 10,
   "trace_path": "logs/feedback_trace_phase1_baseline_train_A_pass1.jsonl"
 }

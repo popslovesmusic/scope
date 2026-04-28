@@ -1,11 +1,11 @@
 {
   "name": "continuation_test_A_tail_removed",
-  "continuation_mismatch_mean": 0.00577727011293198,
-  "continuation_mismatch_max": 0.05989302945337105,
-  "continuation_mismatch_next_mean": 0.00577727011293198,
-  "caution_mean": 0.7397757026948779,
-  "recovery_mean": 0.13165922282500012,
-  "residue_commit_rate": 0.0,
-  "final_groove_size": 128,
+  "continuation_mismatch_mean": 0.017360576591016075,
+  "continuation_mismatch_max": 0.07747139694462823,
+  "continuation_mismatch_next_mean": 0.017360576591016075,
+  "caution_mean": 0.7228522523783679,
+  "recovery_mean": 0.1290792362324571,
+  "residue_commit_rate": 0.006666666666666667,
+  "final_groove_size": 13,
   "trace_path": "logs/feedback_trace_phase1_continuation_test_A_tail_removed.jsonl"
 }
