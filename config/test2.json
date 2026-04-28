@@ -1,0 +1,167 @@
+{
+  "agent_task": "rigorous_groove_learning_validation_v1",
+  "goal": "Distinguish true trajectory-specific groove learning from smoothing, momentum, or routing artifacts.",
+
+  "core_hypothesis": {
+    "claim": "The platform learns wave trajectories by deepening identity-specific continuation grooves.",
+    "must_show": [
+      "same trajectory becomes easier to continue",
+      "different trajectories do not benefit from the wrong groove",
+      "previously learned grooves survive later training",
+      "groove helps when external input is partially removed",
+      "noise does not falsely create strong grooves"
+    ]
+  },
+
+  "test_battery": [
+    {
+      "id": "T1_repeated_A_learning_curve",
+      "purpose": "Prove groove deepening across repeated traversal.",
+      "sequence": [
+        "clear_memory",
+        "A_pass1",
+        "A_pass2",
+        "A_pass3",
+        "A_pass4",
+        "A_pass5",
+        "replay_A"
+      ],
+      "success": [
+        "same groove_id dominates across A passes",
+        "continuation_mismatch_mean trend decreases",
+        "replay_A < A_pass1",
+        "trace_feedback_gain or successful_traversals increases"
+      ]
+    },
+    {
+      "id": "T2_A_vs_B_directionality",
+      "purpose": "Prove groove is directional, not generic smoothing.",
+      "sequence": [
+        "train_A_5_passes",
+        "run_B_without_training",
+        "run_A_again"
+      ],
+      "success": [
+        "B mismatch > trained_A mismatch",
+        "B routes to different groove or fails to lock to A groove",
+        "A_after_B returns to A groove",
+        "A_after_B mismatch remains near trained_A mismatch"
+      ]
+    },
+    {
+      "id": "T3_catastrophic_forgetting",
+      "purpose": "Test whether training B damages learned A.",
+      "sequence": [
+        "clear_memory",
+        "train_A_5_passes",
+        "record_A_metrics",
+        "train_B_5_passes",
+        "replay_A",
+        "replay_B"
+      ],
+      "success": [
+        "replay_A uses original A groove",
+        "replay_A mismatch does not degrade more than 10-15%",
+        "replay_B uses B groove",
+        "A and B groove_ids remain distinct"
+      ]
+    },
+    {
+      "id": "T4_withheld_continuation",
+      "purpose": "Test continuation when external wave is reduced or removed.",
+      "sequence": [
+        "train_A_5_passes",
+        "run_A_with_last_40_percent_zeroed_or_masked",
+        "compare_internal_continuation_to_true_A_tail"
+      ],
+      "success": [
+        "internal continuation remains aligned for a measurable horizon",
+        "continuation_mismatch rises gradually, not immediately",
+        "trained_A continuation beats untrained baseline"
+      ]
+    },
+    {
+      "id": "T5_noise_floor_control",
+      "purpose": "Prevent false learning from noise.",
+      "sequence": [
+        "clear_memory",
+        "run_white_noise",
+        "run_pink_noise",
+        "run_A_after_noise",
+        "train_A_3_passes"
+      ],
+      "success": [
+        "noise does not create stable high-confidence groove",
+        "A still forms its own groove",
+        "noise groove, if created, has low success_count",
+        "adaptive threshold rejects unstable trace segments"
+      ]
+    },
+    {
+      "id": "T6_transition_warning",
+      "purpose": "Test undesired-event detection as loss of continuation alignment.",
+      "sequence": [
+        "train_A_5_passes",
+        "run_A_to_transition_wave",
+        "measure mismatch before transition boundary"
+      ],
+      "success": [
+        "continuation_mismatch rises before or at transition",
+        "groove_id instability increases near transition",
+        "operator sequence changes before event segment dominates"
+      ]
+    }
+  ],
+
+  "metrics_required": [
+    "continuation_mismatch_mean",
+    "continuation_mismatch_median",
+    "continuation_mismatch_std",
+    "continuation_mismatch_max",
+    "continuation_mismatch_next_mean",
+    "active_groove_id",
+    "groove_switch_count",
+    "dominant_groove_fraction",
+    "groove_count",
+    "trace_segment_count_per_groove",
+    "successful_traversals_per_groove",
+    "operator_distribution",
+    "operator_switch_rate",
+    "caution_mean",
+    "recovery_mean",
+    "residue_commit_rate",
+    "control_pattern_mean"
+  ],
+
+  "controls": {
+    "fixed_random_seed": true,
+    "repeat_each_test": 5,
+    "compare_against": [
+      "no_memory_baseline",
+      "no_trace_feedback_baseline",
+      "wrong_groove_forced_baseline",
+      "naive_local_momentum_baseline"
+    ],
+    "report_effect_sizes": true
+  },
+
+  "acceptance_thresholds": {
+    "learning_curve": "replay_A mismatch at least 10% lower than A_pass1 average across repeats",
+    "directionality": "B mismatch at least 10% higher than trained_A when B is untrained",
+    "forgetting": "A replay after B training degrades no more than 15%",
+    "withheld_continuation": "trained continuation beats no-memory baseline by at least 10%",
+    "noise_control": "noise must not produce a dominant stable groove with high successful_traversals"
+  },
+
+  "output_artifacts": [
+    "runs/rigor/comparison_report.json",
+    "runs/rigor/per_test_summary.json",
+    "runs/rigor/groove_identity_report.json",
+    "runs/rigor/forgetting_report.json",
+    "runs/rigor/withheld_continuation_report.json",
+    "runs/rigor/noise_control_report.json",
+    "runs/rigor/full_metrics.csv"
+  ],
+
+  "final_instruction": "Run the full test battery with repeats and baselines. Do not claim robust learning unless A improves, B separates, A survives B training, and withheld continuation beats baseline."
+}

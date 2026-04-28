@@ -1,0 +1,87 @@
+{
+  "T1": [
+    {
+      "continuation_mismatch_mean": 0.010892728275189337,
+      "continuation_mismatch_max": 0.14559136024468988,
+      "dominant_groove": "groove_0",
+      "dominant_frac": 0.236,
+      "groove_switch_count": 21
+    },
+    {
+      "continuation_mismatch_mean": 0.01909076202675008,
+      "continuation_mismatch_max": 0.2406857760136637,
+      "dominant_groove": "groove_0",
+      "dominant_frac": 0.41,
+      "groove_switch_count": 15
+    },
+    {
+      "continuation_mismatch_mean": 0.011844870068255336,
+      "continuation_mismatch_max": 0.2073248175930068,
+      "dominant_groove": "groove_1",
+      "dominant_frac": 0.34,
+      "groove_switch_count": 14
+    },
+    {
+      "continuation_mismatch_mean": 0.012602852307304116,
+      "continuation_mismatch_max": 0.1747168351015217,
+      "dominant_groove": "groove_0",
+      "dominant_frac": 0.36,
+      "groove_switch_count": 17
+    },
+    {
+      "continuation_mismatch_mean": 0.010917326142127447,
+      "continuation_mismatch_max": 0.11343988270530403,
+      "dominant_groove": "groove_1",
+      "dominant_frac": 0.332,
+      "groove_switch_count": 16
+    },
+    {
+      "continuation_mismatch_mean": 0.011069542955352929,
+      "continuation_mismatch_max": 0.14380240494876673,
+      "dominant_groove": "groove_6",
+      "dominant_frac": 0.246,
+      "groove_switch_count": 13
+    }
+  ],
+  "T2": {
+    "B": {
+      "continuation_mismatch_mean": 0.01756946846996462,
+      "continuation_mismatch_max": 0.12444818525572232,
+      "dominant_groove": "groove_4",
+      "dominant_frac": 0.252,
+      "groove_switch_count": 19
+    },
+    "A_after_B": {
+      "continuation_mismatch_mean": 0.0109734991463862,
+      "continuation_mismatch_max": 0.05921999698023073,
+      "dominant_groove": "groove_7",
+      "dominant_frac": 0.264,
+      "groove_switch_count": 14
+    }
+  },
+  "T3": {
+    "replay_A": {
+      "continuation_mismatch_mean": 0.03395357089223981,
+      "continuation_mismatch_max": 0.19552841286223166,
+      "dominant_groove": "groove_1",
+      "dominant_frac": 0.412,
+      "groove_switch_count": 10
+    }
+  },
+  "T4": {
+    "trained": {
+      "continuation_mismatch_mean": 0.026858807728727147,
+      "continuation_mismatch_max": 0.1833694090063568,
+      "dominant_groove": "groove_0",
+      "dominant_frac": 0.626,
+      "groove_switch_count": 9
+    },
+    "untrained": {
+      "continuation_mismatch_mean": 0.017069547758573087,
+      "continuation_mismatch_max": 0.1680971363086814,
+      "dominant_groove": "groove_6",
+      "dominant_frac": 0.23,
+      "groove_switch_count": 24
+    }
+  }
+}

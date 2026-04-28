@@ -1,0 +1,142 @@
+{
+  "agent_patch": "minimal_multi_groove_router_v1",
+  "goal": "Add multiple identity grooves so different trajectories can be learned, separated, routed, and continued without contaminating one another.",
+
+  "core_principle": {
+    "identity": "stable sequence of local -(i) / O* selections plus phase-flow signature",
+    "groove": "reinforced continuation corridor for one identity",
+    "router": "selects the active groove for the current trajectory",
+    "rule": "reinforce only the active groove"
+  },
+
+  "files_to_create": {
+    "native_platform/groove_router.py": {
+      "classes": {
+        "Groove": {
+          "fields": [
+            "groove_id",
+            "op_histogram",
+            "trace_segments",
+            "centroid_phi",
+            "use_count",
+            "success_count",
+            "last_seen"
+          ],
+          "methods": [
+            "score(phi_oriented, op_star)",
+            "reinforce(segment, phi_oriented, op_star)",
+            "feedback_vector()"
+          ]
+        },
+        "GrooveRouter": {
+          "fields": [
+            "grooves",
+            "active_groove_id",
+            "max_grooves",
+            "create_threshold",
+            "switch_margin"
+          ],
+          "methods": [
+            "route(phi_oriented, op_star)",
+            "create_groove(phi_oriented, op_star)",
+            "reinforce_active(phi_prev, phi_current, op_star, mismatch)",
+            "active_feedback_vector()",
+            "summary()"
+          ]
+        }
+      }
+    }
+  },
+
+  "routing_logic": {
+    "score": {
+      "phase_similarity": "cosine(phi_oriented, groove.centroid_phi)",
+      "operator_match": "groove.op_histogram[op_star]",
+      "total": "0.75 * phase_similarity + 0.25 * operator_match"
+    },
+    "select_existing": "choose highest scoring groove if score >= create_threshold",
+    "create_new": "if no groove score passes threshold and max_grooves not reached",
+    "switch_rule": "switch only if new groove exceeds current groove by switch_margin"
+  },
+
+  "safe_defaults": {
+    "max_grooves": 8,
+    "create_threshold": 0.72,
+    "switch_margin": 0.08,
+    "trace_size_per_groove": 64,
+    "reinforce_threshold": 0.015
+  },
+
+  "files_to_modify": {
+    "native_platform/run_native_platform.py": [
+      "import GrooveRouter",
+      "initialize router = GrooveRouter(max_grooves=8)",
+      "after op_star and phi_oriented are computed: active_groove = router.route(phi_oriented, op_star)",
+      "get groove feedback vector from router.active_feedback_vector()",
+      "pass groove feedback into continuation engine or blend with trace feedback",
+      "after mismatch: router.reinforce_active(prev_phi_oriented, phi_oriented, op_star, continuation_mismatch)",
+      "log active_groove_id, groove_count, groove_score, groove_summary"
+    ],
+    "native_platform/residue_phase_continuation.py": [
+      "allow continue_next(phi_current, external_feedback_vec=None)",
+      "if external_feedback_vec is provided, apply it as identity-specific groove feedback"
+    ]
+  },
+
+  "continuation_rule": {
+    "local": "local_continuation from phase motion",
+    "trace": "short-term trace feedback",
+    "groove": "identity-specific router feedback",
+    "combined": "phi_continued = normalize(local + beta_trace * trace_vec + beta_groove * groove_vec)"
+  },
+
+  "logging_additions": {
+    "active_groove_id": "string/int",
+    "groove_count": "int",
+    "groove_score": "float",
+    "groove_use_count": "int",
+    "groove_success_count": "int",
+    "operator_star": "++|--|+-|-+"
+  },
+
+  "tests": [
+    {
+      "name": "single_wave_one_groove",
+      "expect": "A creates one dominant groove"
+    },
+    {
+      "name": "repeat_A_reuses_groove",
+      "expect": "replay_A routes to same groove as A"
+    },
+    {
+      "name": "contrast_B_new_groove",
+      "expect": "B creates or routes to a different groove"
+    },
+    {
+      "name": "no_contamination",
+      "expect": "B does not reinforce A groove"
+    },
+    {
+      "name": "return_to_A",
+      "expect": "A after B returns to original A groove"
+    }
+  ],
+
+  "success_criteria": [
+    "A has stable active_groove_id across repeated passes",
+    "B uses a different active_groove_id",
+    "replay_A continuation_mismatch lower than first A exposure",
+    "A groove does not grow during B",
+    "groove_count stays bounded"
+  ],
+
+  "failure_conditions": [
+    "every run creates a new groove",
+    "all signals route to one groove",
+    "groove_count grows without bound",
+    "active_groove_id flickers frame-to-frame",
+    "B lowers mismatch by riding A groove"
+  ],
+
+  "final_instruction": "Implement multi-groove routing as identity-specific continuation memory. Do not replace local -(i) selection; use O* and phase signature to route grooves."
+}

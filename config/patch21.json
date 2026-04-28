@@ -1,0 +1,61 @@
+{
+  "agent_patch": "trace_feedback_dominance_v1",
+
+  "goal": "Make trace feedback actively shape continuation, not weakly bias it.",
+
+  "patches": [
+    {
+      "id": "P1_strong_feedback_when_aligned",
+      "file": "residue_phase_continuation.py",
+      "replace_continue_logic": [
+        "feedback_vec = self.trace_feedback_vector()",
+        "",
+        "if feedback_vec is not None:",
+        "    alignment = np.dot(local_continuation, feedback_vec)",
+        "",
+        "    if alignment > 0.8:",
+        "        # strong alignment → FOLLOW GROOVE",
+        "        phi_continued = feedback_vec",
+        "    else:",
+        "        # partial alignment → blend",
+        "        beta = self.groove_gain()",
+        "        phi_continued = normalize(local_continuation + beta * feedback_vec)",
+        "else:",
+        "    phi_continued = local_continuation"
+      ]
+    },
+
+    {
+      "id": "P2_alignment_threshold_gate",
+      "file": "residue_phase_continuation.py",
+      "add": [
+        "self.alignment_threshold = 0.8"
+      ]
+    },
+
+    {
+      "id": "P3_trace_strength_scaling",
+      "file": "residue_phase_continuation.py",
+      "modify": [
+        "def trace_feedback_vector(self):",
+        "    if len(self.trace_segments) < 2:",
+        "        return None",
+        "",
+        "    recent = self.trace_segments[-min(len(self.trace_segments), 8):]",
+        "    vec = normalize(np.mean(np.stack(recent, axis=0), axis=0))",
+        "",
+        "    # amplify structure",
+        "    return normalize(vec)"
+      ]
+    },
+
+    {
+      "id": "P4_reduce_local_dominance",
+      "file": "residue_phase_continuation.py",
+      "modify": [
+        "# reduce strength of local continuation",
+        "local_continuation = normalize(phi_current + 0.8 * v1 + 0.2 * curvature)"
+      ]
+    }
+  ]
+}

@@ -24,14 +24,18 @@ def get_detailed_metrics(trace_path, frames):
     groove_ids = [str(r.get("active_groove_id") or "none") for r in records]
     commit_rate = np.mean([1.0 if r.get("residue_committed") else 0.0 for r in records])
     
+    # Patch 23 Survivability Metrics
+    decisions = [r.get("survivability_decision", "unknown") for r in records]
+    reinforce_rate = np.mean([1.0 if d == "reinforce" else 0.0 for d in decisions])
+    reject_rate = np.mean([1.0 if d == "reject" else 0.0 for d in decisions])
+    consistency_mean = np.mean([r.get("signal_x", 0.0) for r in records])
+    
     unique_grooves, counts = np.unique(groove_ids, return_counts=True)
     dominant_groove = unique_grooves[np.argmax(counts)] if len(unique_grooves) > 0 else "none"
     dominant_frac = np.max(counts) / len(groove_ids) if len(groove_ids) > 0 else 0.0
     
-    # Estimate lock breaks by looking at groove transitions
     switch_indices = np.where(np.array(groove_ids)[:-1] != np.array(groove_ids)[1:])[0]
     
-    # successful_traversals and trace_segment_count from last record
     last_rec = records[-1]
     
     return {
@@ -44,7 +48,9 @@ def get_detailed_metrics(trace_path, frames):
         "residue_commit_rate": float(commit_rate),
         "successful_traversals": int(last_rec.get("successful_traversals", 0)),
         "trace_segment_count": int(last_rec.get("trace_segment_count", 0)),
-        "lock_break_count": len(switch_indices)
+        "survivability_reinforce_rate": float(reinforce_rate),
+        "survivability_reject_rate": float(reject_rate),
+        "signal_x_mean": float(consistency_mean)
     }
 
 def run_validation():
@@ -71,10 +77,12 @@ def run_validation():
         for i in range(5):
             summ = run_platform(input_signals=wave_A, memory_path=mem_path, run_id=f"T1_S{seed}_A_pass{i+1}")
             m = get_detailed_metrics(summ["feedback_trace_path"], frames)
+            print(f"  Pass {i+1}: Mismatch={m['continuation_mismatch_mean']:.4f}, ReinforceRate={m['survivability_reinforce_rate']:.2f}, X={m['signal_x_mean']:.2f}")
             t1_passes.append(m)
             
         summ = run_platform(input_signals=wave_A, memory_path=mem_path, run_id=f"T1_S{seed}_replay_A")
         m_replay = get_detailed_metrics(summ["feedback_trace_path"], frames)
+        print(f"  Replay: Mismatch={m_replay['continuation_mismatch_mean']:.4f}")
         t1_passes.append(m_replay)
         seed_results["T1"] = t1_passes
 
@@ -115,7 +123,7 @@ def run_validation():
         
         all_seed_results.append(seed_results)
 
-    # --- Aggregation and Reporting ---
+    # --- Aggregation ---
     print("\n📊 Aggregating Results across seeds...")
     
     t1_means = []
@@ -140,11 +148,7 @@ def run_validation():
         "T1_learning": {
             "A_pass1_mean": float(np.mean([res["T1"][0]["continuation_mismatch_mean"] for res in all_seed_results])),
             "replay_A_mean": float(np.mean([res["T1"][-1]["continuation_mismatch_mean"] for res in all_seed_results])),
-            "switch_count_mean": float(np.mean([res["T1"][-1]["groove_switch_count"] for res in all_seed_results]))
-        },
-        "T2_directionality": {
-            "B_mean": float(np.mean([res["T2"]["B"]["continuation_mismatch_mean"] for res in all_seed_results])),
-            "A_after_B_mean": float(np.mean([res["T2"]["A_after_B"]["continuation_mismatch_mean"] for res in all_seed_results]))
+            "reinforce_rate_mean": float(np.mean([res["T1"][-1]["survivability_reinforce_rate"] for res in all_seed_results]))
         },
         "T4_withheld": {
             "trained_mean": float(np.mean([res["T4"]["trained"]["continuation_mismatch_mean"] for res in all_seed_results])),

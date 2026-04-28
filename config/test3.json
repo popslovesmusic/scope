@@ -1,0 +1,73 @@
+{
+  "agent_task": "rerun_identity_locked_rigorous_validation_v1",
+  "goal": "Determine whether identity stability now produces measurable continuation learning.",
+
+  "preconditions": [
+    "identity_lock_v1 applied",
+    "groove_switch_count reduced to ~15-20 in T1",
+    "lock state persists across runs",
+    "mismatch lock-break active at 2.5x running mismatch mean"
+  ],
+
+  "run_plan": {
+    "repeat_count": 5,
+    "fixed_seeds": [101, 202, 303, 404, 505],
+    "tests": [
+      "T1_repeated_A_learning_curve",
+      "T2_A_vs_B_directionality",
+      "T3_catastrophic_forgetting",
+      "T4_withheld_continuation"
+    ]
+  },
+
+  "required_metrics": [
+    "continuation_mismatch_mean",
+    "continuation_mismatch_std",
+    "continuation_mismatch_next_mean",
+    "dominant_groove",
+    "dominant_groove_fraction",
+    "groove_switch_count",
+    "residue_commit_rate",
+    "successful_traversals",
+    "trace_segment_count",
+    "lock_break_count",
+    "trained_vs_untrained_delta"
+  ],
+
+  "success_thresholds": {
+    "T1_learning": {
+      "condition": "replay_A continuation_mismatch_mean < A_pass1 by at least 10%",
+      "also": "dominant_groove_fraction > 0.65 and groove_switch_count < 30"
+    },
+    "T2_directionality": {
+      "condition": "B mismatch > trained_A mismatch by at least 10%",
+      "also": "B routes to distinct dominant_groove"
+    },
+    "T3_forgetting": {
+      "condition": "A_after_B degradation <= 15%",
+      "also": "A returns to original dominant_groove"
+    },
+    "T4_withheld": {
+      "condition": "trained withheld continuation beats untrained by at least 10%",
+      "also": "groove_switch_count < 30 during masked segment"
+    }
+  },
+
+  "outputs": [
+    "runs/identity_lock_validation/comparison_report.json",
+    "runs/identity_lock_validation/aggregate_stats.json",
+    "runs/identity_lock_validation/pass_curve_A.csv",
+    "runs/identity_lock_validation/forgetting_report.json",
+    "runs/identity_lock_validation/withheld_report.json"
+  ],
+
+  "final_report_should_answer": [
+    "Does A get easier to continue after repeated traversal?",
+    "Does B avoid using A's groove?",
+    "Does A survive B training?",
+    "Does trained withheld continuation beat untrained withheld continuation?",
+    "Is identity lock stable without hiding true transitions?"
+  ],
+
+  "final_instruction": "Run the identity-locked validation battery with fixed seeds and report mean/std across repeats. Do not claim robust learning unless T1, T3, and T4 pass."
+}

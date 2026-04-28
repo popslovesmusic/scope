@@ -1,0 +1,144 @@
+{
+  "agent_patch": "survivability_gated_reinforcement_v1",
+  "goal": "Replace weighted/gain-based reinforcement with elimination-based survivability gating aligned with v15 selection law (no weights).",
+
+  "principle": {
+    "from": "reinforce what happens (beta/gain)",
+    "to": "reinforce only what survives procedural tests (admissibility, persistence, invariance, trace coherence, loss awareness)"
+  },
+
+  "new_concepts": {
+    "survivability_tests": [
+      "admissibility",
+      "persistence",
+      "projection_invariance",
+      "cross_view_consistency",
+      "trace_coherence",
+      "loss_acceptability"
+    ],
+    "decision_mode": "elimination_not_scoring",
+    "outcomes": [
+      "reinforce",
+      "hold",
+      "reject"
+    ]
+  },
+
+  "files_to_modify": {
+    "native_platform/residue_phase_continuation.py": [
+      "remove or ignore scalar beta/gain for reinforcement decisions",
+      "add survivability evaluation before storing trace or applying feedback",
+      "apply groove/trace feedback only when survivor == true"
+    ],
+    "native_platform/groove_router.py": [
+      "update reinforce_active to require survivor == true",
+      "do not update groove centroid/op_histogram unless survivor",
+      "preserve identity lock behavior unchanged"
+    ],
+    "native_platform/signal_layer.py": [
+      "compute X channel as cross-view consistency / projection-loss proxy",
+      "expose X to continuation for survivability checks"
+    ]
+  },
+
+  "survivability_evaluation": {
+    "inputs": [
+      "phi_prev",
+      "phi_candidate",
+      "continuation_mismatch",
+      "running_mismatch_mean",
+      "operator_star",
+      "signal_RGBW",
+      "signal_X",
+      "recent_trace"
+    ],
+    "tests": {
+      "admissibility": "candidate produced by allowed operator O*",
+      "persistence": "mismatch <= running_mismatch_mean OR non-increasing trend over last k steps",
+      "projection_invariance": "consistent under >=2 views (difference below invariant_threshold)",
+      "cross_view_consistency": "X indicates moderate/high consistency (not high disagreement)",
+      "trace_coherence": "distance(candidate, trace_mean) <= trace_threshold",
+      "loss_acceptability": "projection_loss_level != high"
+    },
+    "decision_logic": {
+      "if_any_fail_hard": "reject",
+      "if_all_pass": "reinforce",
+      "otherwise": "hold"
+    },
+    "hard_fail_conditions": [
+      "continuation_mismatch > 2.5 * running_mismatch_mean",
+      "projection_invariance fails strongly",
+      "cross_view_consistency == low"
+    ]
+  },
+
+  "continuation_rule_update": {
+    "before": "phi_next = normalize(local + beta_trace * trace + beta_groove * groove)",
+    "after": [
+      "if decision == reinforce:",
+      "  phi_next = normalize(local + trace + groove)",
+      "elif decision == hold:",
+      "  phi_next = normalize(local + small(trace))",
+      "else:",
+      "  phi_next = local"
+    ]
+  },
+
+  "groove_update_rule": {
+    "reinforce": "update centroid_phi and op_histogram using current segment",
+    "hold": "do not update centroid, increment observation count only",
+    "reject": "no update, optionally increment rejection counter"
+  },
+
+  "trace_update_rule": {
+    "reinforce": "store segment in trace buffer",
+    "hold": "optionally store with low priority",
+    "reject": "do not store"
+  },
+
+  "X_channel_usage": {
+    "definition": "encodes cross-view disagreement / projection loss proxy",
+    "usage": [
+      "gate reinforcement when disagreement high",
+      "flag degeneracy conditions",
+      "prevent false groove consolidation"
+    ]
+  },
+
+  "logging_additions": [
+    "survivability_decision (reinforce|hold|reject)",
+    "tests_passed_count",
+    "tests_failed_list",
+    "projection_loss_level",
+    "cross_view_consistency_level",
+    "reinforcement_applied (bool)"
+  ],
+
+  "tests_to_run": [
+    "T1_repeated_A_learning_curve",
+    "T2_A_vs_B_directionality",
+    "T3_catastrophic_forgetting",
+    "T4_withheld_continuation"
+  ],
+
+  "expected_results": {
+    "T1": "replay_A mismatch < pass1",
+    "T2": "B mismatch remains higher than A",
+    "T3": "A survives B training",
+    "T4": "trained continuation < untrained continuation",
+    "global": [
+      "groove_switch_count remains low",
+      "dominant_groove_fraction increases",
+      "reinforcement only applied to stable segments"
+    ]
+  },
+
+  "failure_signals": [
+    "reinforcement_applied frequently while mismatch increases",
+    "no difference between reinforce and hold behavior",
+    "trained continuation worse than untrained",
+    "groove centroid drifting unpredictably"
+  ],
+
+  "final_instruction": "Implement survivability-gated reinforcement replacing gain-based updates. Reinforce only segments that pass elimination-based tests derived from v15 (no weights, no scalar optimization)."
+}

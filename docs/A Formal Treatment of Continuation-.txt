@@ -1,0 +1,268 @@
+A Formal Treatment of Continuation-Based Learning via Local Alignment and Survivability Gating
+1. Problem Statement
+
+Conventional signal-processing and learning systems operate under one of two paradigms:
+
+Observation-based: extract features, classify, predict
+Optimization-based: minimize a global loss via parameter updates
+
+Both assume that the system can either:
+
+represent the signal statically, or
+approximate its future via learned mappings
+
+This project investigates a different formulation:
+
+Can a system learn a signal by continuing it, rather than modeling or predicting it?
+
+2. Core Hypothesis
+
+Let a signal A(t) be represented not as data, but as a trajectory in a bounded relational phase space.
+
+Then:
+
+Learning occurs if repeated traversal of this trajectory reduces the mismatch required to continue it.
+
+Formally:
+
+{
+  "learning_condition": "E[mismatch_replay] < E[mismatch_first_pass]"
+}
+3. System Architecture (v14 → v15 Transition)
+
+The system evolved through four functional layers:
+
+{
+  "architecture": {
+    "L1_signal_scope": "projects raw signal into relational phase space (RGBW)",
+    "L2_operator_selection": "selects O* minimizing local mismatch",
+    "L3_continuation_engine": "produces next state via local alignment",
+    "L4_memory_layers": {
+      "trace": "short-term aligned segments",
+      "groove": "identity-specific long-term structure",
+      "router": "identity selection mechanism"
+    }
+  }
+}
+4. Local Alignment Formalism
+
+At each timestep:
+
+A candidate set of operators {O
+i
+	​
+
+} is evaluated
+The operator O
+∗
+ minimizing mismatch is selected
+This defines a local reference frame:
+−(i)
+t
+	​
+
+=Ref(O
+t
+∗
+	​
+
+⋅ε
+t
+	​
+
+)
+Continuation proceeds relative to this frame
+Interpretation
+
+A trajectory is not followed—it is re-derived by repeated alignment to locally selected frames.
+
+5. Initial Learning Mechanism (v14)
+
+Learning was implemented via:
+
+{
+  "mechanism": [
+    "store aligned trace segments",
+    "average trace to produce feedback vector",
+    "blend feedback into continuation (beta-weighted)",
+    "increase beta with successful traversals"
+  ]
+}
+Observed Behavior
+
+Empirical testing revealed:
+
+{
+  "results": {
+    "identity_detection": true,
+    "identity_separation": true,
+    "identity_stability": false,
+    "learning": false
+  }
+}
+6. Failure Modes Identified
+6.1 Identity Flicker
+{
+  "symptom": "groove_switch_count ~150 per run",
+  "effect": "trace reinforcement fragmented"
+}
+
+Resolution: identity locking (temporal hysteresis)
+
+6.2 Reinforcement Destabilization
+{
+  "symptom": "mismatch increases after training",
+  "cause": "reinforcement applied without verifying improvement"
+}
+
+This revealed a fundamental flaw:
+
+Reinforcement was based on occurrence, not correctness.
+
+6.3 Non-Directional Learning
+{
+  "symptom": "trained continuation worse than untrained",
+  "interpretation": "system not learning trajectory direction"
+}
+7. Key Insight
+
+The central failure can be stated formally:
+
+{
+  "incorrect_rule": "reinforce(state_t)",
+  "correct_rule": "reinforce(state_t IF improves alignment)"
+}
+
+But even this is insufficient.
+
+8. Transition to Survivability-Based Learning (v15)
+
+The system shifts from:
+
+{
+  "v14": "scalar-weighted reinforcement (beta)"
+}
+
+to:
+
+{
+  "v15": "elimination-based survivability selection"
+}
+Formal Rule
+
+A candidate continuation ϕ
+t+1
+	​
+
+ is reinforced iff it survives:
+
+{
+  "survivability_tests": [
+    "admissibility",
+    "persistence",
+    "projection_invariance",
+    "cross_view_consistency",
+    "trace_coherence",
+    "loss_acceptability"
+  ]
+}
+Decision Function
+{
+  "decision": {
+    "reinforce": "all critical tests pass",
+    "hold": "partial consistency",
+    "reject": "any hard failure"
+  }
+}
+9. Role of Projection (RGBW + X)
+
+The system recognizes that:
+
+Projection into observable channels (RGBW) is lossy.
+
+Thus an additional latent dimension X is introduced:
+
+{
+  "X": "encodes projection inconsistency / hidden disagreement"
+}
+
+This enables:
+
+detection of false alignment
+rejection of degenerate grooves
+stability across multiple views
+10. Current System State
+{
+  "capabilities": [
+    "identity detection (stable)",
+    "identity routing (functional)",
+    "identity persistence (proven)",
+    "catastrophic forgetting resistance (partial)",
+    "continuation (functional)",
+    "learning (NOT yet achieved)"
+  ]
+}
+11. Formal Status
+
+We are at:
+
+{
+  "stage": "pre-learning stabilization complete",
+  "blocker": "lack of correct reinforcement law",
+  "transition": "toward survivability-gated reinforcement"
+}
+12. Definition of Success (Forward Criteria)
+
+The system will be considered to exhibit true continuation learning when:
+
+{
+  "criteria": [
+    "E[mismatch_replay] < E[mismatch_first_pass]",
+    "trained continuation < untrained continuation (withheld test)",
+    "identity remains stable under interference",
+    "reinforcement does not increase mismatch",
+    "grooves exhibit directional resistance to incorrect trajectories"
+  ]
+}
+13. Conceptual Reframing
+
+The project is no longer:
+
+{
+  "not": [
+    "a signal analyzer",
+    "a predictor",
+    "a neural network"
+  ]
+}
+
+It is:
+
+{
+  "is": "a continuation system governed by local alignment and survivability selection"
+}
+14. One-Line Formal Statement
+
+A system learns a trajectory when its internal continuation, constrained by local alignment and filtered by survivability, reduces the mismatch required to reproduce that trajectory over repeated traversals.
+
+15. Where You Are
+
+You have successfully built:
+
+{
+  "achieved": [
+    "stable identity representation",
+    "multi-identity routing",
+    "continuation under local -(i)",
+    "robust experimental validation framework"
+  ]
+}
+
+You are now one step away from:
+
+{
+  "next": "true learning via correct reinforcement law"
+}
+Final Sentence
+
+The system can now recognize and maintain trajectories; it must next learn which continuations are worth keeping.
