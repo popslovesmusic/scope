@@ -1,0 +1,772 @@
+[
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.010227204417776083,
+        "continuation_mismatch_std": 0.009270126863775867,
+        "continuation_mismatch_max": 0.08873393844300781,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.326,
+        "groove_switch_count": 17,
+        "residue_commit_rate": 0.01,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "lock_break_count": 17
+      },
+      {
+        "continuation_mismatch_mean": 0.011366132758105729,
+        "continuation_mismatch_std": 0.009464468375653496,
+        "continuation_mismatch_max": 0.11669498296906522,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.316,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.01,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 13
+      },
+      {
+        "continuation_mismatch_mean": 0.011614110270065234,
+        "continuation_mismatch_std": 0.008950784432944494,
+        "continuation_mismatch_max": 0.07268626364526232,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.22,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 13
+      },
+      {
+        "continuation_mismatch_mean": 0.017554533500839554,
+        "continuation_mismatch_std": 0.009770818927866621,
+        "continuation_mismatch_max": 0.13665795629842659,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.486,
+        "groove_switch_count": 8,
+        "residue_commit_rate": 0.012,
+        "successful_traversals": 1,
+        "trace_segment_count": 11,
+        "lock_break_count": 8
+      },
+      {
+        "continuation_mismatch_mean": 0.011391601230173833,
+        "continuation_mismatch_std": 0.009225795941214865,
+        "continuation_mismatch_max": 0.08406436069464063,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.396,
+        "groove_switch_count": 8,
+        "residue_commit_rate": 0.0,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 8
+      },
+      {
+        "continuation_mismatch_mean": 0.013505980754300677,
+        "continuation_mismatch_std": 0.016783833998754934,
+        "continuation_mismatch_max": 0.15345762923840178,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.502,
+        "groove_switch_count": 8,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 8
+      }
+    ],
+    "T2": {
+      "B": {
+        "continuation_mismatch_mean": 0.011035142557048771,
+        "continuation_mismatch_std": 0.010949594652593106,
+        "continuation_mismatch_max": 0.14381145238111281,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.458,
+        "groove_switch_count": 9,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 24,
+        "lock_break_count": 9
+      },
+      "A_after_B": {
+        "continuation_mismatch_mean": 0.011698585495305865,
+        "continuation_mismatch_std": 0.00973719968878566,
+        "continuation_mismatch_max": 0.09528376493036417,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.642,
+        "groove_switch_count": 4,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 4
+      }
+    },
+    "T3": {
+      "replay_A": {
+        "continuation_mismatch_mean": 0.017809823465049977,
+        "continuation_mismatch_std": 0.00829594007080587,
+        "continuation_mismatch_max": 0.074558012069181,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.452,
+        "groove_switch_count": 3,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 1,
+        "trace_segment_count": 11,
+        "lock_break_count": 3
+      },
+      "replay_B": {
+        "continuation_mismatch_mean": 0.01049973777931757,
+        "continuation_mismatch_std": 0.011455147623763488,
+        "continuation_mismatch_max": 0.17304041706726103,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.31,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 24,
+        "lock_break_count": 12
+      }
+    },
+    "T4": {
+      "trained": {
+        "continuation_mismatch_mean": 0.018464417827630787,
+        "continuation_mismatch_std": 0.020133669817438,
+        "continuation_mismatch_max": 0.14186827850946993,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.264,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 11
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.018571794740464796,
+        "continuation_mismatch_std": 0.021298183743064372,
+        "continuation_mismatch_max": 0.12723916343436759,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.276,
+        "groove_switch_count": 25,
+        "residue_commit_rate": 0.012,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 25
+      }
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.010969687933443929,
+        "continuation_mismatch_std": 0.013434565224844694,
+        "continuation_mismatch_max": 0.17665906928835762,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.334,
+        "groove_switch_count": 17,
+        "residue_commit_rate": 0.0,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 17
+      },
+      {
+        "continuation_mismatch_mean": 0.010818060242928595,
+        "continuation_mismatch_std": 0.010778641074319079,
+        "continuation_mismatch_max": 0.14379154034629305,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.25,
+        "groove_switch_count": 17,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 17
+      },
+      {
+        "continuation_mismatch_mean": 0.010466937379055996,
+        "continuation_mismatch_std": 0.007164786637660642,
+        "continuation_mismatch_max": 0.06270232252397367,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.276,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.0,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 13
+      },
+      {
+        "continuation_mismatch_mean": 0.011774009502406042,
+        "continuation_mismatch_std": 0.013818864397071475,
+        "continuation_mismatch_max": 0.12980108644738353,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.274,
+        "groove_switch_count": 17,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 17
+      },
+      {
+        "continuation_mismatch_mean": 0.011659821973858396,
+        "continuation_mismatch_std": 0.012183890020852201,
+        "continuation_mismatch_max": 0.15507755889356434,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.388,
+        "groove_switch_count": 14,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "lock_break_count": 14
+      },
+      {
+        "continuation_mismatch_mean": 0.01090282550708685,
+        "continuation_mismatch_std": 0.008043591990629227,
+        "continuation_mismatch_max": 0.059263325900959396,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.246,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.01,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 13
+      }
+    ],
+    "T2": {
+      "B": {
+        "continuation_mismatch_mean": 0.01819510484604718,
+        "continuation_mismatch_std": 0.012989875534759833,
+        "continuation_mismatch_max": 0.14654886006165724,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.296,
+        "groove_switch_count": 14,
+        "residue_commit_rate": 0.008,
+        "successful_traversals": 1,
+        "trace_segment_count": 13,
+        "lock_break_count": 14
+      },
+      "A_after_B": {
+        "continuation_mismatch_mean": 0.011695195423415863,
+        "continuation_mismatch_std": 0.011664530252827699,
+        "continuation_mismatch_max": 0.09996625821653993,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.282,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 13
+      }
+    },
+    "T3": {
+      "replay_A": {
+        "continuation_mismatch_mean": 0.011774916393408242,
+        "continuation_mismatch_std": 0.009306612314310967,
+        "continuation_mismatch_max": 0.08083689553562268,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.684,
+        "groove_switch_count": 6,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "lock_break_count": 6
+      },
+      "replay_B": {
+        "continuation_mismatch_mean": 0.017812321941127997,
+        "continuation_mismatch_std": 0.01139371139872653,
+        "continuation_mismatch_max": 0.14710481333407988,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.538,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 1,
+        "trace_segment_count": 11,
+        "lock_break_count": 11
+      }
+    },
+    "T4": {
+      "trained": {
+        "continuation_mismatch_mean": 0.01901846908193508,
+        "continuation_mismatch_std": 0.02212183247858907,
+        "continuation_mismatch_max": 0.1434843476205212,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.414,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.01,
+        "successful_traversals": 0,
+        "trace_segment_count": 14,
+        "lock_break_count": 12
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.01984840682770492,
+        "continuation_mismatch_std": 0.023326460718210658,
+        "continuation_mismatch_max": 0.17012521286293814,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.262,
+        "groove_switch_count": 18,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 13,
+        "lock_break_count": 18
+      }
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.012027915304898776,
+        "continuation_mismatch_std": 0.01647215459684113,
+        "continuation_mismatch_max": 0.2072492874950298,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.308,
+        "groove_switch_count": 20,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 20
+      },
+      {
+        "continuation_mismatch_mean": 0.011447622878696176,
+        "continuation_mismatch_std": 0.012060723904625422,
+        "continuation_mismatch_max": 0.14495981352648757,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.294,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 12
+      },
+      {
+        "continuation_mismatch_mean": 0.01191180161700916,
+        "continuation_mismatch_std": 0.01260402783961691,
+        "continuation_mismatch_max": 0.17529092534462953,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.308,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.008,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 12
+      },
+      {
+        "continuation_mismatch_mean": 0.011965266511607462,
+        "continuation_mismatch_std": 0.017032596202844284,
+        "continuation_mismatch_max": 0.23627905112998715,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.266,
+        "groove_switch_count": 15,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 15
+      },
+      {
+        "continuation_mismatch_mean": 0.01818736284046031,
+        "continuation_mismatch_std": 0.01479424983151409,
+        "continuation_mismatch_max": 0.21259621034626608,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.27,
+        "groove_switch_count": 9,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 1,
+        "trace_segment_count": 11,
+        "lock_break_count": 9
+      },
+      {
+        "continuation_mismatch_mean": 0.010994499082113444,
+        "continuation_mismatch_std": 0.009630971076968439,
+        "continuation_mismatch_max": 0.11588707242848995,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.362,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 11
+      }
+    ],
+    "T2": {
+      "B": {
+        "continuation_mismatch_mean": 0.011867934819908173,
+        "continuation_mismatch_std": 0.015256411264942012,
+        "continuation_mismatch_max": 0.16381038850369023,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.262,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.0,
+        "successful_traversals": 0,
+        "trace_segment_count": 21,
+        "lock_break_count": 13
+      },
+      "A_after_B": {
+        "continuation_mismatch_mean": 0.012276242194424972,
+        "continuation_mismatch_std": 0.012434347645940591,
+        "continuation_mismatch_max": 0.11129019460008904,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.302,
+        "groove_switch_count": 10,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 10
+      }
+    },
+    "T3": {
+      "replay_A": {
+        "continuation_mismatch_mean": 0.01806690770575201,
+        "continuation_mismatch_std": 0.012039619851257056,
+        "continuation_mismatch_max": 0.12414676598090135,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.464,
+        "groove_switch_count": 5,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 1,
+        "trace_segment_count": 10,
+        "lock_break_count": 5
+      },
+      "replay_B": {
+        "continuation_mismatch_mean": 0.012001205781662666,
+        "continuation_mismatch_std": 0.015812283242751905,
+        "continuation_mismatch_max": 0.1584017058333671,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.544,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.008,
+        "successful_traversals": 0,
+        "trace_segment_count": 26,
+        "lock_break_count": 13
+      }
+    },
+    "T4": {
+      "trained": {
+        "continuation_mismatch_mean": 0.01848271503173362,
+        "continuation_mismatch_std": 0.02099844641380676,
+        "continuation_mismatch_max": 0.1888967517585347,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.304,
+        "groove_switch_count": 17,
+        "residue_commit_rate": 0.014,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "lock_break_count": 17
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.01870242498313627,
+        "continuation_mismatch_std": 0.022112228654020905,
+        "continuation_mismatch_max": 0.1552846480618688,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.228,
+        "groove_switch_count": 20,
+        "residue_commit_rate": 0.026,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "lock_break_count": 20
+      }
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.011463302338570656,
+        "continuation_mismatch_std": 0.01104338986371612,
+        "continuation_mismatch_max": 0.09251834927576574,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.358,
+        "groove_switch_count": 19,
+        "residue_commit_rate": 0.008,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 19
+      },
+      {
+        "continuation_mismatch_mean": 0.012528711603376376,
+        "continuation_mismatch_std": 0.015174779919501582,
+        "continuation_mismatch_max": 0.14798828322674606,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.37,
+        "groove_switch_count": 15,
+        "residue_commit_rate": 0.0,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 15
+      },
+      {
+        "continuation_mismatch_mean": 0.017708537530964772,
+        "continuation_mismatch_std": 0.012617762284913604,
+        "continuation_mismatch_max": 0.18926876980969454,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.362,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.008,
+        "successful_traversals": 1,
+        "trace_segment_count": 11,
+        "lock_break_count": 11
+      },
+      {
+        "continuation_mismatch_mean": 0.011392531300416111,
+        "continuation_mismatch_std": 0.009361676936257161,
+        "continuation_mismatch_max": 0.07869675379245478,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.36,
+        "groove_switch_count": 10,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 10
+      },
+      {
+        "continuation_mismatch_mean": 0.01858597350754647,
+        "continuation_mismatch_std": 0.01353247093413548,
+        "continuation_mismatch_max": 0.18846286465379458,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.488,
+        "groove_switch_count": 9,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 1,
+        "trace_segment_count": 10,
+        "lock_break_count": 9
+      },
+      {
+        "continuation_mismatch_mean": 0.012306651308639381,
+        "continuation_mismatch_std": 0.01733717761004472,
+        "continuation_mismatch_max": 0.25767346271854685,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.21,
+        "groove_switch_count": 8,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 8
+      }
+    ],
+    "T2": {
+      "B": {
+        "continuation_mismatch_mean": 0.011229378401950478,
+        "continuation_mismatch_std": 0.0095258149666763,
+        "continuation_mismatch_max": 0.07282549701642427,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.334,
+        "groove_switch_count": 7,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 19,
+        "lock_break_count": 7
+      },
+      "A_after_B": {
+        "continuation_mismatch_mean": 0.011791816581681545,
+        "continuation_mismatch_std": 0.009412232416572174,
+        "continuation_mismatch_max": 0.09182909888847801,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.504,
+        "groove_switch_count": 7,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 7
+      }
+    },
+    "T3": {
+      "replay_A": {
+        "continuation_mismatch_mean": 0.01781378339077721,
+        "continuation_mismatch_std": 0.011102169716465373,
+        "continuation_mismatch_max": 0.14548249807495417,
+        "dominant_groove": "groove_6",
+        "dominant_groove_fraction": 0.394,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 1,
+        "trace_segment_count": 10,
+        "lock_break_count": 11
+      },
+      "replay_B": {
+        "continuation_mismatch_mean": 0.012062000506287082,
+        "continuation_mismatch_std": 0.017201541887021027,
+        "continuation_mismatch_max": 0.20139031973463029,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.262,
+        "groove_switch_count": 14,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 24,
+        "lock_break_count": 14
+      }
+    },
+    "T4": {
+      "trained": {
+        "continuation_mismatch_mean": 0.019720698289430568,
+        "continuation_mismatch_std": 0.02438328179939945,
+        "continuation_mismatch_max": 0.1811839122794664,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.48,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.016,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 12
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.015455804612739547,
+        "continuation_mismatch_std": 0.015459689638323303,
+        "continuation_mismatch_max": 0.10665849069711342,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.302,
+        "groove_switch_count": 28,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 11,
+        "lock_break_count": 28
+      }
+    }
+  },
+  {
+    "T1": [
+      {
+        "continuation_mismatch_mean": 0.010206326487375995,
+        "continuation_mismatch_std": 0.008761754131294696,
+        "continuation_mismatch_max": 0.09117138894034083,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.244,
+        "groove_switch_count": 19,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 19
+      },
+      {
+        "continuation_mismatch_mean": 0.011579566302877934,
+        "continuation_mismatch_std": 0.012275728931874307,
+        "continuation_mismatch_max": 0.12763807321273657,
+        "dominant_groove": "groove_5",
+        "dominant_groove_fraction": 0.242,
+        "groove_switch_count": 14,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 14
+      },
+      {
+        "continuation_mismatch_mean": 0.011848958648441798,
+        "continuation_mismatch_std": 0.016311533324603687,
+        "continuation_mismatch_max": 0.23196138580473225,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.27,
+        "groove_switch_count": 15,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 15
+      },
+      {
+        "continuation_mismatch_mean": 0.01204150203825569,
+        "continuation_mismatch_std": 0.012015496969702524,
+        "continuation_mismatch_max": 0.10054106719078737,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.278,
+        "groove_switch_count": 12,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 12
+      },
+      {
+        "continuation_mismatch_mean": 0.011710314901447678,
+        "continuation_mismatch_std": 0.012155027793189424,
+        "continuation_mismatch_max": 0.14932426096031604,
+        "dominant_groove": "groove_4",
+        "dominant_groove_fraction": 0.512,
+        "groove_switch_count": 10,
+        "residue_commit_rate": 0.004,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 10
+      },
+      {
+        "continuation_mismatch_mean": 0.012137272370320796,
+        "continuation_mismatch_std": 0.01516273005036663,
+        "continuation_mismatch_max": 0.15617510652149924,
+        "dominant_groove": "groove_0",
+        "dominant_groove_fraction": 0.462,
+        "groove_switch_count": 11,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 11
+      }
+    ],
+    "T2": {
+      "B": {
+        "continuation_mismatch_mean": 0.010327642512058558,
+        "continuation_mismatch_std": 0.008278700761297293,
+        "continuation_mismatch_max": 0.0683334591401773,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.408,
+        "groove_switch_count": 13,
+        "residue_commit_rate": 0.006,
+        "successful_traversals": 0,
+        "trace_segment_count": 12,
+        "lock_break_count": 13
+      },
+      "A_after_B": {
+        "continuation_mismatch_mean": 0.01176661488299478,
+        "continuation_mismatch_std": 0.011183736309651011,
+        "continuation_mismatch_max": 0.12400982156201357,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.242,
+        "groove_switch_count": 10,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 10
+      }
+    },
+    "T3": {
+      "replay_A": {
+        "continuation_mismatch_mean": 0.01833970257721903,
+        "continuation_mismatch_std": 0.013834723054053382,
+        "continuation_mismatch_max": 0.19907669827422092,
+        "dominant_groove": "groove_1",
+        "dominant_groove_fraction": 0.334,
+        "groove_switch_count": 8,
+        "residue_commit_rate": 0.012,
+        "successful_traversals": 1,
+        "trace_segment_count": 10,
+        "lock_break_count": 8
+      },
+      "replay_B": {
+        "continuation_mismatch_mean": 0.010648021030206525,
+        "continuation_mismatch_std": 0.01229993606675057,
+        "continuation_mismatch_max": 0.14911923708132757,
+        "dominant_groove": "groove_2",
+        "dominant_groove_fraction": 0.44,
+        "groove_switch_count": 15,
+        "residue_commit_rate": 0.002,
+        "successful_traversals": 0,
+        "trace_segment_count": 25,
+        "lock_break_count": 15
+      }
+    },
+    "T4": {
+      "trained": {
+        "continuation_mismatch_mean": 0.019028617879363476,
+        "continuation_mismatch_std": 0.021036772405923797,
+        "continuation_mismatch_max": 0.14994523966599227,
+        "dominant_groove": "groove_3",
+        "dominant_groove_fraction": 0.498,
+        "groove_switch_count": 9,
+        "residue_commit_rate": 0.012,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 9
+      },
+      "untrained": {
+        "continuation_mismatch_mean": 0.017033712368191716,
+        "continuation_mismatch_std": 0.018028996102857294,
+        "continuation_mismatch_max": 0.10081010358582887,
+        "dominant_groove": "groove_7",
+        "dominant_groove_fraction": 0.36,
+        "groove_switch_count": 21,
+        "residue_commit_rate": 0.012,
+        "successful_traversals": 0,
+        "trace_segment_count": 10,
+        "lock_break_count": 21
+      }
+    }
+  }
+]

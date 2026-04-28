@@ -1,0 +1,43 @@
+# Identity-Locked Learning Validation Report
+Report Date: April 27, 2026
+Validation Task: rerun_identity_locked_rigorous_validation_v1 (test3.json)
+
+## 1. Executive Summary
+The implementation of `identity_lock_v1` has successfully stabilized groove selection, reducing the average `groove_switch_count` from over 100 to ~10 per run. However, rigorous multi-seed testing reveals that this stability has not yet translated into consistent trajectory learning. In many cases, the continuation mismatch increased across repeated passes, suggesting that the current feedback mechanism may be over-correcting or misaligned.
+
+## 2. Success Threshold Evaluation
+| Test | Condition | Status | Metric (Mean) |
+| :--- | :--- | :--- | :--- |
+| **T1: Learning Curve** | replay_A < A_pass1 by 10% | **FAILED** | Pass1: 0.0110, Replay: 0.0120 |
+| **T1: Stability** | switches < 30, dom_frac > 0.65 | **PARTIAL** | Switches: 10.2, DomFrac: ~0.4-0.5 |
+| **T2: Directionality** | B > trained_A by 10% | **FAILED** | B: 0.0125, trained_A (P5): 0.0143 |
+| **T3: Forgetting** | A_after_B degradation <= 15% | **PASSED** | (Metrics show stable return to A grooves) |
+| **T4: Withheld** | trained beats untrained by 10% | **FAILED** | Trained: 0.0189, Untrained: 0.0179 |
+
+## 3. Detailed Answers to Research Questions
+
+### Does A get easier to continue after repeated traversal?
+**No.** The current data shows an upward trend in mismatch (0.0109 -> 0.0143) over 5 passes. The identity lock prevents flickering, but the reinforcement is not yet "corrective" in a way that reduces error.
+
+### Does B avoid using A's groove?
+**Yes.** T2 and T3 show that B consistently routes to different dominant grooves (`groove_5`, etc.) than A, and returning to A correctly picks up the A-identity grooves.
+
+### Does A survive B training?
+**Yes.** Catastrophic forgetting is low; replaying A after B training results in mismatch levels comparable to the original training phase, and the system correctly identifies the A grooves.
+
+### Does trained withheld continuation beat untrained withheld continuation?
+**No.** In T4, the untrained baseline (0.0179) performed slightly better than the trained model (0.0189), indicating the learned "groove" might be adding noise rather than predictive signal during signal removal.
+
+### Is identity lock stable without hiding true transitions?
+**Yes.** The `lock_break_count` correctly identifies major shifts, but keeps the system anchored during stable wave segments.
+
+## 4. Technical Conclusion & Next Steps
+The **Identity Lock** is a successful architectural component for preventing state-flickering. However, the **Reinforcement Logic** (how trace segments are averaged and applied as `beta_groove`) is currently destabilizing the phase flow. 
+
+**Recommendation for v15:**
+1. **Reduce Feedback Gain**: Limit the maximum additive bias from grooves to prevent overshoot.
+2. **Phase-Relative Velocity**: Ensure the feedback vector is truly aligned with the oriented local frame of the router.
+3. **Adaptive Damping**: Slow down reinforcement if the mismatch trend is positive (increasing error).
+
+---
+*Report generated from aggregate_stats.json and comparison_report.json.*
