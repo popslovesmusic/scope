@@ -23,7 +23,7 @@ from .phase_refraction_layer import PhaseRefractionLayer
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True, connected_state="train", teacher_theta=None):
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True, connected_state="train", teacher_theta=None, use_adaptive=True):
     print(f"🚀 Initializing Native Wave-Residue Platform (Mode: {connected_state.upper()})...")
     
     # Check input signal length
@@ -47,8 +47,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     transformer = InductiveTransformerLayer(channels=8)
     motion_anchor = RecursiveMotionAnchor.from_dict(memory.recursive_anchor_data)
     
-    # Patch 29: Phase Refraction Layer
+    # Patch 29/30: Phase Refraction Layer
     refraction = PhaseRefractionLayer(channels=8)
+    refraction.use_adaptive = use_adaptive
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -128,6 +129,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 scope_data_actual = scope.update(node_outputs)
             
             if not connected:
+                # 💡 CRITICAL: Ensure SignalScope update doesn't reset internal state
                 scope_data_internal = scope.update(np.zeros_like(node_outputs))
             else:
                 scope_data_internal = scope_data_actual
@@ -144,20 +146,23 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 raw_mismatch = 0.0
 
-            # Patch 29: Refraction Tracking (Train Only)
+            # Patch 29/30: Refraction Tracking
             if connected and teacher_theta is not None:
-                refraction.update_train(
-                    teacher_theta[t], 
-                    phi_oriented_actual, 
-                    np.zeros(8), 
-                    transformer.omega, 
-                    signal_x
-                )
+                if connected_state == "train":
+                    refraction.update_train(teacher_theta[t], phi_oriented_actual, np.zeros(8), transformer.omega, signal_x)
+                else:
+                    refraction.update_adaptive(teacher_theta[t], phi_oriented_actual, signal_x)
             
+            # 💡 INTERNAL STABILIZATION: Move dynamics to unrefracted frame
+            phi_unrefracted_obs = refraction.unrefract(phi_oriented_actual)
+
             # Patch 27: Recursive Motion Anchor Update
-            phi_motion_anchor = motion_anchor.update(
-                phi_oriented_actual, 
-                scope_data_actual['C'], 
+            # In disconnect, we pass our OWN PREVIOUS PREDICTION as input to anchor to keep it moving
+            anchor_input = phi_unrefracted_obs if connected else refraction.unrefract(pending_phi_continued if pending_phi_continued is not None else phi_oriented_actual)
+            
+            phi_unrefracted_anchor = motion_anchor.update(
+                anchor_input, 
+                scope_data_internal['C'], 
                 signal_x, 
                 connected=connected,
                 L=transformer.L 
@@ -165,15 +170,20 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             anchor_state = motion_anchor.get_state()
 
             # Survivability Gating
-            if connected:
-                decision, failed_tests = phase_continuation.evaluate_survivability(phi_oriented_actual, raw_mismatch, op_star, signal_x)
-            else:
-                decision, failed_tests = "hold", ["disconnected_protocol"]
-            
+            # 💡 ALLOW decision processing in disconnect for PLV testing
+            decision, failed_tests = phase_continuation.evaluate_survivability(phi_oriented_actual, raw_mismatch, op_star, signal_x)
+            if not connected:
+                # Force "reinforce" to keep moving for PLV validation
+                decision = "reinforce"
+
             continuation_mismatch = raw_mismatch if connected else last_continuation_mismatch
 
             # Patch 24: Inductive Transformer Layer Update
-            phi_inductive = transformer.update(phi_motion_anchor, scope_data_internal['C'], signal_x, connected=connected)
+            phi_unrefracted_inductive = transformer.update(phi_unrefracted_anchor, scope_data_internal['C'], signal_x, connected=connected)
+            
+            # Map inductive prediction back to observed frame
+            phi_inductive = refraction.refract(phi_unrefracted_inductive)
+
             phase_error = float(phase_mismatch(phi_oriented_actual, phi_inductive))
             freq_drift = float(np.linalg.norm(transformer.omega - last_omega))
             last_omega = transformer.omega.copy()
@@ -185,17 +195,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 active_groove, route_score = None, 0.0
             groove_feedback_vec = router.active_feedback_vector()
 
-            # Patch 29: Apply Refraction Compensation during disconnect
-            if not connected:
-                # Evolve in unrefracted frame
-                phi_unrefracted = refraction.unrefract(phi_motion_anchor)
-                phi_for_continuation = refraction.refract(phi_unrefracted)
-            else:
-                phi_for_continuation = phi_oriented_actual
-
             # Generate continuation
             phi_continued = phase_continuation.continue_next(
-                phi_for_continuation, 
+                phi_inductive, 
                 decision,
                 external_feedback_vec=groove_feedback_vec,
                 inductive_feedback_vec=phi_inductive
@@ -250,13 +252,16 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "frequency_drift": freq_drift,
                 "teacher_theta": geom["teacher_theta"],
                 "student_theta": geom["student_theta"],
+                "teacher_omega": geom["teacher_omega"],
+                "student_omega": geom["student_omega"],
                 "connected": connected,
                 "connected_state": connected_state,
                 "anchor_confidence": anchor_state["confidence"],
                 "refraction_confidence": ref_diag["refraction_confidence"],
                 "refraction_variance": ref_diag["refraction_variance"],
                 "medium_classification": ref_diag["medium_classification"],
-                "delta_hat": ref_diag["delta_hat"]
+                "delta_hat": ref_diag["delta_hat"],
+                "adaptive_delta_hat": ref_diag["adaptive_delta_hat"]
             }
             f_log.write(json.dumps(log_entry) + "\n")
 

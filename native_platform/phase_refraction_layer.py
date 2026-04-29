@@ -9,9 +9,13 @@ class BandRefractionModel:
         self.band_id = band_id
         self.channels = channels
         
-        # Parameters to learn
+        # Static parameters (learned in Phase 1)
         self.delta_hat = np.zeros(channels) # constant phase offset
         self.eta_hat = np.ones(channels)   # velocity scale
+        
+        # Adaptive parameters (tracked in Phase 2/3)
+        self.adaptive_delta_hat = np.zeros(channels)
+        self.alpha_drift = 0.05 # slow drift estimator rate
         
         # Fourier coefficients for nonlinear warp (order 1)
         self.a1 = np.zeros(channels)
@@ -43,11 +47,12 @@ class BandRefractionModel:
             
         # Update estimates (Circular Mean for delta)
         history_arr = np.array(self.delta_history)
-        c_mean = np.angle(np.mean(np.exp(1j * history_arr), axis=0))
-        self.delta_hat = c_mean
+        # We use the resultant vector to update static estimate
+        resultant = np.mean(np.exp(1j * history_arr), axis=0)
+        self.delta_hat = np.angle(resultant)
         
         # Circular variance = 1 - |mean_resultant_vector|
-        c_var = 1.0 - np.abs(np.mean(np.exp(1j * history_arr), axis=0))
+        c_var = 1.0 - np.abs(resultant)
         self.variance = float(np.mean(c_var))
         
         if self.eta_history:
@@ -56,19 +61,41 @@ class BandRefractionModel:
         # Refraction confidence
         self.confidence = signal_x * (1.0 - self.variance)
         
-        # Estimate drift rate (rough)
+        # Initial adaptive state matches static
+        self.adaptive_delta_hat = self.delta_hat.copy()
+        
+        # Estimate drift rate
         if len(self.delta_history) > 20:
             early = np.angle(np.mean(np.exp(1j * history_arr[:10]), axis=0))
             late = np.angle(np.mean(np.exp(1j * history_arr[-10:]), axis=0))
             self.drift_rate = float(np.mean(np.abs(wrap_to_pi(late - early))))
 
-    def apply_inverse(self, theta_obs):
-        """Map observed/student phase back to unrefracted frame."""
-        return wrap_to_pi(theta_obs - self.delta_hat)
+    def update_adaptive(self, theta_teacher, theta_obs, signal_x):
+        """Slowly update adaptive delta_hat when connected, based on confidence."""
+        if signal_x < 0.3: return # Skip if signal is too weak/inconsistent
+        
+        # delta = wrap(obs - teacher)
+        delta_current = wrap_to_pi(theta_obs - theta_teacher)
+        
+        # Confidence-weighted update
+        weight = self.alpha_drift * signal_x
+        
+        # Update using complex exponential for circular consistency
+        z_adaptive = np.exp(1j * self.adaptive_delta_hat)
+        z_current = np.exp(1j * delta_current)
+        
+        z_next = (1.0 - weight) * z_adaptive + weight * z_current
+        self.adaptive_delta_hat = np.angle(z_next)
 
-    def apply_forward(self, theta_true):
+    def apply_inverse(self, theta_obs, adaptive=False):
+        """Map observed/student phase back to unrefracted frame."""
+        offset = self.adaptive_delta_hat if adaptive else self.delta_hat
+        return wrap_to_pi(theta_obs - offset)
+
+    def apply_forward(self, theta_true, adaptive=False):
         """Map true/model phase to observed frame."""
-        return wrap_to_pi(theta_true + self.delta_hat)
+        offset = self.adaptive_delta_hat if adaptive else self.delta_hat
+        return wrap_to_pi(theta_true + offset)
 
     def classify_medium(self):
         if self.variance <= 0.15 and self.drift_rate <= 0.05:
@@ -86,16 +113,22 @@ class PhaseRefractionLayer:
             "mixed": BandRefractionModel("mixed", channels)
         }
         self.active_band_id = "alpha"
+        self.use_adaptive = True
 
     def update_train(self, theta_teacher, theta_obs, omega_teacher, omega_obs, signal_x):
         band = self.bands[self.active_band_id]
         band.learn_step(theta_teacher, theta_obs, omega_teacher, omega_obs, signal_x)
 
+    def update_adaptive(self, theta_teacher, theta_obs, signal_x):
+        """Called only when connected but after initial training."""
+        band = self.bands[self.active_band_id]
+        band.update_adaptive(theta_teacher, theta_obs, signal_x)
+
     def unrefract(self, theta_obs):
-        return self.bands[self.active_band_id].apply_inverse(theta_obs)
+        return self.bands[self.active_band_id].apply_inverse(theta_obs, adaptive=self.use_adaptive)
 
     def refract(self, theta_unrefracted):
-        return self.bands[self.active_band_id].apply_forward(theta_unrefracted)
+        return self.bands[self.active_band_id].apply_forward(theta_unrefracted, adaptive=self.use_adaptive)
 
     def get_diagnostics(self):
         band = self.bands[self.active_band_id]
@@ -106,5 +139,7 @@ class PhaseRefractionLayer:
             "refraction_drift_rate": band.drift_rate,
             "medium_classification": band.classify_medium(),
             "delta_hat": band.delta_hat.tolist(),
-            "eta_hat": band.eta_hat.tolist()
+            "adaptive_delta_hat": band.adaptive_delta_hat.tolist(),
+            "eta_hat": band.eta_hat.tolist(),
+            "use_adaptive": self.use_adaptive
         }
