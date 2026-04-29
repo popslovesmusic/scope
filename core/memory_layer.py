@@ -322,6 +322,9 @@ class PersistentMemoryState:
     
     # Patch 22: Multi-groove routing data
     groove_data: Dict[str, Any] = field(default_factory=dict)
+    
+    # Patch 27: Recursive motion anchor data
+    recursive_anchor_data: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -341,6 +344,7 @@ class PersistentMemoryState:
             "last_active_component_id": self.last_active_component_id,
             "successful_traversals": int(self.successful_traversals),
             "groove_data": dict(self.groove_data),
+            "recursive_anchor_data": dict(self.recursive_anchor_data),
             "saved_at": datetime.utcnow().isoformat() + "Z",
         }
 
@@ -364,7 +368,7 @@ class PersistentMemoryState:
         s.qualified_residue_count = int(d.get("qualified_residue_count", 0))
         s.committed_residue_count = int(d.get("committed_residue_count", 0))
         s.rejected_residue_count = int(d.get("rejected_residue_count", 0))
-        s.average_stability_score = float(d.get("average_stability_score", 0.0))
+        s.average_stability_score = float(s.average_stability_score)
         s.last_commit = bool(d.get("last_commit", False))
         s.last_commit_reason = str(d.get("last_commit_reason", ""))
         s.last_reject_reason = str(d.get("last_reject_reason", ""))
@@ -372,6 +376,7 @@ class PersistentMemoryState:
         s.last_active_component_id = d.get("last_active_component_id", None)
         s.successful_traversals = int(d.get("successful_traversals", 0))
         s.groove_data = dict(d.get("groove_data", {}))
+        s.recursive_anchor_data = dict(d.get("recursive_anchor_data", {}))
         return s
 
 

@@ -18,6 +18,7 @@ from .operator_selection import select_operator, apply_operator
 from .groove_router import GrooveRouter
 from .signal_layer import compute_x_channel, get_consistency_level
 from .inductive_transformer import InductiveTransformerLayer
+from .recursive_motion_anchor import RecursiveMotionAnchor
 
 from core.memory_layer import load_memory_state, save_memory_state
 
@@ -47,6 +48,9 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     
     # Patch 24: Inductive Transformer Layer
     transformer = InductiveTransformerLayer(channels=8)
+    
+    # Patch 27: Recursive Motion Anchor
+    motion_anchor = RecursiveMotionAnchor.from_dict(memory.recursive_anchor_data)
     
     # Load Feedback Config
     fb_config_path = "native_platform/feedback_config.json"
@@ -94,11 +98,8 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     with open(feedback_trace_path, "a", encoding="utf-8") as f_log:
         for t in range(num_frames):
             # A. Signal Generation
-            # Patch 26: Stricter disconnect. 
-            # If not connected, we should not even LOOK at raw_input for internal dynamics.
             if input_signals is not None:
                 raw_input = input_signals[t]
-                # If raw_input is a vector (EEG features), use its mean for the scalar engine input
                 if isinstance(raw_input, (np.ndarray, list)):
                     input_signal_actual = float(np.mean(raw_input))
                     scope_input_actual = np.asarray(raw_input)
@@ -109,7 +110,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 input_signal_actual = np.sin(t * 0.1)
                 scope_input_actual = input_signal_actual
 
-            # Leakage Control: Zero input for internal state when disconnected
             input_signal = input_signal_actual if connected else 0.0
             scope_input = scope_input_actual if connected else np.zeros_like(scope_input_actual)
 
@@ -139,16 +139,12 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             node_outputs = engine.get_node_outputs()
             
             # C. Update SignalScope
-            # For GROUND TRUTH tracking, we always compute what the scope WOULD have seen
-            # but for internal logic we use scope_input (which is zeroed if disconnected)
             if isinstance(scope_input_actual, np.ndarray):
                 scope_data_actual = scope.update(scope_input_actual)
             else:
-                scope_data_actual = scope.update(node_outputs) # assuming node_outputs reacts to input_signal
+                scope_data_actual = scope.update(node_outputs)
                 
-            # Internal scope state (may be zeroed)
             if not connected:
-                # Disconnected: scope sees nothing or internal reverb
                 scope_data_internal = scope.update(np.zeros_like(node_outputs))
             else:
                 scope_data_internal = scope_data_actual
@@ -165,7 +161,6 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             )
             
             # Patch 18: Operator Selection for Local Reference -(i)
-            # Use actual phi for evaluation metrics
             op_star, op_cost = select_operator(phi_actual, prev_phi)
             phi_oriented_actual = apply_operator(phi_actual, op_star)
 
@@ -175,14 +170,22 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             else:
                 raw_mismatch = 0.0
 
-            # Leakage Control: Internal model sees its own PREVIOUS PREDICTION if disconnected
-            phi_for_internal = phi_oriented_actual if connected else (pending_phi_continued if pending_phi_continued is not None else phi_oriented_actual)
+            # Patch 27: Recursive Motion Anchor Update
+            phi_motion_anchor = motion_anchor.update(
+                phi_oriented_actual, 
+                scope_data_actual['C'], 
+                signal_x, 
+                connected=connected,
+                L=transformer.L 
+            )
+            
+            # Fetch updated state for logging
+            anchor_state = motion_anchor.get_state()
 
             # Patch 23: Survivability Gating (uses internal perception)
-            # If disconnected, we cannot "reinforce" from driver
             if connected:
                 decision, failed_tests = phase_continuation.evaluate_survivability(
-                    phi_for_internal, 
+                    phi_oriented_actual, 
                     raw_mismatch, 
                     op_star, 
                     signal_x
@@ -194,13 +197,12 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             continuation_mismatch = raw_mismatch if connected else last_continuation_mismatch
 
             # Patch 24: Inductive Transformer Layer Update
-            # If disconnected, transformer.update receives phi_for_internal (its own last prediction)
-            phi_inductive = transformer.update(phi_for_internal, scope_data_internal['C'], signal_x, connected=connected)
+            phi_inductive = transformer.update(phi_motion_anchor, scope_data_internal['C'], signal_x, connected=connected)
             
-            # Metric: phase_error (between actual oriented input and inductive prediction)
+            # New Metric: phase_error (between actual oriented input and inductive prediction)
             phase_error = float(phase_mismatch(phi_oriented_actual, phi_inductive))
             
-            # Metric: frequency_drift
+            # New Metric: frequency_drift
             freq_drift = float(np.linalg.norm(transformer.omega - last_omega))
             last_omega = transformer.omega.copy()
 
@@ -213,8 +215,10 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             groove_feedback_vec = router.active_feedback_vector()
 
             # Patch 22/23/24: Generate internal continuation
+            phi_for_continuation = phi_oriented_actual if connected else phi_motion_anchor
+            
             phi_continued = phase_continuation.continue_next(
-                phi_for_internal, 
+                phi_for_continuation, 
                 decision,
                 external_feedback_vec=groove_feedback_vec,
                 inductive_feedback_vec=phi_inductive
@@ -311,7 +315,12 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "teacher_omega": geom["teacher_omega"],
                 "student_omega": geom["student_omega"],
                 "connected": connected,
-                "connected_state": connected_state
+                "connected_state": connected_state,
+                # Patch 27 Anchor State
+                "anchor_theta": anchor_state["theta"],
+                "anchor_omega": anchor_state["omega"],
+                "anchor_alpha": anchor_state["alpha"],
+                "anchor_confidence": anchor_state["confidence"]
             }
             f_log.write(json.dumps(log_entry) + "\n")
 
@@ -339,6 +348,8 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     phase_continuation.mark_traversal_complete()
     memory.successful_traversals = int(phase_continuation.successful_traversals)
     memory.groove_data = router.to_dict()
+    # Patch 27: Persist Anchor state
+    memory.recursive_anchor_data = motion_anchor.to_dict()
     
     save_memory_state(memory_path, memory)
     print(f"✅ Run Complete. Trace: logs/feedback_trace_{run_id}.jsonl")
