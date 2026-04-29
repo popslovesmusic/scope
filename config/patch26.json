@@ -1,0 +1,190 @@
+{
+  "agent_task": {
+    "title": "Failure-Oriented Continuation Stress Test Suite",
+    "purpose": "Test whether the inductive transformer continuation layer performs true trajectory continuation or only succeeds on simple/easy signals.",
+    "core_directive": "Try to break the continuation claim. Passing easy tests is not enough.",
+    "baseline_report": {
+      "current_status": "Patch 25 reports TRUE CONTINUATION",
+      "raw_log": "logs/feedback_trace_V2_RECOUPLE.jsonl",
+      "risk": "disconnect metrics are near-perfect, so leakage, trivial signal dynamics, or overconstraint must be ruled out"
+    },
+    "non_negotiables": [
+      "Do not change the model during testing",
+      "Do not tune thresholds after seeing results",
+      "Preserve existing phase geometry metrics",
+      "Report failures honestly",
+      "Separate train, disconnect, recouple, and withheld phases",
+      "Log teacher and student streams per timestep"
+    ],
+    "required_controls": {
+      "leakage_control": {
+        "goal": "prove student cannot access teacher during disconnect",
+        "checks": [
+          "zero input buffer during disconnect",
+          "disable teacher-derived Signal X during disconnect unless computed only from student-internal views",
+          "assert no teacher_theta, teacher_amp, or teacher_omega used in student update",
+          "log connected_state per timestep"
+        ],
+        "failure_condition": "perfect disconnect alignment while any teacher-derived value is still accessible"
+      },
+      "shuffle_control": {
+        "goal": "detect metric illusion",
+        "method": "shuffle teacher phase stream during evaluation only",
+        "expected": "PLV and cosine should collapse",
+        "failure_condition": "high PLV remains after shuffled teacher comparison"
+      },
+      "untrained_control": {
+        "goal": "confirm learning matters",
+        "method": "run same protocol with untrained or reset student",
+        "expected": "trained trajectory_alignment_score > untrained score",
+        "failure_condition": "untrained equals or beats trained on withheld/stress patterns"
+      }
+    },
+    "stress_tests": [
+      {
+        "id": "S1",
+        "name": "Long Disconnect Survival",
+        "purpose": "Measure how long true continuation survives.",
+        "protocol": {
+          "train_seconds": 20,
+          "disconnect_seconds": [10, 30, 60, 120],
+          "recouple_seconds": 10
+        },
+        "expected_degradation": "gradual, not instant collapse",
+        "metrics": [
+          "trajectory_alignment_score_by_time",
+          "phase_locking_value_by_time",
+          "frequency_mae_by_time",
+          "pattern_survival_time"
+        ]
+      },
+      {
+        "id": "S2",
+        "name": "Frequency Shift During Disconnect",
+        "purpose": "Check whether student can continue learned dynamics when teacher changes unseen.",
+        "protocol": {
+          "train_signal": "alpha rhythm",
+          "disconnect_teacher_change": "slow frequency drift",
+          "student_visibility": "none"
+        },
+        "interpretation": "Student should not magically follow hidden teacher changes; failure to follow is acceptable and proves no leakage."
+      },
+      {
+        "id": "S3",
+        "name": "Multi-Band Signal",
+        "purpose": "Test continuation beyond single clean rhythm.",
+        "signal": {
+          "bands": ["theta", "alpha", "beta"],
+          "cross_channel_phase_offsets": true,
+          "amplitude_modulation": true
+        },
+        "success_condition": "phase geometry remains coherent per dominant band and does not collapse into one groove."
+      },
+      {
+        "id": "S4",
+        "name": "Abrupt Phase Jump",
+        "purpose": "Test lock breaking and recoupling behavior.",
+        "event": {
+          "phase_jump_radians": [0.78539816339, 1.57079632679, 3.14159265359],
+          "timing": "during train and recouple only"
+        },
+        "metrics": [
+          "phase_slip_count",
+          "recoupling_recovery_time",
+          "false_lock_rate"
+        ]
+      },
+      {
+        "id": "S5",
+        "name": "Noise Injection",
+        "purpose": "Determine robustness against noisy EEG-like input.",
+        "noise_levels": [0.05, 0.10, 0.20, 0.35],
+        "success_condition": "graceful degradation and no false TRUE CONTINUATION claims under severe noise."
+      },
+      {
+        "id": "S6",
+        "name": "Withheld Rhythm Generalization",
+        "purpose": "Re-test old T3 weakness where untrained sometimes beat trained.",
+        "protocol": {
+          "train_on": ["alpha", "theta"],
+          "withhold": ["beta", "mixed_alpha_theta"],
+          "compare": ["trained", "untrained"]
+        },
+        "required_result": "trained beats untrained on trajectory metrics, not just mismatch."
+      },
+      {
+        "id": "S7",
+        "name": "Groove Monopoly Test",
+        "purpose": "Detect whether the system locks into one groove for everything.",
+        "metrics": [
+          "dominant_groove_fraction",
+          "groove_switch_count",
+          "groove_entropy"
+        ],
+        "failure_condition": "one groove dominates across unrelated rhythms without corresponding phase-geometry improvement."
+      }
+    ],
+    "required_metrics": {
+      "primary": [
+        "phase_cosine_mean",
+        "mean_phase_delta_degrees",
+        "phase_locking_value",
+        "frequency_mae",
+        "trajectory_alignment_score",
+        "motion_floor_violation_rate",
+        "phase_slip_count",
+        "lagged_cross_correlation",
+        "best_lag_samples"
+      ],
+      "secondary": [
+        "mismatch_mean",
+        "reinforce_rate",
+        "reject_rate",
+        "Signal X",
+        "dominant_groove",
+        "dominant_groove_fraction",
+        "groove_entropy"
+      ]
+    },
+    "claim_rules": {
+      "true_continuation": {
+        "allowed_only_if": [
+          "no leakage control failures",
+          "shuffle control collapses PLV/cosine",
+          "trained beats untrained on withheld/stress tests",
+          "disconnect PLV >= 0.70",
+          "disconnect abs(mean_phase_delta_degrees) <= 45",
+          "disconnect trajectory_alignment_score >= 0.65",
+          "motion_floor_violation_rate <= 0.10"
+        ]
+      },
+      "downgrade_to_stable_but_limited": {
+        "if": [
+          "works only on single-band clean signal",
+          "fails multi-band or noise tests",
+          "trained does not beat untrained"
+        ]
+      },
+      "downgrade_to_metric_artifact": {
+        "if": [
+          "shuffle control remains high",
+          "teacher leakage detected",
+          "phase logs missing",
+          "perfect scores appear under impossible hidden teacher changes"
+        ]
+      }
+    },
+    "output_report": {
+      "filename": "CONTINUATION_STRESS_TEST_REPORT.md",
+      "must_include": [
+        "control results",
+        "stress-test table",
+        "trained vs untrained comparison",
+        "failure cases",
+        "claim status",
+        "recommended next patch only if failure is diagnosed"
+      ]
+    },
+    "final_instruction": "Do not improve the model during this run. This is validation only."
+  }
+}
