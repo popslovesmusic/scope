@@ -1,0 +1,191 @@
+{
+  "agent_task": {
+    "title": "Patch 29: Phase Refraction Layer",
+    "purpose": "Model the distortion between true/teacher phase and observed/student feature phase so continuation happens in a stable coordinate frame.",
+    "core_hypothesis": "The system is not merely failing to continue; it is continuing inside a refracted coordinate system. If the medium is stable, the refraction can be estimated and compensated.",
+    "current_state": {
+      "patch_25": "phase geometry metrics added",
+      "patch_26": "stress tests exposed leakage/artifacts",
+      "patch_27": "recursive motion anchor is leakage-free and non-frozen but still drifting",
+      "diagnosis": "feature-to-phase geometry is unstable or refracted"
+    },
+    "conceptual_mapping": {
+      "teacher_phase": "unrefracted reference trajectory",
+      "student_observed_phase": "phase extracted from feature space",
+      "medium": "feature mapping + admissibility + smoothing + channel/band mixing",
+      "refraction": "systematic phase offset, warping, or dispersion introduced by the medium",
+      "constant_medium": "refraction map remains stable enough to estimate",
+      "drifting_medium": "refraction map changes over time and must be tracked adaptively"
+    },
+    "non_negotiables": [
+      "Do not reintroduce teacher leakage during disconnect",
+      "Do not remove Patch 25/26/27 metrics",
+      "Do not use teacher state in student recursive update",
+      "Do not tune thresholds to force a true-continuation claim",
+      "Report whether the medium appears constant or drifting"
+    ],
+    "new_module": {
+      "path": "native_platform/phase_refraction_layer.py",
+      "objects": [
+        "PhaseRefractionLayer",
+        "BandRefractionModel",
+        "RefractionDiagnostics"
+      ]
+    },
+    "raw_logs_required": {
+      "during_train_only": [
+        "teacher_theta",
+        "student_observed_theta",
+        "teacher_omega",
+        "student_observed_omega",
+        "band_id",
+        "channel_id",
+        "signal_x",
+        "groove_id"
+      ],
+      "during_disconnect": [
+        "student_refracted_theta",
+        "student_unrefracted_theta_estimate",
+        "student_omega",
+        "band_id",
+        "channel_id",
+        "refraction_confidence"
+      ]
+    },
+    "refraction_model": {
+      "phase_offset": {
+        "definition": "delta_phi = wrap_to_pi(student_observed_theta - teacher_theta)",
+        "purpose": "Estimate constant angular bending."
+      },
+      "velocity_scale": {
+        "definition": "eta = safe_ratio(student_observed_omega, teacher_omega)",
+        "purpose": "Estimate dispersion / speed distortion."
+      },
+      "phase_warp": {
+        "definition": "delta_phi(theta) learned as a circular lookup or low-order Fourier model",
+        "purpose": "Handle nonlinear phase-dependent distortion."
+      },
+      "band_specific_refraction": {
+        "definition": "separate refraction parameters per rhythm band",
+        "purpose": "Prevent alpha/theta/beta collapse into one geometry."
+      }
+    },
+    "training_phase_algorithm": [
+      "For each channel and band, compute delta_phi = wrap(student_observed_theta - teacher_theta).",
+      "Compute circular mean and circular variance of delta_phi.",
+      "Estimate velocity scale eta when teacher_omega is above omega_floor.",
+      "Fit a simple refraction map: theta_observed ≈ theta_true + delta_phi(theta_true).",
+      "Store confidence = 1 - circular_variance, weighted by Signal X.",
+      "Classify medium as constant if refraction variance remains below threshold."
+    ],
+    "disconnect_phase_algorithm": [
+      "Do not access teacher state.",
+      "Let recursive anchor produce next student observed phase.",
+      "Apply learned inverse refraction map to estimate unrefracted internal phase.",
+      "Continue dynamics in the stabilized phase frame.",
+      "Project back through refraction map only for comparison/output.",
+      "Decay refraction confidence over disconnect duration."
+    ],
+    "recouple_phase_algorithm": [
+      "Re-enable teacher comparison.",
+      "Measure whether learned refraction map still matches.",
+      "Compute recoupling refraction error.",
+      "Update refraction model only after recouple, never during disconnect."
+    ],
+    "equations": {
+      "offset_estimate": "delta_hat = circular_mean(wrap(theta_obs - theta_teacher))",
+      "inverse_constant_refraction": "theta_unrefracted = wrap(theta_obs - delta_hat)",
+      "forward_constant_refraction": "theta_obs_est = wrap(theta_unrefracted + delta_hat)",
+      "velocity_scale": "eta_hat = median(theta_obs_omega / teacher_omega)",
+      "inverse_velocity": "omega_unrefracted = omega_obs / eta_hat",
+      "phase_warp_fourier": "delta_phi(theta) = a1*sin(theta) + b1*cos(theta) + a2*sin(2theta) + b2*cos(2theta)",
+      "confidence": "refraction_confidence = signal_x_weighted * (1 - circular_variance(delta_phi))"
+    },
+    "diagnostics": {
+      "medium_constancy": {
+        "metrics": [
+          "delta_phi_circular_variance",
+          "delta_phi_drift_rate",
+          "eta_variance",
+          "refraction_confidence"
+        ],
+        "classifications": {
+          "constant_medium": "delta_phi_circular_variance <= 0.15 AND delta_phi_drift_rate <= 0.05",
+          "weakly_drifting_medium": "delta_phi_circular_variance <= 0.35",
+          "unstable_medium": "delta_phi_circular_variance > 0.35 OR refraction_confidence < 0.40"
+        }
+      },
+      "continuation": {
+        "metrics": [
+          "PLV_in_observed_frame",
+          "PLV_in_unrefracted_frame",
+          "trajectory_alignment_observed",
+          "trajectory_alignment_unrefracted",
+          "phase_delta_before_refraction_correction",
+          "phase_delta_after_refraction_correction"
+        ]
+      }
+    },
+    "success_criteria": {
+      "minimum": [
+        "Refraction map has confidence >= 0.60 during train",
+        "Unrefracted-frame PLV improves over observed-frame PLV",
+        "S1_early PLV improves over Patch 27 baseline",
+        "Shuffle control remains passed",
+        "No teacher leakage detected"
+      ],
+      "strong": [
+        "S1_early PLV >= 0.30",
+        "S1_late PLV >= 0.20",
+        "S3_multiband PLV >= 0.25",
+        "medium classified as constant or weakly_drifting",
+        "trained beats untrained in unrefracted-frame alignment"
+      ]
+    },
+    "failure_modes": {
+      "no_constant_refraction": "delta_phi variance is too high; medium is not stable enough for simple correction.",
+      "wrong_inverse": "correction reduces PLV or increases frequency error.",
+      "band_collapse": "one refraction map is wrongly applied to all bands.",
+      "hidden_leakage": "perfect correction occurs despite failed controls.",
+      "overfit_refraction": "training improves but withheld rhythms fail."
+    },
+    "tests": {
+      "unit_tests": [
+        "test_constant_phase_offset_recovery",
+        "test_180_degree_refraction_recovery",
+        "test_velocity_scale_recovery",
+        "test_phase_wrap_handling",
+        "test_band_specific_refraction_separation",
+        "test_disconnect_uses_no_teacher_state"
+      ],
+      "stress_tests": [
+        "S1_long_disconnect_before_after_refraction",
+        "S3_multiband_before_after_refraction",
+        "S6_withheld_rhythm_generalization",
+        "shuffle_control_after_refraction"
+      ]
+    },
+    "report": {
+      "filename": "PATCH_29_PHASE_REFRACTION_REPORT.md",
+      "must_include": [
+        "medium classification",
+        "refraction parameters per band/channel",
+        "before/after PLV in observed and unrefracted frames",
+        "shuffle control result",
+        "S1 and S3 comparison against Patch 27",
+        "failure mode diagnosis",
+        "claim status"
+      ],
+      "allowed_claim_status": [
+        "drifting",
+        "refraction_improved_but_insufficient",
+        "constant_medium_confirmed",
+        "weakly_drifting_medium",
+        "unstable_medium",
+        "partial_continuation",
+        "true_continuation"
+      ]
+    },
+    "final_instruction": "Treat this patch as representation calibration, not model success. The goal is to determine whether a stable refraction map exists and whether correcting for it improves recursive continuation."
+  }
+}

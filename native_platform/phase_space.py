@@ -27,3 +27,28 @@ def phase_mismatch(phi1, phi2):
     # Clip to prevent float precision errors
     dot = max(-1.0, min(1.0, dot))
     return 1.0 - dot
+
+def wrap_to_pi(v):
+    return (v + np.pi) % (2 * np.pi) - np.pi
+
+def compute_plv(phi1, phi2):
+    """
+    Computes Phase Locking Value (PLV).
+    If inputs are 8D unit vectors (time, channels), computes mean cosine similarity.
+    If inputs are scalar angles, computes mean length of resultant vector.
+    """
+    phi1 = np.asarray(phi1)
+    phi2 = np.asarray(phi2)
+    
+    # Handle 8D vector case (time, channels)
+    if len(phi1.shape) >= 2 and phi1.shape[-1] == 8:
+        # Compute cosine similarity for each time step
+        cos_sim = np.sum(phi1 * phi2, axis=-1) # Shape: (time,)
+        return float(np.mean(cos_sim))
+    else:
+        # Classical PLV for scalar angles
+        return float(np.abs(np.mean(np.exp(1j * (phi1 - phi2)))))
+
+def compute_cosine_similarity(phi1, phi2):
+    dot = np.sum(phi1 * phi2, axis=-1)
+    return dot

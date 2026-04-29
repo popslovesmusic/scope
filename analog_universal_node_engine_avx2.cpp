@@ -1,10 +1,10 @@
 #include "analog_universal_node_engine_avx2.h"
+#include "ftt/fftw3.h"
 #include <algorithm>
 #include <random>
 #include <chrono>
 #include <iostream>
 #include <iomanip>
-#include <fftw3.h>
 #include <immintrin.h>
 #include <omp.h>
 #include <unordered_map>
@@ -14,7 +14,6 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
 
 // FFTW Wisdom Cache
 struct FFTWPlanCache {
@@ -133,27 +132,18 @@ FORCE_INLINE double AnalogUniversalNodeAVX2::applyFeedback(double input_signal, 
 
 double AnalogUniversalNodeAVX2::processSignalScalar(double input_signal, double control_signal, double aux_signal) {
     double amplified = input_signal * control_signal;
-    
-    // Reaction term (Patch 28): Non-linear dynamics
     if (reaction_enabled) {
         amplified += 0.05 * std::tanh(integrator_state);
     }
-
     double integrated = integrate(amplified, 0.1);
-    
-    // Corridor Gating (Patch 28)
     if (corridor_enabled) {
         if (std::abs(integrated) > 8.0) integrated *= 0.5;
     }
-
     double fb = applyFeedback(integrated, feedback_gain);
-    
-    // Scalar spectral approximation
     double spectral = 0.0;
     for (double mult : {0.3, 0.7, 0.9, 1.2, 1.4, 1.8, 2.1, 2.7}) {
         spectral += std::sin((amplified + aux_signal) * mult);
     }
-    
     current_output = fb + (spectral * 0.125);
     current_output = clamp_custom(current_output, -10.0, 10.0);
     previous_input = input_signal;
@@ -192,6 +182,59 @@ double AnalogUniversalNodeAVX2::getOutput() const noexcept { return current_outp
 double AnalogUniversalNodeAVX2::getIntegratorState() const noexcept { return integrator_state; }
 void AnalogUniversalNodeAVX2::resetIntegrator() noexcept { integrator_state = 0.0; previous_input = 0.0; }
 
+std::vector<float> AnalogUniversalNodeAVX2::oscillate(double frequency_hz, double duration_seconds) {
+    const int sample_rate = 48000;
+    const int num_samples = static_cast<int>(duration_seconds * sample_rate);
+    std::vector<float> output(num_samples);
+    oscillate_inplace(output.data(), num_samples, frequency_hz, sample_rate);
+    return output;
+}
+
+void AnalogUniversalNodeAVX2::oscillate_inplace(float* output, int num_samples, double frequency_hz, double sample_rate) {
+    const float angular_freq_f = static_cast<float>(2.0 * M_PI * frequency_hz / sample_rate);
+    const int simd_width = 8;
+    const int num_simd_chunks = num_samples / simd_width;
+    __m256 phase_increment = _mm256_set1_ps(angular_freq_f);
+    __m256 phase_step = _mm256_mul_ps(phase_increment, _mm256_set_ps(7.0f, 6.0f, 5.0f, 4.0f, 3.0f, 2.0f, 1.0f, 0.0f));
+    __m256 phase_advance = _mm256_set1_ps(angular_freq_f * simd_width);
+    __m256 current_phase = phase_step;
+    for (int chunk = 0; chunk < num_simd_chunks; ++chunk) {
+        __m256 wave = AVX2Math::fast_sin_avx2(current_phase);
+        _mm256_storeu_ps(&output[chunk * simd_width], wave);
+        current_phase = _mm256_add_ps(current_phase, phase_advance);
+    }
+    for (int i = num_simd_chunks * simd_width; i < num_samples; ++i) {
+        output[i] = std::sin(i * angular_freq_f);
+    }
+}
+
+std::vector<float> AnalogUniversalNodeAVX2::processBlockFrequencyDomain(const std::vector<float>& input_block) {
+    std::vector<float> output = input_block;
+    if (!output.empty()) processBlockFrequencyDomain_inplace(output.data(), (int)output.size());
+    return output;
+}
+
+void AnalogUniversalNodeAVX2::processBlockFrequencyDomain_inplace(float* data, int num_samples) {
+    if (num_samples == 0) return;
+    int N = num_samples;
+    fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    auto plans = g_fftw_cache.get_or_create_plans(N, in, out);
+    for (int i = 0; i < N; ++i) { in[i][0] = data[i]; in[i][1] = 0.0; }
+    fftw_execute_dft(plans.forward, in, out);
+    for (int i = 0; i < N; ++i) { if (i < N/4 || i > 3*N/4) { out[i][0] = 0; out[i][1] = 0; } }
+    fftw_execute_dft(plans.inverse, out, in);
+    for (int i = 0; i < N; ++i) { data[i] = (float)(in[i][0] / N); }
+    fftw_free(in); fftw_free(out);
+}
+
+std::vector<double> AnalogUniversalNodeAVX2::processBatch(const std::vector<double>& input_signals, const std::vector<double>& control_signals, const std::vector<double>& aux_signals) {
+    size_t n = input_signals.size();
+    std::vector<double> results(n);
+    for (size_t i = 0; i < n; ++i) results[i] = processSignalAVX2(input_signals[i], control_signals[i], aux_signals[i]);
+    return results;
+}
+
 // AnalogCellularEngineAVX2 Implementation
 AnalogCellularEngineAVX2::AnalogCellularEngineAVX2(size_t num_nodes)
     : nodes(num_nodes), system_frequency(1.0), noise_level(0.001) {
@@ -207,9 +250,7 @@ void AnalogCellularEngineAVX2::runMissionScalar(uint64_t steps) {
     for (uint64_t step = 0; step < steps; ++step) {
         double input = std::sin(static_cast<double>(step) * 0.01);
         double ctrl = std::cos(static_cast<double>(step) * 0.01);
-        for (auto& node : nodes) {
-            node.processSignalScalar(input, ctrl, 0.0);
-        }
+        for (auto& node : nodes) node.processSignalScalar(input, ctrl, 0.0);
     }
     auto end = std::chrono::high_resolution_clock::now();
     metrics_.total_execution_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -223,32 +264,71 @@ void AnalogCellularEngineAVX2::runMission(uint64_t steps) {
         double input = std::sin(static_cast<double>(step) * 0.01);
         double ctrl = std::cos(static_cast<double>(step) * 0.01);
         #pragma omp parallel for
-        for (int i = 0; i < (int)nodes.size(); ++i) {
-            nodes[i].processSignalAVX2(input, ctrl, 0.0);
-        }
+        for (int i = 0; i < (int)nodes.size(); ++i) nodes[i].processSignalAVX2(input, ctrl, 0.0);
     }
     auto end = std::chrono::high_resolution_clock::now();
     metrics_.total_execution_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     metrics_.total_operations = steps * nodes.size();
 }
 
+void AnalogCellularEngineAVX2::runMissionOptimized(const double* input_signals, const double* control_patterns, uint64_t num_steps, uint32_t iterations_per_node) {
+    metrics_.reset();
+    auto mission_start = std::chrono::high_resolution_clock::now();
+    int num_nodes_int = (int)nodes.size();
+    for (uint64_t step = 0; step < num_steps; ++step) {
+        const double input = input_signals[step];
+        const double control = control_patterns[step];
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < num_nodes_int; ++i) {
+            for (uint32_t j = 0; j < iterations_per_node; ++j) nodes[i].processSignalAVX2_hotpath(input, control, 0.0);
+        }
+    }
+    auto mission_end = std::chrono::high_resolution_clock::now();
+    metrics_.total_execution_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(mission_end - mission_start).count();
+    metrics_.total_operations = num_steps * nodes.size() * iterations_per_node;
+    metrics_.update_performance();
+}
+
+void AnalogCellularEngineAVX2::runMissionOptimized_Phase4B(const double* input_signals, const double* control_patterns, uint64_t num_steps, uint32_t iterations_per_node) {
+    metrics_.reset();
+    auto mission_start = std::chrono::high_resolution_clock::now();
+    int num_nodes_int = (int)nodes.size();
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        int nthreads = omp_get_num_threads();
+        int nodes_per_thread = (num_nodes_int + nthreads - 1) / nthreads;
+        int node_start = tid * nodes_per_thread;
+        int node_end = std::min(node_start + nodes_per_thread, num_nodes_int);
+        for (uint64_t step = 0; step < num_steps; ++step) {
+            const double input = input_signals[step];
+            const double control = control_patterns[step];
+            for (int i = node_start; i < node_end; ++i) {
+                for (uint32_t j = 0; j < iterations_per_node; ++j) nodes[i].processSignalAVX2_hotpath(input, control, 0.0);
+            }
+        }
+    }
+    auto mission_end = std::chrono::high_resolution_clock::now();
+    metrics_.total_execution_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(mission_end - mission_start).count();
+    metrics_.total_operations = num_steps * nodes.size() * iterations_per_node;
+    metrics_.update_performance();
+}
+
+void AnalogCellularEngineAVX2::runMissionOptimized_Phase4C(const double* input_signals, const double* control_patterns, uint64_t num_steps, uint32_t iterations_per_node) {
+    // Spatial vectorization simplified to Phase 4B for now as it needs a specific data layout rewrite
+    runMissionOptimized_Phase4B(input_signals, control_patterns, num_steps, iterations_per_node);
+}
+
 AnalogCellularEngineAVX2::FieldStats AnalogCellularEngineAVX2::getFieldStatistics(const std::vector<double>& prev_outputs) const {
     FieldStats stats = {0,0,0,0,0};
     if (nodes.empty()) return stats;
     size_t n = nodes.size();
-    
     double sum = 0, sum_sq = 0, sum_delta = 0, sum_grad = 0;
     for (size_t i = 0; i < n; ++i) {
         double out = nodes[i].current_output;
-        sum += out;
-        sum_sq += out * out;
-        if (i < prev_outputs.size()) {
-            sum_delta += std::abs(out - prev_outputs[i]);
-        }
-        if (i > 0) {
-            double grad = out - nodes[i-1].current_output;
-            sum_grad += grad * grad;
-        }
+        sum += out; sum_sq += out * out;
+        if (i < prev_outputs.size()) sum_delta += std::abs(out - prev_outputs[i]);
+        if (i > 0) { double grad = out - nodes[i-1].current_output; sum_grad += grad * grad; }
     }
     stats.mean = sum / n;
     stats.variance = (sum_sq / n) - (stats.mean * stats.mean);
@@ -258,43 +338,39 @@ AnalogCellularEngineAVX2::FieldStats AnalogCellularEngineAVX2::getFieldStatistic
     return stats;
 }
 
-void AnalogCellularEngineAVX2::setIntegratorState(double val) {
-    for (auto& node : nodes) node.integrator_state = val;
-}
-
-void AnalogCellularEngineAVX2::setReactionEnabled(bool enabled) {
-    reaction_enabled = enabled;
-    for (auto& node : nodes) node.reaction_enabled = enabled;
-}
-
-void AnalogCellularEngineAVX2::setCorridorEnabled(bool enabled) {
-    corridor_enabled = enabled;
-    for (auto& node : nodes) node.corridor_enabled = enabled;
-}
-
+void AnalogCellularEngineAVX2::setIntegratorState(double val) { for (auto& node : nodes) node.integrator_state = val; }
+void AnalogCellularEngineAVX2::setReactionEnabled(bool enabled) { reaction_enabled = enabled; for (auto& node : nodes) node.reaction_enabled = enabled; }
+void AnalogCellularEngineAVX2::setCorridorEnabled(bool enabled) { corridor_enabled = enabled; for (auto& node : nodes) node.corridor_enabled = enabled; }
 EngineMetrics AnalogCellularEngineAVX2::getMetrics() const noexcept { return metrics_; }
 void AnalogCellularEngineAVX2::printLiveMetrics() { metrics_.print_metrics(); }
 void AnalogCellularEngineAVX2::resetMetrics() { metrics_.reset(); }
-
-// CPU Feature Detection
-bool CPUFeatures::hasAVX2() noexcept { return true; } // Placeholder
-bool CPUFeatures::hasFMA() noexcept { return true; } // Placeholder
+bool CPUFeatures::hasAVX2() noexcept { return true; } 
+bool CPUFeatures::hasFMA() noexcept { return true; } 
 void CPUFeatures::printCapabilities() noexcept { std::cout << "AVX2: ✅ FMA: ✅" << std::endl; }
 
-// Node block processing (legacy/utility)
-void AnalogUniversalNodeAVX2::oscillate_inplace(float* out, int n, double f, double sr) {}
-void AnalogUniversalNodeAVX2::processBlockFrequencyDomain_inplace(float* d, int n) {}
-std::vector<float> AnalogUniversalNodeAVX2.oscillate(double f, double d) { return {}; }
-std::vector<float> AnalogUniversalNodeAVX2.processBlockFrequencyDomain(const std::vector<float>& b) { return {}; }
-std::vector<double> AnalogUniversalNodeAVX2.processBatch(const std::vector<double>& i, const std::vector<double>& c, const std::vector<double>& a) { return {}; }
-void AnalogCellularEngineAVX2::processBlockFrequencyDomain(std::vector<double>& b) {}
+double AnalogCellularEngineAVX2::processSignalWaveAVX2(double input_signal, double control_pattern) {
+    double total = 0;
+    for(auto& node : nodes) total += node.processSignalAVX2(input_signal, control_pattern, 0.0);
+    return total / nodes.size();
+}
+
+void AnalogCellularEngineAVX2::processBlockFrequencyDomain(std::vector<double>& signal_block) {
+    int N = (int)signal_block.size();
+    if (N == 0) return;
+    fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    auto plans = g_fftw_cache.get_or_create_plans(N, in, out);
+    for (int i = 0; i < N; ++i) { in[i][0] = signal_block[i]; in[i][1] = 0.0; }
+    fftw_execute_dft(plans.forward, in, out);
+    for (int i = N / 4; i < (N * 3 / 4); ++i) { out[i][0] = 0; out[i][1] = 0; }
+    fftw_execute_dft(plans.inverse, out, in);
+    for (int i = 0; i < N; ++i) signal_block[i] = in[i][0] / N;
+    fftw_free(in); fftw_free(out);
+}
+
 double AnalogCellularEngineAVX2::performSignalSweepAVX2(double f) { return 0; }
-double AnalogCellularEngineAVX2::processSignalWaveAVX2(double i, double c) { return 0; }
-void AnalogCellularEngineAVX2::runMissionOptimized(const double* i, const double* c, uint64_t s, uint32_t it) {}
-void AnalogCellularEngineAVX2::runMissionOptimized_Phase4B(const double* i, const double* c, uint64_t s, uint32_t it) {}
-void AnalogCellularEngineAVX2::runMissionOptimized_Phase4C(const double* i, const double* c, uint64_t s, uint32_t it) {}
-void AnalogCellularEngineAVX2::runMassiveBenchmark(int i) {}
-double AnalogCellularEngineAVX2::runDragRaceBenchmark(int n) { return 0; }
-void AnalogCellularEngineAVX2::runBuiltinBenchmark(int i) {}
-double AnalogCellularEngineAVX2::calculateInterNodeCoupling(size_t n) { return 0; }
+void AnalogCellularEngineAVX2::runMassiveBenchmark(int iterations) {}
+double AnalogCellularEngineAVX2::runDragRaceBenchmark(int num_runs) { return 0; }
+void AnalogCellularEngineAVX2::runBuiltinBenchmark(int iterations) {}
+double AnalogCellularEngineAVX2::calculateInterNodeCoupling(size_t node_index) { return 0; }
 double AnalogCellularEngineAVX2::generateNoiseSignal() { return 0; }
