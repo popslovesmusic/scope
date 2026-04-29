@@ -1,15 +1,15 @@
-# Continuation Stress Test Report (Patch 26)
+# Continuation Stress Test Report (Patch 31)
 
-Date: 2026-04-28 19:47:09
+Date: 2026-04-29 18:55:07
 
 ## 1. Controls
-| Control | Normal PLV | Shuffled PLV | Result |
+| Control | Normal VelCoherence | Shuffled VelCoherence | Result |
 | :--- | :--- | :--- | :--- |
-| Shuffle | 0.103 | 0.115 | FAILED |
+| Shuffle | -0.019 | 0.063 | FAILED |
 
 ## 2. Stress Test Results
-| ID | Test Name | PLV | Cosine | Freq MAE | Alignment | Status |
+| ID | Test Name | VelCoherence | StateSim | Freq MAE | Alignment | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| S1e | S1_early | 0.089 | 0.000 | 0.0621 | 0.061 | DRIFTING |
-| S1l | S1_late | 0.082 | 0.000 | 0.0469 | 0.062 | DRIFTING |
-| S3 | S3 | 0.126 | 0.000 | 0.0975 | 0.065 | DRIFTING |
+| S1e | S1_early | 0.019 | 0.246 | 0.2886 | 0.000 | DRIFTING |
+| S1l | S1_late | 0.027 | 0.251 | 0.3182 | 0.000 | DRIFTING |
+| S3 | S3 | 0.010 | 0.263 | 0.3332 | 0.000 | DRIFTING |

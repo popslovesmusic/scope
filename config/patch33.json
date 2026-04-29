@@ -1,0 +1,41 @@
+{
+  "patch_33": "closed_loop_gain_sweep_and_diagnostics",
+  "purpose": "Tune Patch 32 closed-loop continuation and identify whether trace, inductive bias, anchor, or damping is limiting performance.",
+  "edit_files": [
+    "native_platform/run_native_platform.py",
+    "scripts/run_continuation_stress_tests.py"
+  ],
+  "add_config": {
+    "closed_loop": {
+      "w_base": 1.0,
+      "w_trace": 0.75,
+      "w_inductive": 0.35,
+      "w_anchor": 0.05,
+      "damping": 0.88
+    }
+  },
+  "sweep_values": {
+    "w_trace": [0.35, 0.55, 0.75, 1.0],
+    "w_inductive": [0.15, 0.25, 0.35, 0.5],
+    "w_anchor": [0.03, 0.05, 0.1, 0.15],
+    "damping": [0.8, 0.88, 0.92, 0.97]
+  },
+  "log_new_fields": [
+    "closed_loop_w_trace",
+    "closed_loop_w_inductive",
+    "closed_loop_w_anchor",
+    "closed_loop_damping",
+    "trace_vec_available",
+    "trace_vec_norm",
+    "blend_norm",
+    "blend_cosine_to_prev",
+    "blend_cosine_to_trace",
+    "blend_cosine_to_inductive"
+  ],
+  "success_targets": {
+    "S1_late_velocity_coherence": ">= 0.20",
+    "S3_velocity_coherence": ">= 0.15",
+    "state_similarity": "not lower than Patch 32",
+    "freq_mae": "lower than Patch 32"
+  }
+}

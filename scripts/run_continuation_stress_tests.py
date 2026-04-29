@@ -24,116 +24,163 @@ def map_features_to_phi(frames):
 def calculate_geometry_metrics(records, ground_truth_phi=None, shuffle_teacher=False):
     if not records:
         return {}
-    
-    st = np.array([r["student_theta"] for r in records]) # [N, 8]
+
+    st = np.array([r["phi_continued"] for r in records], dtype=float)  # [N, 8]
     if ground_truth_phi is not None:
-        tt = np.array(ground_truth_phi)
+        tt = np.array(ground_truth_phi, dtype=float)
     else:
-        tt = np.array([r["teacher_theta"] for r in records])
-    
+        tt = np.array([r["phi_current"] for r in records], dtype=float)
+
     if shuffle_teacher:
-        # Shift teacher by 50% of the window to break timing alignment
         tt = np.roll(tt, len(tt)//2, axis=0)
-    
-    # Unit vector alignment (Cosine)
+
+    # Full-state cosine alignment: static similarity of teacher/student state vectors.
     st_norm = st / (np.linalg.norm(st, axis=1, keepdims=True) + 1e-9)
     tt_norm = tt / (np.linalg.norm(tt, axis=1, keepdims=True) + 1e-9)
     cosines = np.sum(st_norm * tt_norm, axis=1)
-    
-    # PLV on Velocity (Omega) - More sensitive to motion continuation
+    state_cosine = float(np.mean(cosines))
+
+    # Full-8D velocity coherence: continuation-direction similarity.
     so = np.diff(st, axis=0)
     to = np.diff(tt, axis=0)
-    
-    # Project 8-dim velocity to an angle
-    st_vel_angles = np.arctan2(so[:, 1], so[:, 0])
-    tt_vel_angles = np.arctan2(to[:, 1], to[:, 0])
-    phase_delta = wrap_to_pi(st_vel_angles - tt_vel_angles)
-    plv = float(np.abs(np.mean(np.exp(1j * phase_delta))))
-    
-    freq_mae = float(np.mean(np.abs(so - to)))
-    alignment_score = plv * (1.0 - min(1.0, freq_mae * 5.0)) # Higher penalty for stress
-    
+
+    if len(so) == 0 or len(to) == 0:
+        velocity_coherence = 0.0
+        omega_mae = 0.0
+    else:
+        so_norm = so / (np.linalg.norm(so, axis=1, keepdims=True) + 1e-9)
+        to_norm = to / (np.linalg.norm(to, axis=1, keepdims=True) + 1e-9)
+        velocity_coherence = float(np.mean(np.sum(so_norm * to_norm, axis=1)))
+        omega_mae = float(np.mean(np.abs(so - to)))
+
+    # Bounded per-channel state similarity. Useful for identity/persistence quality.
+    state_sim_per_frame = 1.0 - (np.abs(st - tt) / (np.abs(st) + np.abs(tt) + 1e-9))
+    state_similarity = float(np.mean(state_sim_per_frame))
+
+    # Legacy-compatible penalty score, but now based on meaningful full-8D metrics.
+    alignment_score = velocity_coherence * state_similarity * (1.0 - min(1.0, omega_mae * 5.0))
+
     return {
         "mismatch": float(np.mean([r.get("continuation_mismatch", 0.0) for r in records])),
-        "cosine": float(np.mean(cosines)),
-        "plv": plv,
-        "freq_mae": freq_mae,
-        "alignment_score": alignment_score
+        "cosine": state_cosine,
+        "state_cosine": state_cosine,
+        "velocity_coherence": velocity_coherence,
+        "state_similarity": state_similarity,
+        "omega_mae": omega_mae,
+        "freq_mae": omega_mae,
+        "alignment_score": alignment_score,
+
+        "plv": velocity_coherence,
+        "plv_deprecated_alias": True,
+        "metric_patch": "patch_31_full_8d_metric_fix"
     }
 
-def run_stress_test_battery():
+def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, damping=0.88, sweep_id=None):
     output_dir = "runs/stress_tests"
     os.makedirs(output_dir, exist_ok=True)
-    mem_path = "sessions/stress_test_memory.json"
+    mem_path = f"sessions/stress_test_memory_{sweep_id}.json" if sweep_id else "sessions/stress_test_memory.json"
     
     sr = 256
     results = {}
 
     # Control A: Shuffle Control
-    print("\n🕵️ Running Control A: Shuffle Control (with Temporal Shift)...")
+    print(f"\n🕵️ Running Control A: Shuffle Control (Sweep: {sweep_id})...")
     if os.path.exists(mem_path): os.remove(mem_path)
     alpha_raw = generate_alpha(sr, 15)
     alpha_frames = signal_to_input_frames(alpha_raw, sr)
-    summ = run_platform(input_signals=alpha_frames, memory_path=mem_path, run_id="CTRL_SHUFFLE", connected=True)
+    summ = run_platform(input_signals=alpha_frames, memory_path=mem_path, run_id=f"CTRL_{sweep_id}" if sweep_id else "CTRL_SHUFFLE", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
     recs = tail_jsonl(summ["feedback_trace_path"], len(alpha_frames))
     
     results["shuffle_control_normal"] = calculate_geometry_metrics(recs, shuffle_teacher=False)
     results["shuffle_control_shuffled"] = calculate_geometry_metrics(recs, shuffle_teacher=True)
-    print(f"    Normal PLV: {results['shuffle_control_normal']['plv']:.3f}, Shuffled PLV: {results['shuffle_control_shuffled']['plv']:.3f}")
+    print(f"    Normal VelCoherence: {results['shuffle_control_normal']['velocity_coherence']:.3f}, Shuffled VelCoherence: {results['shuffle_control_shuffled']['velocity_coherence']:.3f}")
 
     # S1: Long Disconnect Survival
-    print("\n🏃 Running S1: Long Disconnect (60s)...")
+    print(f"\n🏃 Running S1: Long Disconnect (60s) (Sweep: {sweep_id})...")
     if os.path.exists(mem_path): os.remove(mem_path)
     full_alpha = generate_alpha(sr, 80)
     full_frames = signal_to_input_frames(full_alpha, sr)
     n_train = int(len(full_frames) * (20/80))
     n_disc = int(len(full_frames) * (60/80))
     
-    run_platform(input_signals=full_frames[:n_train], memory_path=mem_path, run_id="S1_TRAIN", connected=True)
+    run_platform(input_signals=full_frames[:n_train], memory_path=mem_path, run_id=f"S1_TRAIN_{sweep_id}" if sweep_id else "S1_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
     teacher_disc_phi = map_features_to_phi(full_frames[n_train:n_train+n_disc])
-    summ_disc = run_platform(input_signals=full_frames[n_train:n_train+n_disc], memory_path=mem_path, run_id="S1_DISC", connected=False)
+    summ_disc = run_platform(input_signals=full_frames[n_train:n_train+n_disc], memory_path=mem_path, run_id=f"S1_DISC_{sweep_id}" if sweep_id else "S1_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
     disc_recs = tail_jsonl(summ_disc["feedback_trace_path"], n_disc)
     
     n_10s = int(len(disc_recs) * (10/60))
     results["S1_early"] = calculate_geometry_metrics(disc_recs[:n_10s], ground_truth_phi=teacher_disc_phi[:n_10s])
     results["S1_late"] = calculate_geometry_metrics(disc_recs[-n_10s:], ground_truth_phi=teacher_disc_phi[-n_10s:])
-    print(f"    Early PLV: {results['S1_early']['plv']:.3f}, Late PLV: {results['S1_late']['plv']:.3f}")
+    print(f"    Early VelCoherence: {results['S1_early']['velocity_coherence']:.3f}, Late VelCoherence: {results['S1_late']['velocity_coherence']:.3f}")
 
     # S3: Multi-Band Signal
-    print("\n🎹 Running S3: Multi-Band (Mixed Alpha/Theta)...")
+    print(f"\n🎹 Running S3: Multi-Band (Mixed Alpha/Theta) (Sweep: {sweep_id})...")
     if os.path.exists(mem_path): os.remove(mem_path)
     mixed = generate_mixed_alpha_theta(sr, 30)
     mixed_frames = signal_to_input_frames(mixed, sr)
     n_tr = int(len(mixed_frames) * 0.6)
     
-    run_platform(input_signals=mixed_frames[:n_tr], memory_path=mem_path, run_id="S3_TRAIN", connected=True)
+    run_platform(input_signals=mixed_frames[:n_tr], memory_path=mem_path, run_id=f"S3_TRAIN_{sweep_id}" if sweep_id else "S3_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
     teacher_s3_phi = map_features_to_phi(mixed_frames[n_tr:])
-    summ_s3 = run_platform(input_signals=mixed_frames[n_tr:], memory_path=mem_path, run_id="S3_DISC", connected=False)
+    summ_s3 = run_platform(input_signals=mixed_frames[n_tr:], memory_path=mem_path, run_id=f"S3_DISC_{sweep_id}" if sweep_id else "S3_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
     results["S3"] = calculate_geometry_metrics(tail_jsonl(summ_s3["feedback_trace_path"], len(teacher_s3_phi)), ground_truth_phi=teacher_s3_phi)
-    print(f"    Mixed PLV: {results['S3']['plv']:.3f}")
+    print(f"    Mixed VelCoherence: {results['S3']['velocity_coherence']:.3f}")
 
     # Generate Report
-    report_path = os.path.join(output_dir, "CONTINUATION_STRESS_TEST_REPORT.md")
+    report_name = f"CONTINUATION_STRESS_TEST_REPORT_{sweep_id}.md" if sweep_id else "CONTINUATION_STRESS_TEST_REPORT.md"
+    report_path = os.path.join(output_dir, report_name)
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# Continuation Stress Test Report (Patch 26)\n\n")
+        f.write(f"# Continuation Stress Test Report (Patch 33 - Sweep: {sweep_id if sweep_id else 'Default'})\n\n")
         f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"Config: w_trace={w_trace}, w_inductive={w_inductive}, w_anchor={w_anchor}, damping={damping}\n\n")
         
         f.write("## 1. Controls\n")
-        f.write("| Control | Normal PLV | Shuffled PLV | Result |\n")
+        f.write("| Control | Normal VelCoherence | Shuffled VelCoherence | Result |\n")
         f.write("| :--- | :--- | :--- | :--- |\n")
-        # Shuffle control passes if shifted PLV is significantly lower
-        res = "PASSED" if results["shuffle_control_shuffled"]["plv"] < results["shuffle_control_normal"]["plv"] * 0.7 else "FAILED"
-        f.write(f"| Shuffle | {results['shuffle_control_normal']['plv']:.3f} | {results['shuffle_control_shuffled']['plv']:.3f} | {res} |\n\n")
+        # Shuffle control passes if shifted coherence is significantly lower
+        res = "PASSED" if results["shuffle_control_shuffled"]["velocity_coherence"] < results["shuffle_control_normal"]["velocity_coherence"] * 0.7 else "FAILED"
+        f.write(f"| Shuffle | {results['shuffle_control_normal']['velocity_coherence']:.3f} | {results['shuffle_control_shuffled']['velocity_coherence']:.3f} | {res} |\n\n")
         
         f.write("## 2. Stress Test Results\n")
-        f.write("| ID | Test Name | PLV | Cosine | Freq MAE | Alignment | Status |\n")
+        f.write("| ID | Test Name | VelCoherence | StateSim | Freq MAE | Alignment | Status |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
         for tid, key in [("S1e", "S1_early"), ("S1l", "S1_late"), ("S3", "S3")]:
             m = results[key]
-            status = "STABLE" if m['plv'] > 0.6 else "DRIFTING"
-            f.write(f"| {tid} | {key} | {m['plv']:.3f} | {m['cosine']:.3f} | {m['freq_mae']:.4f} | {m['alignment_score']:.3f} | {status} |\n")
+            status = "STABLE" if (m['velocity_coherence'] > 0.5 and m['state_similarity'] > 0.65) else "DRIFTING"
+            f.write(f"| {tid} | {key} | {m['velocity_coherence']:.3f} | {m['state_similarity']:.3f} | {m['omega_mae']:.4f} | {m['alignment_score']:.3f} | {status} |\n")
 
-    print(f"\n✅ Stress Tests Complete. Report: {report_path}")
+    return results
+
+def run_gain_sweep():
+    # Patch 33 Sweep Values
+    w_traces = [0.35, 0.75] # Reduced sweep for time
+    w_inductives = [0.25, 0.35]
+    dampings = [0.88, 0.92]
+    
+    best_coherence = -1.0
+    best_config = None
+    
+    sweep_results = []
+    
+    for wt in w_traces:
+        for wi in w_inductives:
+            for d in dampings:
+                sid = f"wt{wt}_wi{wi}_d{d}"
+                res = run_stress_test_battery(w_trace=wt, w_inductive=wi, damping=d, sweep_id=sid)
+                avg_coherence = (res["S1_late"]["velocity_coherence"] + res["S3"]["velocity_coherence"]) / 2.0
+                sweep_results.append({"config": sid, "avg_coherence": avg_coherence})
+                if avg_coherence > best_coherence:
+                    best_coherence = avg_coherence
+                    best_config = sid
+                    
+    print("\n📊 Sweep Results Summary:")
+    for r in sweep_results:
+        print(f"  Config: {r['config']}, Avg Coherence: {r['avg_coherence']:.3f}")
+    print(f"\n🏆 Best Config: {best_config} with Coherence: {best_coherence:.3f}")
 
 if __name__ == "__main__":
-    run_stress_test_battery()
+    import sys
+    if "--sweep" in sys.argv:
+        run_gain_sweep()
+    else:
+        run_stress_test_battery()

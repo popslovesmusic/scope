@@ -100,7 +100,9 @@ class ResiduePhaseContinuation:
         if len(self.trace_segments) < 16:
             return None
         recent = self.trace_segments[-min(len(self.trace_segments), 32):]
-        return normalize(np.mean(np.stack(recent, axis=0), axis=0))
+        # Patch 32: Ensure directional output is strictly normalized
+        vec = np.mean(np.stack(recent, axis=0), axis=0)
+        return normalize(vec) if np.linalg.norm(vec) > 1e-9 else None
 
     def groove_gain(self):
         growth = 1.0 - np.exp(-0.20 * float(self.successful_traversals))

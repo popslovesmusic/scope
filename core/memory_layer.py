@@ -325,6 +325,9 @@ class PersistentMemoryState:
     
     # Patch 27: Recursive motion anchor data
     recursive_anchor_data: Dict[str, Any] = field(default_factory=dict)
+    
+    # Patch 30: Native platform component state
+    native_state: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -345,6 +348,7 @@ class PersistentMemoryState:
             "successful_traversals": int(self.successful_traversals),
             "groove_data": dict(self.groove_data),
             "recursive_anchor_data": dict(self.recursive_anchor_data),
+            "native_state": dict(self.native_state),
             "saved_at": datetime.utcnow().isoformat() + "Z",
         }
 
@@ -377,6 +381,7 @@ class PersistentMemoryState:
         s.successful_traversals = int(d.get("successful_traversals", 0))
         s.groove_data = dict(d.get("groove_data", {}))
         s.recursive_anchor_data = dict(d.get("recursive_anchor_data", {}))
+        s.native_state = dict(d.get("native_state", {}))
         return s
 
 

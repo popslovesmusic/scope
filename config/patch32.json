@@ -1,0 +1,64 @@
+{
+  "patch_name": "patch_32_closed_loop_continuation",
+  "goal": "Convert open-loop continuation into reference-anchored, trace-informed closed-loop continuation during disconnect.",
+  "priority": "critical",
+  "files_to_edit": [
+    "native_platform/run_native_platform.py",
+    "native_platform/residue_phase_continuation.py"
+  ],
+  "design_principle": "trace feedback must be applied relative to orientation reference, not as raw state injection",
+  "changes": [
+    {
+      "file": "native_platform/run_native_platform.py",
+      "location": "inside main loop, replace phi_for_internal logic",
+      "old_code": "phi_for_internal = phi_oriented_actual if connected else (pending_phi_continued if pending_phi_continued is not None else phi_oriented_actual)",
+      "new_code": "if connected:\n    phi_for_internal = phi_oriented_actual\nelse:\n    base = pending_phi_continued if pending_phi_continued is not None else phi_oriented_actual\n\n    # Trace feedback (directional, not absolute)\n    trace_vec = phase_continuation.trace_feedback_vector()\n\n    # Inductive bias (already reference-aligned)\n    inductive_vec = phi_inductive\n\n    # Weak global anchor (prevents full drift of reference)\n    anchor_vec = prev_phi_oriented if prev_phi_oriented is not None else base\n\n    # Blend weights (tunable)\n    w_base = 1.0\n    w_trace = 0.35 if trace_vec is not None else 0.0\n    w_inductive = 0.25\n    w_anchor = 0.15\n\n    blended = w_base * base\n\n    if trace_vec is not None:\n        blended += w_trace * trace_vec\n\n    if inductive_vec is not None:\n        blended += w_inductive * inductive_vec\n\n    blended += w_anchor * anchor_vec\n\n    # Normalize to maintain admissibility\n    phi_for_internal = blended / (np.linalg.norm(blended) + 1e-9)"
+    },
+    {
+      "file": "native_platform/residue_phase_continuation.py",
+      "location": "trace_feedback_vector()",
+      "action": "ensure directional output (already mostly correct)",
+      "note": "no structural rewrite needed; ensure it returns normalized directional vector only (already true)"
+    },
+    {
+      "file": "native_platform/run_native_platform.py",
+      "location": "after computing phi_for_internal",
+      "addition": "# Optional damping to prevent runaway drift\nif not connected:\n    damping = 0.92\n    phi_for_internal = damping * phi_for_internal + (1.0 - damping) * (prev_phi_oriented if prev_phi_oriented is not None else phi_for_internal)\n    phi_for_internal = phi_for_internal / (np.linalg.norm(phi_for_internal) + 1e-9)"
+    }
+  ],
+  "parameters": {
+    "w_base": 1.0,
+    "w_trace": 0.35,
+    "w_inductive": 0.25,
+    "w_anchor": 0.15,
+    "damping": 0.92
+  },
+  "expected_effect": [
+    "prevents exponential drift during disconnect",
+    "maintains directional continuity via trace",
+    "anchors orientation reference -(i) weakly without freezing",
+    "reduces omega divergence",
+    "improves velocity_coherence and state_similarity"
+  ],
+  "validation": {
+    "run": "scripts/run_continuation_stress_tests.py",
+    "target_improvement": {
+      "velocity_coherence": "> 0.25 (from ~0.06)",
+      "state_similarity": "> 0.45 (from ~0.25)",
+      "omega_mae": "reduced by ~30%"
+    },
+    "interpretation": {
+      "if_improves": "closed-loop continuation working",
+      "if_no_change": "trace not strong enough or anchor misaligned",
+      "if_worse": "over-constrained, reduce anchor or damping"
+    }
+  },
+  "do_not_change": [
+    "SignalScope core",
+    "compute_phase_vector",
+    "wheel12_projection",
+    "hex encoding",
+    "Patch 31 metrics"
+  ],
+  "note": "This patch implements reference-relative memory feedback, converting continuation from open-loop prediction to constrained dynamical persistence aligned with -(i)."
+}

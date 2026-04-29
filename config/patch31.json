@@ -1,0 +1,50 @@
+{
+  "patch_name": "patch_31_metric_architecture_fix",
+  "goal": "Replace invalid 2D arctan2 PLV stress metric with full-8D continuation metrics while preserving existing architecture.",
+  "priority": "critical",
+  "files_to_edit": [
+    "scripts/run_continuation_stress_tests.py"
+  ],
+  "changes": [
+    {
+      "target_function": "calculate_geometry_metrics",
+      "action": "replace_metric_block",
+      "reason": "Current PLV collapses 8D motion into dims 0 and 1 only, making stress-test conclusions unreliable."
+    }
+  ],
+  "replacement_function": "def calculate_geometry_metrics(records, ground_truth_phi=None, shuffle_teacher=False):\n    if not records:\n        return {}\n\n    st = np.array([r[\"student_theta\"] for r in records], dtype=float)  # [N, 8]\n    if ground_truth_phi is not None:\n        tt = np.array(ground_truth_phi, dtype=float)\n    else:\n        tt = np.array([r[\"teacher_theta\"] for r in records], dtype=float)\n\n    if shuffle_teacher:\n        tt = np.roll(tt, len(tt)//2, axis=0)\n\n    # Full-state cosine alignment: static similarity of teacher/student state vectors.\n    st_norm = st / (np.linalg.norm(st, axis=1, keepdims=True) + 1e-9)\n    tt_norm = tt / (np.linalg.norm(tt, axis=1, keepdims=True) + 1e-9)\n    cosines = np.sum(st_norm * tt_norm, axis=1)\n    state_cosine = float(np.mean(cosines))\n\n    # Full-8D velocity coherence: continuation-direction similarity.\n    so = np.diff(st, axis=0)\n    to = np.diff(tt, axis=0)\n\n    if len(so) == 0 or len(to) == 0:\n        velocity_coherence = 0.0\n        omega_mae = 0.0\n    else:\n        so_norm = so / (np.linalg.norm(so, axis=1, keepdims=True) + 1e-9)\n        to_norm = to / (np.linalg.norm(to, axis=1, keepdims=True) + 1e-9)\n        velocity_coherence = float(np.mean(np.sum(so_norm * to_norm, axis=1)))\n        omega_mae = float(np.mean(np.abs(so - to)))\n\n    # Bounded per-channel state similarity. Useful for identity/persistence quality.\n    state_sim_per_frame = 1.0 - (np.abs(st - tt) / (np.abs(st) + np.abs(tt) + 1e-9))\n    state_similarity = float(np.mean(state_sim_per_frame))\n\n    # Legacy-compatible penalty score, but now based on meaningful full-8D metrics.\n    alignment_score = velocity_coherence * state_similarity * (1.0 - min(1.0, omega_mae * 5.0))\n\n    return {\n        \"mismatch\": float(np.mean([r.get(\"continuation_mismatch\", 0.0) for r in records])),\n        \"cosine\": state_cosine,\n        \"state_cosine\": state_cosine,\n        \"velocity_coherence\": velocity_coherence,\n        \"state_similarity\": state_similarity,\n        \"omega_mae\": omega_mae,\n        \"freq_mae\": omega_mae,\n        \"alignment_score\": alignment_score,\n\n        \"plv\": velocity_coherence,\n        \"plv_deprecated_alias\": true,\n        \"metric_patch\": \"patch_31_full_8d_metric_fix\"\n    }\n",
+  "report_updates": [
+    {
+      "location": "print statements",
+      "replace": "PLV labels",
+      "with": "Velocity coherence labels"
+    },
+    {
+      "location": "report table headers",
+      "replace": "PLV",
+      "with": "VelCoherence"
+    },
+    {
+      "location": "status rule",
+      "old": "m['plv'] > 0.6",
+      "new": "m['velocity_coherence'] > 0.5 and m['state_similarity'] > 0.65"
+    }
+  ],
+  "exact_status_patch": {
+    "old": "status = \"STABLE\" if m['plv'] > 0.6 else \"DRIFTING\"",
+    "new": "status = \"STABLE\" if (m['velocity_coherence'] > 0.5 and m['state_similarity'] > 0.65) else \"DRIFTING\""
+  },
+  "recommended_validation": [
+    "Run scripts/run_continuation_stress_tests.py",
+    "Compare Patch 27, Patch 29, Patch 30 using velocity_coherence and state_similarity",
+    "Do not accept 'DRIFT TRACKING UNNECESSARY' unless corrected metrics also show no improvement"
+  ],
+  "do_not_change": [
+    "native_platform/wheel12_projection.py",
+    "native_platform/hex_state.py",
+    "scopes/hex_state.py",
+    "scopes/hex_residue_codec.py",
+    "RGB+1 interpretation",
+    "12-wheel projection"
+  ]
+}
