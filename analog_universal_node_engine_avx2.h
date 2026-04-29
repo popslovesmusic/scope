@@ -135,6 +135,10 @@ public:
     double feedback_gain    = 0.0;
     int    node_id          = 0;
 
+    // Patch 28: Semantic toggles
+    bool   reaction_enabled = true;
+    bool   corridor_enabled = true;
+
     // Spatial coordinates for node positioning
     int16_t x = 0;
     int16_t y = 0;
@@ -148,6 +152,7 @@ public:
     FORCE_INLINE double applyFeedback(double input_signal, double feedback_gain);
 
     double processSignal(double input_signal, double control_signal, double aux_signal);
+    double processSignalScalar(double input_signal, double control_signal, double aux_signal);
     double processSignalAVX2(double input_signal, double control_signal, double aux_signal);
 
     // Phase 4A: Hot-path version without profiling overhead
@@ -184,11 +189,24 @@ public:
 // ANALOG CELLULAR ENGINE AVX2
 // ============================================================================
 class AnalogCellularEngineAVX2 {
+public:
+    struct FieldStats {
+        double mean;
+        double variance;
+        double gradient_energy;
+        double state_delta;
+        double total_energy;
+    };
+
 private:
     // Use 64-byte aligned allocator for cache-line optimization
     std::vector<AnalogUniversalNodeAVX2, aligned_allocator<AnalogUniversalNodeAVX2, 64>> nodes;
     double system_frequency;
     double noise_level;
+
+    // Patch 28: Semantic Audit State
+    bool reaction_enabled = true;
+    bool corridor_enabled = true;
 
     // FIX C2.1: Per-instance metrics instead of global static
     // This prevents data races when multiple engines run concurrently
@@ -199,6 +217,7 @@ public:
 
     // Mission and benchmark functions
     void runMission(std::uint64_t steps);
+    void runMissionScalar(std::uint64_t steps);
 
     // Optimized mission with pre-computed signals (for Julia/Rust FFI)
     // Eliminates serial sin/cos bottleneck, achieves ~90% CPU utilization
@@ -235,6 +254,12 @@ public:
     void printLiveMetrics();
     void resetMetrics();
     double generateNoiseSignal();
+
+    // Patch 28: Semantic Audit Functions
+    void setReactionEnabled(bool enabled);
+    void setCorridorEnabled(bool enabled);
+    FieldStats getFieldStatistics(const std::vector<double>& previous_outputs) const;
+    void setIntegratorState(double value);
 
     // Node output access
     std::vector<double> getNodeOutputs() const {

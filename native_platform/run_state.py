@@ -75,13 +75,19 @@ def backup_file(path):
 def clear_memory(path='sessions/native_memory.json'):
     if os.path.exists(path):
         backup_file(path)
-        # Reset to initial empty state
+        # Reset to initial empty state (v14.x modern schema)
         initial_state = {
             "turn_counter": 0,
             "qualified_residue_count": 0,
+            "committed_residue_count": 0,
+            "rejected_residue_count": 0,
             "committed": [],
-            "operator_bias": {},
-            "caution_baseline_shift": 0.0
+            "operator_bias": {"++": 0.0, "--": 0.0, "+-": 0.0, "-+": 0.0},
+            "caution_baseline_shift": 0.0,
+            "recovery_baseline_shift": 0.0,
+            "successful_traversals": 0,
+            "groove_data": {},
+            "recursive_anchor_data": {}
         }
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(initial_state, f, indent=2)

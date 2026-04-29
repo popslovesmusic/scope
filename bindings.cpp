@@ -1,4 +1,3 @@
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
@@ -15,9 +14,17 @@ PYBIND11_MODULE(engine_bridge, m) {
         .def_readwrite("current_ns_per_op", &EngineMetrics::current_ns_per_op)
         .def_readwrite("speedup_factor", &EngineMetrics::speedup_factor);
 
+    py::class_<AnalogCellularEngineAVX2::FieldStats>(m, "FieldStats")
+        .def_readwrite("mean", &AnalogCellularEngineAVX2::FieldStats::mean)
+        .def_readwrite("variance", &AnalogCellularEngineAVX2::FieldStats::variance)
+        .def_readwrite("gradient_energy", &AnalogCellularEngineAVX2::FieldStats::gradient_energy)
+        .def_readwrite("state_delta", &AnalogCellularEngineAVX2::FieldStats::state_delta)
+        .def_readwrite("total_energy", &AnalogCellularEngineAVX2::FieldStats::total_energy);
+
     py::class_<AnalogCellularEngineAVX2>(m, "AnalogCellularEngineAVX2")
         .def(py::init<size_t>())
         .def("runMission", &AnalogCellularEngineAVX2::runMission)
+        .def("runMissionScalar", &AnalogCellularEngineAVX2::runMissionScalar)
         .def("runMissionOptimized", [](AnalogCellularEngineAVX2& self, py::array_t<double> inputs, py::array_t<double> controls, uint32_t iterations) {
             auto r_inputs = inputs.unchecked<1>();
             auto r_controls = controls.unchecked<1>();
@@ -29,5 +36,9 @@ PYBIND11_MODULE(engine_bridge, m) {
         .def("getNodeOutputs", &AnalogCellularEngineAVX2::getNodeOutputs)
         .def("getMetrics", &AnalogCellularEngineAVX2::getMetrics)
         .def("resetMetrics", &AnalogCellularEngineAVX2::resetMetrics)
-        .def("processSignalWaveAVX2", &AnalogCellularEngineAVX2::processSignalWaveAVX2);
+        .def("processSignalWaveAVX2", &AnalogCellularEngineAVX2::processSignalWaveAVX2)
+        .def("setReactionEnabled", &AnalogCellularEngineAVX2::setReactionEnabled)
+        .def("setCorridorEnabled", &AnalogCellularEngineAVX2::setCorridorEnabled)
+        .def("getFieldStatistics", &AnalogCellularEngineAVX2::getFieldStatistics)
+        .def("setIntegratorState", &AnalogCellularEngineAVX2::setIntegratorState);
 }
