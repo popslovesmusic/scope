@@ -75,7 +75,7 @@ def calculate_geometry_metrics(records, ground_truth_phi=None, shuffle_teacher=F
         "metric_patch": "patch_31_full_8d_metric_fix"
     }
 
-def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, damping=0.88, sweep_id=None):
+def run_stress_test_battery(w_trace=0.75, w_inductive=0.15, w_anchor=0.03, damping=0.92, sweep_id=None, experimental_rotation=False):
     output_dir = "runs/stress_tests"
     os.makedirs(output_dir, exist_ok=True)
     mem_path = f"sessions/stress_test_memory_{sweep_id}.json" if sweep_id else "sessions/stress_test_memory.json"
@@ -84,11 +84,11 @@ def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, dampi
     results = {}
 
     # Control A: Shuffle Control
-    print(f"\n🕵️ Running Control A: Shuffle Control (Sweep: {sweep_id})...")
+    print(f"\n🕵️ Running Control A: Shuffle Control (Sweep: {sweep_id}, ExpRot: {experimental_rotation})...")
     if os.path.exists(mem_path): os.remove(mem_path)
     alpha_raw = generate_alpha(sr, 15)
     alpha_frames = signal_to_input_frames(alpha_raw, sr)
-    summ = run_platform(input_signals=alpha_frames, memory_path=mem_path, run_id=f"CTRL_{sweep_id}" if sweep_id else "CTRL_SHUFFLE", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
+    summ = run_platform(input_signals=alpha_frames, memory_path=mem_path, run_id=f"CTRL_{sweep_id}" if sweep_id else "CTRL_SHUFFLE", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping, experimental_rotation=experimental_rotation)
     recs = tail_jsonl(summ["feedback_trace_path"], len(alpha_frames))
     
     results["shuffle_control_normal"] = calculate_geometry_metrics(recs, shuffle_teacher=False)
@@ -103,9 +103,9 @@ def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, dampi
     n_train = int(len(full_frames) * (20/80))
     n_disc = int(len(full_frames) * (60/80))
     
-    run_platform(input_signals=full_frames[:n_train], memory_path=mem_path, run_id=f"S1_TRAIN_{sweep_id}" if sweep_id else "S1_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
+    run_platform(input_signals=full_frames[:n_train], memory_path=mem_path, run_id=f"S1_TRAIN_{sweep_id}" if sweep_id else "S1_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping, experimental_rotation=experimental_rotation)
     teacher_disc_phi = map_features_to_phi(full_frames[n_train:n_train+n_disc])
-    summ_disc = run_platform(input_signals=full_frames[n_train:n_train+n_disc], memory_path=mem_path, run_id=f"S1_DISC_{sweep_id}" if sweep_id else "S1_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
+    summ_disc = run_platform(input_signals=full_frames[n_train:n_train+n_disc], memory_path=mem_path, run_id=f"S1_DISC_{sweep_id}" if sweep_id else "S1_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping, experimental_rotation=experimental_rotation)
     disc_recs = tail_jsonl(summ_disc["feedback_trace_path"], n_disc)
     
     n_10s = int(len(disc_recs) * (10/60))
@@ -120,9 +120,9 @@ def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, dampi
     mixed_frames = signal_to_input_frames(mixed, sr)
     n_tr = int(len(mixed_frames) * 0.6)
     
-    run_platform(input_signals=mixed_frames[:n_tr], memory_path=mem_path, run_id=f"S3_TRAIN_{sweep_id}" if sweep_id else "S3_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
+    run_platform(input_signals=mixed_frames[:n_tr], memory_path=mem_path, run_id=f"S3_TRAIN_{sweep_id}" if sweep_id else "S3_TRAIN", connected=True, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping, experimental_rotation=experimental_rotation)
     teacher_s3_phi = map_features_to_phi(mixed_frames[n_tr:])
-    summ_s3 = run_platform(input_signals=mixed_frames[n_tr:], memory_path=mem_path, run_id=f"S3_DISC_{sweep_id}" if sweep_id else "S3_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping)
+    summ_s3 = run_platform(input_signals=mixed_frames[n_tr:], memory_path=mem_path, run_id=f"S3_DISC_{sweep_id}" if sweep_id else "S3_DISC", connected=False, w_trace=w_trace, w_inductive=w_inductive, w_anchor=w_anchor, damping=damping, experimental_rotation=experimental_rotation)
     results["S3"] = calculate_geometry_metrics(tail_jsonl(summ_s3["feedback_trace_path"], len(teacher_s3_phi)), ground_truth_phi=teacher_s3_phi)
     print(f"    Mixed VelCoherence: {results['S3']['velocity_coherence']:.3f}")
 
@@ -130,9 +130,9 @@ def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, dampi
     report_name = f"CONTINUATION_STRESS_TEST_REPORT_{sweep_id}.md" if sweep_id else "CONTINUATION_STRESS_TEST_REPORT.md"
     report_path = os.path.join(output_dir, report_name)
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(f"# Continuation Stress Test Report (Patch 33 - Sweep: {sweep_id if sweep_id else 'Default'})\n\n")
+        f.write(f"# Continuation Stress Test Report (Patch 33-35 - Sweep: {sweep_id if sweep_id else 'Default'})\n\n")
         f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write(f"Config: w_trace={w_trace}, w_inductive={w_inductive}, w_anchor={w_anchor}, damping={damping}\n\n")
+        f.write(f"Config: w_trace={w_trace}, w_inductive={w_inductive}, w_anchor={w_anchor}, damping={damping}, experimental_rotation={experimental_rotation}\n\n")
         
         f.write("## 1. Controls\n")
         f.write("| Control | Normal VelCoherence | Shuffled VelCoherence | Result |\n")
@@ -152,10 +152,11 @@ def run_stress_test_battery(w_trace=0.75, w_inductive=0.35, w_anchor=0.05, dampi
     return results
 
 def run_gain_sweep():
-    # Patch 33 Sweep Values
-    w_traces = [0.35, 0.75] # Reduced sweep for time
-    w_inductives = [0.25, 0.35]
-    dampings = [0.88, 0.92]
+    # Patch 34 Sweep Values
+    w_traces = [0.5, 0.75, 1.0] 
+    w_inductives = [0.15, 0.25, 0.35]
+    dampings = [0.88, 0.92, 0.97]
+    w_anchor = 0.03 # Patch 34 recommendation
     
     best_coherence = -1.0
     best_config = None
@@ -166,7 +167,7 @@ def run_gain_sweep():
         for wi in w_inductives:
             for d in dampings:
                 sid = f"wt{wt}_wi{wi}_d{d}"
-                res = run_stress_test_battery(w_trace=wt, w_inductive=wi, damping=d, sweep_id=sid)
+                res = run_stress_test_battery(w_trace=wt, w_inductive=wi, w_anchor=w_anchor, damping=d, sweep_id=sid)
                 avg_coherence = (res["S1_late"]["velocity_coherence"] + res["S3"]["velocity_coherence"]) / 2.0
                 sweep_results.append({"config": sid, "avg_coherence": avg_coherence})
                 if avg_coherence > best_coherence:

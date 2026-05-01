@@ -244,8 +244,7 @@ def compute_manifest(*, snapshot: Dict[str, Any], include_globs: Optional[List[s
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--write", action="store_true", help="write snapshot + manifest
- to baseline/")
+    ap.add_argument("--write", action="store_true", help="write snapshot + manifest to baseline/")
     ap.add_argument("--prompt", default="v14_baseline_freeze")
     ap.add_argument("--seed", type=int, default=123)
     args = ap.parse_args()

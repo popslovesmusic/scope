@@ -23,8 +23,8 @@ from .phase_refraction_layer import PhaseRefractionLayer
 
 from core.memory_layer import load_memory_state, save_memory_state
 
-def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True, connected_state="train", teacher_theta=None, use_adaptive=True, refraction_enabled=True, w_trace=0.75, w_inductive=0.35, w_anchor=0.05, damping=0.88):
-    print(f"🚀 Initializing Native Wave-Residue Platform (Run: {run_id}, Mode: {connected_state.upper()}, RefEnabled: {refraction_enabled}, Adaptive: {use_adaptive})...")
+def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, feedback_enabled=None, run_id=None, input_signals=None, memory_path="sessions/native_memory.json", connected=True, connected_state="train", teacher_theta=None, use_adaptive=True, refraction_enabled=True, w_trace=0.75, w_inductive=0.15, w_anchor=0.03, damping=0.92, experimental_rotation=False):
+    print(f"🚀 Initializing Native Wave-Residue Platform (Run: {run_id}, Mode: {connected_state.upper()}, RefEnabled: {refraction_enabled}, Adaptive: {use_adaptive}, ExpRot: {experimental_rotation})...")
     
     if input_signals is not None:
         num_frames = len(input_signals)
@@ -65,6 +65,7 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
     prev_phi = None
     pending_phi_continued = None
     prev_phi_oriented = None
+    prev_teacher_phi = None
     mismatch_series = []
     last_omega = np.zeros(4)
     phi_inductive = None
@@ -158,65 +159,107 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
             if refraction_enabled:
                 refraction.step(connected=connected)
 
-            # Diagnostics defaults for Patch 33
+            # Diagnostics for Patch 35
+            teacher_velocity = None
+            if teacher_theta is not None and t < len(teacher_theta):
+                current_teacher_phi = teacher_theta[t]
+                if prev_teacher_phi is not None:
+                    teacher_velocity = current_teacher_phi - prev_teacher_phi
+                prev_teacher_phi = current_teacher_phi.copy()
+
             diag_cl = {
-                "closed_loop_w_trace": float(w_trace),
-                "closed_loop_w_inductive": float(w_inductive),
-                "closed_loop_w_anchor": float(w_anchor),
-                "closed_loop_damping": float(damping),
-                "trace_vec_available": False,
-                "trace_vec_norm": 0.0,
-                "blend_norm": 0.0,
-                "blend_cosine_to_prev": 0.0,
-                "blend_cosine_to_trace": 0.0,
-                "blend_cosine_to_inductive": 0.0
+                "trace_velocity_raw_available": False,
+                "trace_velocity_rotated_available": False,
+                "trace_velocity_rotation_operator": str(op_star),
+                "raw_trace_cosine_to_base_velocity": 0.0,
+                "rotated_trace_cosine_to_base_velocity": 0.0,
+                "raw_trace_cosine_to_teacher_velocity": 0.0,
+                "rotated_trace_cosine_to_teacher_velocity": 0.0,
+                "rotation_helped": False,
+                "trace_velocity_norm": 0.0,
+                "base_velocity_norm": 0.0,
+                "inductive_velocity_norm": 0.0,
+                "corrected_velocity_norm": 0.0,
+                "candidate_cosine_to_anchor": 0.0,
+                "candidate_cosine_to_trace_velocity": 0.0,
+                "candidate_cosine_to_base_velocity": 0.0,
+                "candidate_cosine_to_inductive_velocity": 0.0
             }
 
-            # Patch 32/33: Closed-Loop Continuation
+            # Patch 35: Reference-Rotated Velocity Closed-Loop Continuation
             if connected:
                 phi_for_internal = phi_oriented_actual
             else:
-                base = pending_phi_continued if pending_phi_continued is not None else phi_oriented_actual
+                anchor = prev_phi_oriented if prev_phi_oriented is not None else phi_oriented_actual
+                base = pending_phi_continued if pending_phi_continued is not None else anchor
 
-                # Trace feedback (directional, not absolute)
-                trace_vec = phase_continuation.trace_feedback_vector()
-
-                # Inductive bias (already reference-aligned)
-                inductive_vec = phi_inductive
-
-                # Weak global anchor (prevents full drift of reference)
-                anchor_vec = prev_phi_oriented if prev_phi_oriented is not None else base
-
-                # Blend weights (Patch 33 tuning)
-                w_base_val = 1.0
+                # Velocity terms
+                base_velocity = base - anchor
                 
-                diag_cl["trace_vec_available"] = trace_vec is not None
-                if trace_vec is not None:
-                    diag_cl["trace_vec_norm"] = float(np.linalg.norm(trace_vec))
+                # Patch 34/35: Closed-Loop Trace Velocity
+                trace_velocity_raw = phase_continuation.trace_velocity_vector()
+                if experimental_rotation:
+                    # Patch 35: Reference Rotation (Experimental)
+                    trace_velocity = apply_operator(trace_velocity_raw, op_star) if trace_velocity_raw is not None else None
+                else:
+                    # Patch 34: Identity (Default)
+                    trace_velocity = trace_velocity_raw
+                
+                inductive_velocity = phi_inductive - anchor if phi_inductive is not None else None
 
-                blended = w_base_val * base
-                if trace_vec is not None:
-                    blended += w_trace * trace_vec
-                if inductive_vec is not None:
-                    blended += w_inductive * inductive_vec
-                blended += w_anchor * anchor_vec
+                # Map function parameters to velocity-relative weights
+                w_base_velocity = 1.0
+                w_trace_velocity = w_trace
+                w_inductive_velocity = w_inductive
+                w_anchor_state = w_anchor
+                cl_damping = damping
 
-                diag_cl["blend_norm"] = float(np.linalg.norm(blended))
-                phi_for_internal = blended / (diag_cl["blend_norm"] + 1e-9)
+                corrected_velocity = w_base_velocity * base_velocity
 
-                def cosine_sim(v1, v2):
+                if trace_velocity is not None:
+                    corrected_velocity += w_trace_velocity * trace_velocity
+
+                if inductive_velocity is not None:
+                    corrected_velocity += w_inductive_velocity * inductive_velocity
+
+                def safe_cosine(v1, v2):
                     if v1 is None or v2 is None: return 0.0
                     n1, n2 = np.linalg.norm(v1), np.linalg.norm(v2)
                     if n1 < 1e-9 or n2 < 1e-9: return 0.0
                     return float(np.dot(v1, v2) / (n1 * n2))
 
-                diag_cl["blend_cosine_to_prev"] = cosine_sim(phi_for_internal, prev_phi_oriented)
-                diag_cl["blend_cosine_to_trace"] = cosine_sim(phi_for_internal, trace_vec)
-                diag_cl["blend_cosine_to_inductive"] = cosine_sim(phi_for_internal, inductive_vec)
+                if trace_velocity_raw is not None:
+                    diag_cl["trace_velocity_raw_available"] = True
+                    diag_cl["trace_velocity_norm"] = float(np.linalg.norm(trace_velocity_raw))
+                    diag_cl["raw_trace_cosine_to_base_velocity"] = safe_cosine(trace_velocity_raw, base_velocity)
+                    diag_cl["raw_trace_cosine_to_teacher_velocity"] = safe_cosine(trace_velocity_raw, teacher_velocity)
 
-                # Optional damping to prevent runaway drift
-                phi_for_internal = damping * phi_for_internal + (1.0 - damping) * (prev_phi_oriented if prev_phi_oriented is not None else phi_for_internal)
-                phi_for_internal = phi_for_internal / (np.linalg.norm(phi_for_internal) + 1e-9)
+                if trace_velocity is not None:
+                    diag_cl["trace_velocity_rotated_available"] = True
+                    diag_cl["rotated_trace_cosine_to_base_velocity"] = safe_cosine(trace_velocity, base_velocity)
+                    diag_cl["rotated_trace_cosine_to_teacher_velocity"] = safe_cosine(trace_velocity, teacher_velocity)
+                    diag_cl["rotation_helped"] = diag_cl["rotated_trace_cosine_to_base_velocity"] > diag_cl["raw_trace_cosine_to_base_velocity"]
+
+                diag_cl["base_velocity_norm"] = float(np.linalg.norm(base_velocity))
+                if inductive_velocity is not None:
+                    diag_cl["inductive_velocity_norm"] = float(np.linalg.norm(inductive_velocity))
+                
+                # Velocity damping, not state freezing
+                corrected_velocity *= cl_damping
+                diag_cl["corrected_velocity_norm"] = float(np.linalg.norm(corrected_velocity))
+
+                # Integrate motion relative to current reference
+                candidate = anchor + corrected_velocity
+
+                # Weak state anchor prevents total reference walk without dominating motion
+                candidate = candidate + w_anchor_state * anchor
+
+                diag_cl["candidate_cosine_to_anchor"] = safe_cosine(candidate, anchor)
+                diag_cl["candidate_cosine_to_trace_velocity"] = safe_cosine(candidate, trace_velocity)
+                diag_cl["candidate_cosine_to_base_velocity"] = safe_cosine(candidate, base_velocity)
+                diag_cl["candidate_cosine_to_inductive_velocity"] = safe_cosine(candidate, inductive_velocity)
+
+                phi_for_internal = candidate / (np.linalg.norm(candidate) + 1e-9)
 
             if refraction_enabled:
                 anchor_input = refraction.unrefract(phi_for_internal)
@@ -289,6 +332,8 @@ def run_platform(num_frames=100, num_nodes=100, engine_steps_per_frame=None, fee
                 "phi_current": phi_actual.tolist(), "phi_continued": phi_continued.tolist(),
                 "continuation_mismatch": continuation_mismatch, "active_groove_id": router.active_groove_id,
                 "survivability_decision": decision, "signal_x": signal_x, "phase_error": phase_error,
+                "survivability_failed_tests": failed_tests,
+                "relational_guard": phase_continuation.last_relational_guard,
                 "teacher_theta": geom["teacher_theta"], "student_theta": geom["student_theta"],
                 "connected": connected, "connected_state": connected_state,
                 "refraction_enabled": bool(refraction_enabled),

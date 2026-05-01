@@ -1,9 +1,20 @@
 import numpy as np
+from core.relational_guard import relational_guard
 from .phase_space import normalize, phase_mismatch
 from .signal_layer import get_consistency_level
 
 class ResiduePhaseContinuation:
-    def __init__(self, history_size=64, trace_size=128, base_groove_gain=0.15, max_groove_gain=0.25, successful_traversals=0):
+    def __init__(
+        self,
+        history_size=64,
+        trace_size=128,
+        base_groove_gain=0.15,
+        max_groove_gain=0.25,
+        successful_traversals=0,
+        relational_guard_enabled=True,
+        relational_overcoherence_threshold=0.96,
+        relational_guard_min_segments=24,
+    ):
         self.history = []
         self.trace_buffer = []
         self.history_size = int(history_size)
@@ -18,6 +29,10 @@ class ResiduePhaseContinuation:
         self.traversal_count = 0
         self.running_mismatch_mean = 0.015
         self.mismatch_history = []
+        self.last_relational_guard = None
+        self.relational_guard_enabled = bool(relational_guard_enabled)
+        self.relational_overcoherence_threshold = float(relational_overcoherence_threshold)
+        self.relational_guard_min_segments = int(relational_guard_min_segments)
 
     def update_history(self, phi):
         phi = np.asarray(phi, dtype=float)
@@ -61,9 +76,19 @@ class ResiduePhaseContinuation:
             
         # Test D: Trace coherence
         trace_vec = self.trace_feedback_vector()
+        self.last_relational_guard = None
         if trace_vec is not None:
             if len(self.history) > 0:
                 seg = normalize(phi_candidate - self.history[-1])
+                guard = relational_guard(
+                    seg,
+                    trace_vec,
+                    0.0,
+                    overcoherence_threshold=self.relational_overcoherence_threshold,
+                )
+                self.last_relational_guard = guard.to_dict()
+                if self._should_resist_relational_overcoherence(guard):
+                    failed_tests.append("relational_overcoherence")
                 dist = np.linalg.norm(seg - trace_vec)
                 # Permissive coherence for EEG features
                 if dist > 0.7: 
@@ -77,6 +102,22 @@ class ResiduePhaseContinuation:
             return "reinforce", failed_tests
             
         return "hold", failed_tests
+
+    def _should_resist_relational_overcoherence(self, guard):
+        if not self.relational_guard_enabled:
+            return False
+        if guard.recommended_action != "reinforce_with_resistance":
+            return False
+        if len(self.trace_segments) < self.relational_guard_min_segments:
+            return False
+        if len(self.mismatch_history) < 4:
+            return False
+
+        recent = np.asarray(self.mismatch_history[-8:], dtype=float)
+        mismatch_mean = float(np.mean(recent))
+        mismatch_std = float(np.std(recent))
+        flat_tolerance = max(0.002, 0.10 * max(abs(mismatch_mean), abs(self.running_mismatch_mean), 1e-9))
+        return bool(mismatch_std <= flat_tolerance)
 
     def store_trace_segment(self, phi_prev, phi_current, mismatch, decision):
         """
@@ -103,6 +144,17 @@ class ResiduePhaseContinuation:
         # Patch 32: Ensure directional output is strictly normalized
         vec = np.mean(np.stack(recent, axis=0), axis=0)
         return normalize(vec) if np.linalg.norm(vec) > 1e-9 else None
+
+    def trace_velocity_vector(self):
+        """Return normalized recent directional velocity from trace segments."""
+        if len(self.trace_segments) < 4:
+            return None
+        recent = self.trace_segments[-min(len(self.trace_segments), 32):]
+        v = np.mean(np.stack(recent, axis=0), axis=0)
+        n = np.linalg.norm(v)
+        if n < 1e-9:
+            return None
+        return v / n
 
     def groove_gain(self):
         growth = 1.0 - np.exp(-0.20 * float(self.successful_traversals))

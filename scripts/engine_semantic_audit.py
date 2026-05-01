@@ -34,16 +34,16 @@ def run_audit():
     # 2. Frozen Field Test
     print("  Testing for Frozen Field...")
     # Evolve for 100 steps with changing input
-    variances = []
+    means = []
     for t in range(100):
         bridge.step(input_signal=np.sin(t*0.1), control_pattern=1.0)
         s = bridge.get_field_statistics()
-        variances.append(s["variance"])
+        means.append(s["mean"])
     
-    # Check if variance is non-constant
-    var_change = np.std(variances)
-    results["frozen_field_test"] = "PASS" if var_change > 1e-9 else "FAIL"
-    print(f"    Variance StdDev: {var_change:.9f} -> {results['frozen_field_test']}")
+    # Check if mean is non-constant
+    mean_change = np.std(means)
+    results["frozen_field_test"] = "PASS" if mean_change > 1e-9 else "FAIL"
+    print(f"    Mean StdDev: {mean_change:.9f} -> {results['frozen_field_test']}")
 
     # 3. Reaction Term Toggle Test
     print("  Testing Reaction Toggle...")

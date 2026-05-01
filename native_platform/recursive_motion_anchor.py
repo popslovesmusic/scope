@@ -12,10 +12,13 @@ def circular_mean(angles):
 class BandOscillator:
     def __init__(self, band_id, channels=8):
         self.band_id = band_id
-        self.theta = np.zeros(channels)
-        self.omega = np.zeros(channels)
-        self.alpha = np.zeros(channels)
-        self.A = np.zeros(channels)
+        self.channels = channels
+        self.num_pairs = channels // 2
+        
+        self.theta = np.zeros(self.num_pairs)
+        self.omega = np.zeros(self.num_pairs)
+        self.alpha = np.zeros(self.num_pairs)
+        self.A = np.zeros(self.num_pairs)
         
         self.omega_history = []
         self.alpha_history = []
@@ -27,22 +30,31 @@ class BandOscillator:
         self.confidence = 1.0
         
         # Patch 27 Defaults - Tuned for rigidity
-        self.decay_omega = 0.995 # Less decay
-        self.decay_alpha = 0.95 # More persistence of acceleration
-        self.k_alpha = 0.40     # Stronger curvature pull
-        self.k_restore = 0.25   # Stronger restoration to omega_hat
+        self.decay_omega = 0.995 
+        self.decay_alpha = 0.95 
+        self.k_alpha = 0.40     
+        self.k_restore = 0.25   
         self.omega_floor = 0.001
         self.omega_max = 0.50
         self.alpha_max = 0.15
         self.gain_alpha = 0.08
 
-    def update_train(self, theta_in, A_in):
-        # Derive velocity and acceleration from ground truth relative to current internal state
-        # This allows the student to "learn" the correction required to stay on track
+    def _to_complex(self, v):
+        return v[0::2] + 1j * v[1::2]
+
+    def _to_real(self, c):
+        res = np.zeros(self.channels)
+        res[0::2] = c.real
+        res[1::2] = c.imag
+        return res
+
+    def update_train(self, phi_in, A_in):
+        # Convert 8D phi_in to 4 angles
+        c_in = self._to_complex(phi_in)
+        theta_in = np.angle(c_in + 1e-12)
+
         omega_in = wrap_to_pi(theta_in - self.theta)
 
-        # But we must update the histories based on the GROUND TRUTH velocity 
-        # to know what the target motion is.
         if self.prev_theta_teacher is not None:
             omega_teacher = wrap_to_pi(theta_in - self.prev_theta_teacher)
             self.omega_history.append(omega_teacher)
@@ -66,16 +78,16 @@ class BandOscillator:
         if np.isscalar(A_in):
             self.A = np.full_like(self.theta, A_in)
         else:
-            self.A = np.asarray(A_in).copy()
+            self.A = np.asarray(A_in[0::2]).copy()
         self.confidence = 1.0
 
     def step_recursive(self, k_L=0.12, L=None):
         if L is None:
             L = np.zeros_like(self.theta)
             
-        # 1. Estimates from history
         if len(self.omega_history) < 4:
-            return self.theta
+            c = np.exp(1j * self.theta)
+            return normalize(self._to_real(c))
 
         omega_hat = np.array([circular_mean([h[c] for h in self.omega_history]) for c in range(len(self.theta))])
         if len(self.omega_history) > 1:
@@ -104,7 +116,8 @@ class BandOscillator:
         self.A *= 0.98
         self.confidence *= 0.99
         
-        return self.theta
+        c = np.exp(1j * self.theta)
+        return normalize(self._to_real(c))
 
     def to_dict(self):
         return {
@@ -121,12 +134,13 @@ class BandOscillator:
         }
 
     @staticmethod
-    def from_dict(d):
-        b = BandOscillator(d["band_id"])
-        b.theta = np.array(d["theta"])
-        b.omega = np.array(d["omega"])
-        b.alpha = np.array(d["alpha"])
-        b.A = np.array(d["A"])
+    def from_dict(d, channels=8):
+        b = BandOscillator(d["band_id"], channels=channels)
+        num_pairs = channels // 2
+        b.theta = np.array(d.get("theta", np.zeros(num_pairs)))
+        b.omega = np.array(d.get("omega", np.zeros(num_pairs)))
+        b.alpha = np.array(d.get("alpha", np.zeros(num_pairs)))
+        b.A = np.array(d.get("A", np.zeros(num_pairs)))
         b.omega_history = [np.array(h) for h in d.get("omega_history", [])]
         b.alpha_history = [np.array(h) for h in d.get("alpha_history", [])]
         b.confidence = d.get("confidence", 1.0)
@@ -145,11 +159,11 @@ class RecursiveMotionAnchor:
         self.active_band_id = "alpha" 
         self.channels = channels
 
-    def update(self, theta_input, A_input, signal_x, connected=True, active_groove_id=None, L=None):
+    def update(self, phi_input, A_input, signal_x, connected=True, active_groove_id=None, L=None):
         band = self.bands[self.active_band_id]
         if connected:
-            band.update_train(theta_input, A_input)
-            return theta_input
+            band.update_train(phi_input, A_input)
+            return phi_input
         else:
             return band.step_recursive(L=L)
 
@@ -174,7 +188,8 @@ class RecursiveMotionAnchor:
     def from_dict(d):
         if not d:
             return RecursiveMotionAnchor()
-        ra = RecursiveMotionAnchor(channels=d.get("channels", 8))
+        channels = d.get("channels", 8)
+        ra = RecursiveMotionAnchor(channels=channels)
         ra.active_band_id = d.get("active_band_id", "alpha")
-        ra.bands = {bid: BandOscillator.from_dict(bd) for bid, bd in d.get("bands", {}).items()}
+        ra.bands = {bid: BandOscillator.from_dict(bd, channels=channels) for bid, bd in d.get("bands", {}).items()}
         return ra

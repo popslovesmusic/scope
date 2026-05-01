@@ -8,99 +8,110 @@ def wrap(v):
 class InductiveTransformerLayer:
     def __init__(self, channels=8, sample_rate=128):
         self.channels = channels
+        self.num_pairs = channels // 2
         self.sample_rate = sample_rate
         
-        # Internal State (Student)
-        self.theta = np.zeros(channels) # 'Phase' of each channel
-        self.A = np.zeros(channels)     # Amplitude
-        self.omega = np.zeros(channels) # Phase velocity
-        self.L = np.zeros(channels)     # Inductive motion memory
+        # Internal State (Student) - Using 4 angles for stability
+        self.theta = np.zeros(self.num_pairs) 
+        self.A = np.zeros(self.num_pairs)     
+        self.omega = np.zeros(self.num_pairs) 
+        self.L = np.zeros(self.num_pairs)     
         
         # Teacher Tracking (Last Input)
-        self.teacher_theta = np.zeros(channels)
-        self.teacher_omega = np.zeros(channels)
-        self.teacher_amp = np.zeros(channels)
+        self.teacher_theta = np.zeros(self.num_pairs)
+        self.teacher_omega = np.zeros(self.num_pairs)
         
-        # Parameters (Defaults from Patch 24/25)
+        # Parameters
         self.decay_L = 0.96
         self.gain_L = 0.08
-        self.k_input_base = 0.18
+        self.k_input_base = 0.45 
         self.k_L = 0.22
-        self.k_neighbor = 0.04
+        self.max_phase_correction = 0.5 
         self.decay_A = 0.97
         self.k_A = 0.1
-        self.max_phase_correction = 0.12
         
         self.prev_theta_input = None
 
-    def update(self, theta_input, A_input, signal_x, connected=True):
-        """
-        Updates the inductive transformer state.
-        theta_input: Target phase (8-element vector)
-        A_input: Target amplitude (scalar or vector)
-        signal_x: Consistency proxy [0, 1]
-        connected: Boolean, if False, runs in internal-only mode (disconnect)
-        """
-        # Teacher Update (for metric tracking)
-        if theta_input is not None:
-            if self.prev_theta_input is not None:
-                self.teacher_omega = wrap(theta_input - self.prev_theta_input)
-            self.teacher_theta = theta_input
-            self.teacher_amp = np.full(self.channels, A_input) if np.isscalar(A_input) else A_input
+    def _to_complex(self, v):
+        return v[0::2] + 1j * v[1::2]
 
-        # 1. Dynamic Coupling k_input scales with Signal X
+    def _to_real(self, c):
+        res = np.zeros(self.channels)
+        res[0::2] = c.real
+        res[1::2] = c.imag
+        return res
+
+    def update(self, phi_input, A_input, signal_x, connected=True):
+        if phi_input is None: return self.get_state_vector()
+        
+        # Convert 8D input to 4 angles
+        c_input = self._to_complex(phi_input)
+        theta_input = np.angle(c_input + 1e-12)
+
+        # Teacher Update
+        if self.prev_theta_input is not None:
+            self.teacher_omega = wrap(theta_input - self.prev_theta_input)
+        self.teacher_theta = theta_input
+
+        # 1. Dynamic Coupling
         k_input = self.k_input_base * signal_x if connected else 0.0
         
-        # 2. Inductive Memory Update (L_t = decay_L * L_prev + gain_L * omega_t)
+        # 2. Inductive Memory Update
         self.L = self.decay_L * self.L + self.gain_L * self.omega
         
         # 3. Phase Update (Theta)
         if connected:
-            # External driving + Inductive Bias
             correction = wrap(theta_input - self.theta)
             correction = np.clip(correction, -self.max_phase_correction, self.max_phase_correction)
-            delta_theta = self.omega + k_input * correction + self.k_L * self.L
-        else:
-            # Internal purely: Momentum + Inductive Bias
-            delta_theta = self.omega + self.k_L * self.L
-            
-        # Neighbor coupling (Transformer-style coupling)
-        if self.channels > 1:
-            mean_theta = np.mean(self.theta)
-            neighbor_pull = self.k_neighbor * wrap(mean_theta - self.theta)
-            delta_theta += neighbor_pull
+            # Update internal velocity towards input
+            self.omega = wrap(self.omega + k_input * correction)
 
-        # Apply update
-        new_theta = self.theta + delta_theta
-        
-        # Update velocity (Internal / Student)
-        self.omega = wrap(new_theta - self.theta)
-        
-        # Update state
-        self.theta = new_theta 
-        
+        # Apply update using current velocity + inductive bias
+        # 💡 CRITICAL: Don't update self.omega from this combined delta_theta 
+        # to avoid positive feedback runaway.
+        delta_theta = self.omega + self.k_L * self.L
+        new_theta = wrap(self.theta + delta_theta)
+        self.theta = new_theta
+
         # 4. Amplitude Update
+        target_A = np.full(self.num_pairs, A_input) if np.isscalar(A_input) else A_input[0::2]
         if connected:
-            target_A = np.full(self.channels, A_input) if np.isscalar(A_input) else A_input
             self.A = self.decay_A * self.A + self.k_A * target_A
         else:
-            self.A = self.decay_A * self.A
+            self.A *= self.decay_A
 
-        self.prev_theta_input = theta_input.copy() if theta_input is not None else None
+        self.prev_theta_input = theta_input.copy()
         
         return self.get_state_vector()
 
+    def to_dict(self):
+        return {
+            "theta": self.theta.tolist(),
+            "omega": self.omega.tolist(),
+            "L": self.L.tolist(),
+            "A": self.A.tolist()
+        }
+
+    @classmethod
+    def from_dict(cls, d, channels=8):
+        obj = cls(channels=channels)
+        num_pairs = channels // 2
+        if d:
+            obj.theta = np.array(d.get("theta", np.zeros(num_pairs)))
+            obj.omega = np.array(d.get("omega", np.zeros(num_pairs)))
+            obj.L = np.array(d.get("L", np.zeros(num_pairs)))
+            obj.A = np.array(d.get("A", np.zeros(num_pairs)))
+        return obj
+
     def get_state_vector(self):
-        """Returns the current state as a normalized vector for integration."""
-        return normalize(self.theta)
+        """Returns the current state as a normalized 8D unit vector."""
+        c = np.exp(1j * self.theta)
+        return normalize(self._to_real(c))
 
     def get_raw_geometry(self):
-        """Exposes raw geometry for Patch 25 logging."""
         return {
             "teacher_theta": self.teacher_theta.tolist(),
             "student_theta": self.theta.tolist(),
-            "teacher_amp": self.teacher_amp.tolist(),
             "student_amp": self.A.tolist(),
-            "teacher_omega": self.teacher_omega.tolist(),
             "student_omega": self.omega.tolist()
         }

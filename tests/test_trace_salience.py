@@ -285,8 +285,7 @@ def test_recovery_and_recontextualization_reduce_applied_caution_only():
         recontextualization_weight=0.5,
     )
 
-    assert
- abs(float(raw0) - float(raw1)) < 1e-12
+    assert abs(float(raw0) - float(raw1)) < 1e-12
     assert float(after1) < float(after0)
 
 

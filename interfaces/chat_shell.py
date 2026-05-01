@@ -903,8 +903,7 @@ class ChatShell:
                 "/trace 5             show last 5 phase summaries",
                 "/trace full          show detailed trace for last turn",
                 "/trace highlights    show triggered highlights (last 3 turns)",
-                "/trace highlights 5  show
- highlights for last 5 turns",
+                "/trace highlights 5  show highlights for last 5 turns",
                 "/trace review        verbose highlight review (last 3 turns)",
                 "/props               show triggered trace properties (inferred)",
                 "/props full          show all trace properties + supporting fields",
